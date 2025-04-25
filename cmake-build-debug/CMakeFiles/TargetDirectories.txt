@@ -1,0 +1,3 @@
+/Users/rgardishyan/CLionProjects/RayTracerInOneWeekend/cmake-build-debug/CMakeFiles/RayTracerInOneWeekend.dir
+/Users/rgardishyan/CLionProjects/RayTracerInOneWeekend/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/rgardishyan/CLionProjects/RayTracerInOneWeekend/cmake-build-debug/CMakeFiles/rebuild_cache.dir
