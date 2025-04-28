@@ -12,7 +12,13 @@ public:
     ray r;
     float t;
     vec3 triangle[3]; // the vertices of the triangle in the right order for normal calculation
-    // don't care about the rest
+    vec3 triangle_normal;
+};
+
+struct sampler_result {
+    vec3 light_point;
+    vec3 light_dir;
+    triangular_light light;
 };
 
 class reservoir {
@@ -64,6 +70,36 @@ public:
         lights = lights_vec.data();
     }
 
+    std::vector<sampler_result> sample_lights(std::vector<temp_hit_info> hit_infos, tinybvh::BVH &bvh) {
+        // Swap the current and previous reservoirs
+        next_frame();
+        // For every pixel:
+        // 1. Sample M times from the light sources; Choose one sample (reservoir)
+        // 2. Check visibility of the light sample
+        // 3. Temporal update - update the current reservoir with the previous one
+        // 4. Spatial update - update the current reservoir with the neighbors
+        // 5. Return the sample in the current reservoir
+        std::vector<sampler_result> results;
+        results.reserve(x_pixels * y_pixels);
+        for (u_int i = 0; i < x_pixels; i++) {
+            for (u_int j = 0; j < y_pixels; j++) {
+                temp_hit_info &hi = hit_infos.at(i * y_pixels + j);
+                set_initial_sample(i, j, hi);
+                visibility_check(i, j, hi.r, bvh);
+                temporal_update(i, j);
+                spatial_update(i, j);
+                sampler_result result
+                {
+                    current_reservoirs.at(i * y_pixels + j).sample_pos,
+                    unit_vector(result.light_point - hi.r.at(hi.t)),
+                    current_reservoirs.at(i * y_pixels + j).sample
+                };
+                results.push_back(result);
+            }
+        }
+        return results;
+    }
+
     void set_initial_sample(u_int i, u_int j, temp_hit_info &hi) {
         // Create a reservoir for the pixel
         reservoir &res = current_reservoirs.at(i * y_pixels + j);
@@ -76,15 +112,18 @@ public:
         }
     }
 
-    void visibility_check(u_int i, u_int j, ray &r, tinybvh::BVH &bvh) {
+    void visibility_check(u_int i, u_int j, temp_hit_info &hi, tinybvh::BVH &bvh) {
         // Check visibility of the light sample
         auto &res = current_reservoirs.at(i * y_pixels + j);
-        tinybvh::Ray shadow(
-            toBVHVec(r.origin() + (r.direction() * 1e-4f)), // avoid self‐intersection
-            toBVHVec(res.sample_pos - r.origin())
-        );
-        bvh.Intersect(shadow);
-        if (shadow.hit.t < (res.sample_pos - r.origin()).length()) {
+        // Shadow dir = light sample - hit point
+        vec3 shadow_dir = res.sample_pos - hi.r.at(hi.t);
+        // Create a ray from the hit point to the light sample
+        ray shadow(hi.r.at(hi.t), unit_vector(shadow_dir));
+        // Check if the ray intersects with the scene
+        tinybvh::Ray shadow_ray(toBVHVec(shadow.origin()), toBVHVec(shadow.direction()));
+        bvh.Intersect(shadow_ray);
+        // If the ray intersects with the scene, discard the sample
+        if (shadow_ray.hit.t < shadow_dir.length()) {
             res.reset();
         }
     }
@@ -149,8 +188,7 @@ private:
         // theta = angle between light direction and triangle normal
         // solid_angle = area of light / distance^2
         vec3 light_dir = light_point - hit_point;
-        vec3 triangle_normal = unit_vector(cross(hi.triangle[1] - hi.triangle[0], hi.triangle[2] - hi.triangle[0]));
-        float cos_theta = dot(unit_vector(light_dir), triangle_normal);
+        float cos_theta = dot(unit_vector(light_dir), hi.triangle_normal);
         float distance = light_dir.length();
         float area_of_light = 0.5f * cross(light.v1 - light.v0, light.v2 - light.v0).length();
         float solid_angle = area_of_light / (distance * distance);
