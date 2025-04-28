@@ -64,13 +64,14 @@ inline reservoir merge_reservoirs(const std::vector<reservoir> &reservoirs) {
 class restir_light_sampler {
 public:
     restir_light_sampler(u_int x, u_int y, std::vector<triangular_light> &lights_vec) : x_pixels(x), y_pixels(y) {
-        prev_reservoirs = std::vector<reservoir>(x * y);
-        current_reservoirs = std::vector<reservoir>(x * y);
+        prev_reservoirs = std::vector<std::vector<reservoir>>(y, std::vector<reservoir>(x));
+        current_reservoirs = std::vector<std::vector<reservoir>>(y, std::vector<reservoir>(x));
         num_lights = lights_vec.size();
         lights = lights_vec.data();
     }
 
-    std::vector<sampler_result> sample_lights(std::vector<temp_hit_info> hit_infos, tinybvh::BVH &bvh) {
+    std::vector<std::vector<sampler_result> > sample_lights(std::vector<std::vector<temp_hit_info> > hit_infos,
+                                                            tinybvh::BVH &bvh) {
         // Swap the current and previous reservoirs
         next_frame();
         // For every pixel:
@@ -79,30 +80,32 @@ public:
         // 3. Temporal update - update the current reservoir with the previous one
         // 4. Spatial update - update the current reservoir with the neighbors
         // 5. Return the sample in the current reservoir
-        std::vector<sampler_result> results;
-        results.reserve(x_pixels * y_pixels);
-        for (u_int i = 0; i < x_pixels; i++) {
-            for (u_int j = 0; j < y_pixels; j++) {
-                temp_hit_info &hi = hit_infos.at(i * y_pixels + j);
-                set_initial_sample(i, j, hi);
-                visibility_check(i, j, hi.r, bvh);
-                temporal_update(i, j);
-                spatial_update(i, j);
+        std::vector<std::vector<sampler_result> > results;
+        for (u_int y = 0; y < y_pixels; y++) {
+            std::vector<sampler_result> row;
+            for (u_int x = 0; x < x_pixels; x++) {
+                temp_hit_info &hi = hit_infos.at(y).at(x);
+                set_initial_sample(x, y, hi);
+                visibility_check(x, y, hi, bvh);
+                temporal_update(x, y);
+                spatial_update(x, y);
+                auto res = current_reservoirs.at(y).at(x);
                 sampler_result result
                 {
-                    current_reservoirs.at(i * y_pixels + j).sample_pos,
-                    unit_vector(result.light_point - hi.r.at(hi.t)),
-                    current_reservoirs.at(i * y_pixels + j).sample
+                    res.sample_pos,
+                    unit_vector(res.sample_pos - hi.r.at(hi.t)),
+                    res.sample
                 };
-                results.push_back(result);
+                row.push_back(result);
             }
+            results.push_back(row);
         }
         return results;
     }
 
-    void set_initial_sample(u_int i, u_int j, temp_hit_info &hi) {
+    void set_initial_sample(u_int x, u_int y, temp_hit_info &hi) {
         // Create a reservoir for the pixel
-        reservoir &res = current_reservoirs.at(i * y_pixels + j);
+        reservoir &res = current_reservoirs.at(y).at(x);
         res.reset();
         // Sample M times from the light sources
         for (int k = 0; k < m; k++) {
@@ -112,9 +115,9 @@ public:
         }
     }
 
-    void visibility_check(u_int i, u_int j, temp_hit_info &hi, tinybvh::BVH &bvh) {
+    void visibility_check(u_int x, u_int y, temp_hit_info &hi, tinybvh::BVH &bvh) {
         // Check visibility of the light sample
-        auto &res = current_reservoirs.at(i * y_pixels + j);
+        auto &res = current_reservoirs.at(y).at(x);
         // Shadow dir = light sample - hit point
         vec3 shadow_dir = res.sample_pos - hi.r.at(hi.t);
         // Create a ray from the hit point to the light sample
@@ -128,25 +131,25 @@ public:
         }
     }
 
-    void temporal_update(u_int i, u_int j) {
+    void temporal_update(u_int x, u_int y) {
         // Update the current reservoir with the previous one
-        auto &prev_res = prev_reservoirs.at(i * y_pixels + j);
-        auto &curr_res = current_reservoirs.at(i * y_pixels + j);
+        auto &prev_res = prev_reservoirs.at(y).at(x);
+        auto &curr_res = current_reservoirs.at(y).at(x);
         curr_res.update(prev_res.sample, prev_res.sample_pos, prev_res.W);
     }
 
-    void spatial_update(u_int i, u_int j) {
+    void spatial_update(u_int x, u_int y) {
         // Update the current reservoir with the neighbors
         std::vector<reservoir> all_reservoirs;
-        auto &curr_res = current_reservoirs.at(i * y_pixels + j);
+        auto &curr_res = current_reservoirs.at(y).at(x);
         all_reservoirs.push_back(curr_res);
-        for (int x = -1; x <= 1; x++) {
-            for (int y = -1; y <= 1; y++) {
-                if (x == 0 && y == 0) continue;
-                int ni = i + x;
-                int nj = j + y;
-                if (ni >= 0 && ni < x_pixels && nj >= 0 && nj < y_pixels) {
-                    all_reservoirs.push_back(current_reservoirs.at(ni * y_pixels + nj));
+        for (int xx = -1; xx <= 1; xx++) {
+            for (int yy = -1; yy <= 1; yy++) {
+                if (xx == 0 && yy == 0) continue;
+                int nx = x + xx;
+                int ny = y + yy;
+                if (nx >= 0 && nx < x_pixels && ny >= 0 && ny < y_pixels) {
+                    all_reservoirs.push_back(current_reservoirs.at(ny).at(nx));
                 }
             }
         }
@@ -156,9 +159,9 @@ public:
         curr_res.update(merged_res.sample, merged_res.sample_pos, merged_res.W);
     }
 
-    void spatial_update(u_int i, u_int j, int radius) {
+    void spatial_update(u_int x, u_int y, int radius) {
         for (int r = 0; r < radius; r++) {
-            spatial_update(i, j);
+            spatial_update(x, y);
         }
     }
 
@@ -171,8 +174,8 @@ private:
     u_int m = 4;
     u_int x_pixels;
     u_int y_pixels;
-    std::vector<reservoir> prev_reservoirs;
-    std::vector<reservoir> current_reservoirs;
+    std::vector<std::vector<reservoir>> prev_reservoirs;
+    std::vector<std::vector<reservoir>> current_reservoirs;
     triangular_light *lights;
     u_int num_lights;
 
