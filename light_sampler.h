@@ -7,16 +7,24 @@
 #include "triangular_light.h"
 #include "ray.h"
 
+class temp_hit_info {
+public:
+    ray r;
+    float t;
+    vec3 triangle[3];
+    // don't care about the rest
+};
+
 class reservoir {
 public:
     triangular_light sample;
     point3 sample_pos;
     int M;
-    int W;
+    float W;
 
     reservoir() : sample({0,0,0},{0,0,0},{0,0,0}, {0,0,0}, 0), sample_pos(0,0,0), M(0), W(0) {}
 
-    void update(triangular_light new_sample, point3 sample_point, int w_i) {
+    void update(triangular_light new_sample, point3 sample_point, float w_i) {
         W += w_i;
         M++;
         if (W == w_i) {
@@ -54,7 +62,7 @@ public:
         lights = lights_vec.data();
     }
 
-    void set_initial_sample(u_int i, u_int j, ray &r) {
+    void set_initial_sample(u_int i, u_int j, temp_hit_info &hi) {
         // Create a reservoir for the pixel
         reservoir &res = current_reservoirs.at(i * y_pixels + j);
         res.reset();
@@ -62,7 +70,7 @@ public:
         for (int k = 0; k < m; k++) {
             triangular_light l = pick_light();
             point3 sample_point = sample_on_light(l);
-            res.update(l, sample_point, get_light_weight(l, r));
+            res.update(l, sample_point, get_light_weight(l, sample_point, hi.r.at(t)));
         }
     }
 
@@ -125,15 +133,25 @@ private:
     triangular_light *lights;
     u_int num_lights;
 
-    triangular_light pick_light() {
+    triangular_light pick_light() const {
         // Pick a random light source uniformly (standard, change this if you want to use a different sampling strategy)
         int index = rand() % num_lights;
         return lights[index];
     }
 
-    int get_light_weight(triangular_light &light, ray &r) {
-        // Uniform weights for now, we can use solid angle or area weights later
-        return 1;
+    static float get_light_weight(triangular_light &light, point3 light_point, temp_hit_info &hi) {
+        point3 hit_point = hi.r.at(hi.t);
+        // w = light_intensity * cos(theta) * solid_angle
+        // theta = angle between light direction and triangle normal
+        // solid_angle = area of light / distance^2
+        vec3 light_dir = light_point - hit_point;
+        vec3 triangle_normal = unit_vector(cross(hi.triangle[1] - hi.triangle[0], hi.triangle[2] - hi.triangle[0]));
+        float cos_theta = dot(unit_vector(light_dir), triangle_normal);
+        float distance = light_dir.length();
+        float area_of_light = 0.5f * cross(light.v1 - light.v0, light.v2 - light.v0).length();
+        float solid_angle = area_of_light / (distance * distance);
+
+        return light.intensity * cos_theta * solid_angle;
     }
 };
 
