@@ -11,7 +11,7 @@ class temp_hit_info {
 public:
     ray r;
     float t;
-    vec3 triangle[3];
+    vec3 triangle[3]; // the vertices of the triangle in the right order for normal calculation
     // don't care about the rest
 };
 
@@ -22,24 +22,26 @@ public:
     int M;
     float W;
 
-    reservoir() : sample({0,0,0},{0,0,0},{0,0,0}, {0,0,0}, 0), sample_pos(0,0,0), M(0), W(0) {}
+    reservoir() : sample({0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, 0), sample_pos(0, 0, 0), M(0), W(0) {
+    }
 
     void update(triangular_light new_sample, point3 sample_point, float w_i) {
-        W += w_i;
         M++;
-        if (W == w_i) {
+        if (W == 0) {
+            W = w_i;
             sample = new_sample;
-        } else {
-            float p = float(w_i) / float(W);
-            if (rand() / float(RAND_MAX) < p) {
-                sample = new_sample;
-                sample_pos = sample_point;
-            }
+            return;
+        }
+        W += w_i;
+        float p = float(w_i) / float(W);
+        if (rand() / float(RAND_MAX) < p) {
+            sample = new_sample;
+            sample_pos = sample_point;
         }
     }
 
     void reset() {
-        sample = {{0,0,0},{0,0,0},{0,0,0}, {0,0,0}, 0};
+        sample = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, 0};
         M = 0;
         W = 0;
     }
@@ -74,7 +76,7 @@ public:
         }
     }
 
-    void visibility_check(u_int i, u_int j, ray &r, tinybvh::BVH &bvh)  {
+    void visibility_check(u_int i, u_int j, ray &r, tinybvh::BVH &bvh) {
         // Check visibility of the light sample
         auto &res = current_reservoirs.at(i * y_pixels + j);
         tinybvh::Ray shadow(
@@ -93,6 +95,7 @@ public:
         auto &curr_res = current_reservoirs.at(i * y_pixels + j);
         curr_res.update(prev_res.sample, prev_res.sample_pos, prev_res.W);
     }
+
     void spatial_update(u_int i, u_int j) {
         // Update the current reservoir with the neighbors
         std::vector<reservoir> all_reservoirs;
@@ -127,7 +130,8 @@ public:
 
 private:
     u_int m = 4;
-    u_int x_pixels; u_int y_pixels;
+    u_int x_pixels;
+    u_int y_pixels;
     std::vector<reservoir> prev_reservoirs;
     std::vector<reservoir> current_reservoirs;
     triangular_light *lights;
