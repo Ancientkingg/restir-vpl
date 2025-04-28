@@ -6,6 +6,7 @@
 #define TRIANGULAR_LIGHT_H
 #include "color.h"
 #include "vec3.h"
+#include <vector>
 
 class triangular_light {
 public:
