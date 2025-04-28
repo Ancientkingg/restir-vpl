@@ -1,7 +1,7 @@
 #ifndef VEC3_H
 #define VEC3_H
 #include "lib/tiny_bvh.h"
-
+#include <ostream>
 
 class vec3 {
   public:

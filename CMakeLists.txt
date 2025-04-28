@@ -15,5 +15,4 @@ add_executable(RayTracerInOneWeekend main.cpp
         triangular_light.h
         material.h
         light_sampler.h
-        light_sampler.cpp
 )
