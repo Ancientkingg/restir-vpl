@@ -14,4 +14,6 @@ add_executable(RayTracerInOneWeekend main.cpp
         lib/tiny_obj_loader.h
         triangular_light.h
         material.h
+
+        world.cpp
 )
