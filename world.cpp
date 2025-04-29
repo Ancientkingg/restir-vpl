@@ -19,10 +19,15 @@ void load_one_obj(std::vector<tinybvh::bvhvec4> &triangle_soup, std::vector<tiny
 		std::cerr << "TinyObjReader: " << reader.Warning() << std::endl;
 	}
 
+	int num_starting_mats = materials.size();
+
 	// Access the loaded shapes and materials
 	const auto &shapes = reader.GetShapes();
 	const auto &attrib = reader.GetAttrib();
-	materials = reader.GetMaterials();
+
+	const auto &new_mats = reader.GetMaterials();
+
+	materials.insert(materials.end(), new_mats.begin(), new_mats.end());
 	// Iterate through the shapes and extract the triangles
 	for (tinyobj::shape_t shape : shapes){
 		int face_id = 0;
@@ -44,7 +49,7 @@ void load_one_obj(std::vector<tinybvh::bvhvec4> &triangle_soup, std::vector<tiny
 			}
 			int material_id = -1;
 			if (face_id < shape.mesh.material_ids.size()) {
-				material_id = shape.mesh.material_ids[face_id];
+				material_id = shape.mesh.material_ids[face_id] + num_starting_mats;
 			}
 			mat_ids.push_back(material_id);
 
@@ -80,15 +85,10 @@ tinybvh::BVH World::bvh(){
 }
 
 std::vector<triangular_light> World::get_triangular_lights(){
-	std::cerr << light_material_ids.size() << std::endl;
-	std::cerr << light_materials.size() << std::endl;
-
 	std::vector<triangular_light> out;
 
 	int face_id = 0;
 	for(int i = 0; i < lights.size(); i += 3){
-		std::cerr << face_id << " , " << light_material_ids[face_id] << std::endl;
-
 		triangular_light tl{
 			{lights[i][0],lights[i][1],lights[i][2]},
 			{lights[i+1][0],lights[i+1][1],lights[i+1][2]},
@@ -102,6 +102,25 @@ std::vector<triangular_light> World::get_triangular_lights(){
 		};
 		out.push_back(tl);
 		face_id++;
+	}
+	return out;
+}
+
+std::vector<material> World::get_materials(){
+	std::vector<material> out;
+	for(int id : all_material_ids){
+		tinyobj::material_t mat = all_materials[all_material_ids[id]];
+		color c = {
+			mat.diffuse[0],
+			mat.diffuse[1],
+			mat.diffuse[2]
+		};
+		float k_d = (mat.diffuse[0] + mat.diffuse[1] + mat.diffuse[2]) / 3;
+		float k_s = *mat.specular;
+		float p = mat.shininess;
+
+		out.push_back({c, k_d, k_s, p});
+
 	}
 	return out;
 }

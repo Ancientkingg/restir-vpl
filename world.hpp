@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "triangular_light.h"
+#include "material.h"
 
 class World
 {
@@ -30,6 +31,7 @@ class World
 	tinybvh::BVH bvh(); // Build the bvh
 
 	std::vector<triangular_light> get_triangular_lights();
+	std::vector<material> get_materials();
 
 	private:
 	std::vector<int> all_material_ids;

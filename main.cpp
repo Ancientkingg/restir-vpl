@@ -6,19 +6,13 @@ int main() {
     camera cam;
 
     cam.aspect_ratio = 16.0 / 9; // Ratio of image width over height
-    cam.image_width = 1000;
+    cam.image_width = 500;
     cam.spp = 100;
 
-    material m{
-        color(1.f, 1.f, 1.f),
-        1.f,
-        .0f,
-        1.0f
-    };
-
-
     World *world = new World();
-    world->add_obj("objects/suzanne.obj", false);
+    world->add_obj("objects/whiteMonkey.obj", false);
+    world->add_obj("objects/whiteMonkey_rotated.obj", false);
+
     world->add_obj("objects/twoBigCubeLights.obj", true);
 
     tinybvh::bvhvec4 transpose =
@@ -32,6 +26,7 @@ int main() {
 
     std::vector<triangular_light> lights = world->get_triangular_lights();
     tinybvh::BVH bvh = world->bvh();
+    std::vector<material> mats = world->get_materials();
 
-    cam.render(bvh, lights, {m}, "image.ppm");
+    cam.render(bvh, lights, mats, "image.ppm");
 }
