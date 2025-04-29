@@ -11,9 +11,9 @@ int main() {
 
     World *world = new World();
     world->add_obj("objects/whiteMonkey.obj", false);
-    world->add_obj("objects/whiteMonkey_rotated.obj", false);
+    world->add_obj("objects/blueMonkey_rotated.obj", false);
 
-    world->add_obj("objects/twoBigCubeLights.obj", true);
+    world->add_obj("objects/bigCubeLight.obj", true);
 
     tinybvh::bvhvec4 transpose =
             tinybvh::bvhvec4(0, 40, -1, 0);

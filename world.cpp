@@ -27,7 +27,9 @@ void load_one_obj(std::vector<tinybvh::bvhvec4> &triangle_soup, std::vector<tiny
 
 	const auto &new_mats = reader.GetMaterials();
 
-	materials.insert(materials.end(), new_mats.begin(), new_mats.end());
+	for(tinyobj::material_t new_mat : new_mats){
+		materials.push_back(new_mat);
+	}
 	// Iterate through the shapes and extract the triangles
 	for (tinyobj::shape_t shape : shapes){
 		int face_id = 0;
@@ -37,6 +39,11 @@ void load_one_obj(std::vector<tinybvh::bvhvec4> &triangle_soup, std::vector<tiny
 				std::cerr << "Warning: Non-triangle face found in OBJ file." << std::endl;
 				continue;
 			}
+			int material_id = -1;
+			if (face_id < shape.mesh.material_ids.size()) {
+				material_id = shape.mesh.material_ids[face_id] + num_starting_mats;
+			}
+			mat_ids.push_back(material_id);
 			tinybvh::bvhvec4 triangle[3];
 			for (size_t v = 0; v < fv; v++) {
 				tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
@@ -44,14 +51,9 @@ void load_one_obj(std::vector<tinybvh::bvhvec4> &triangle_soup, std::vector<tiny
 					attrib.vertices[3 * idx.vertex_index + 0],
 					attrib.vertices[3 * idx.vertex_index + 1],
 					attrib.vertices[3 * idx.vertex_index + 2],
-					1.0f
+					material_id
 				);
 			}
-			int material_id = -1;
-			if (face_id < shape.mesh.material_ids.size()) {
-				material_id = shape.mesh.material_ids[face_id] + num_starting_mats;
-			}
-			mat_ids.push_back(material_id);
 
 			triangle_soup.push_back(triangle[0]);
 			triangle_soup.push_back(triangle[1]);
@@ -108,8 +110,8 @@ std::vector<triangular_light> World::get_triangular_lights(){
 
 std::vector<material> World::get_materials(){
 	std::vector<material> out;
-	for(int id : all_material_ids){
-		tinyobj::material_t mat = all_materials[all_material_ids[id]];
+	for(int id = 0; id < *std::max_element(all_material_ids.begin(), all_material_ids.end()); id++){
+		tinyobj::material_t mat = all_materials[id];
 		color c = {
 			mat.diffuse[0],
 			mat.diffuse[1],
