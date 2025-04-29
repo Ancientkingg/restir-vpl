@@ -12,6 +12,8 @@
 #include <iostream>
 #include <vector>
 
+#include "triangular_light.h"
+
 class World
 {
 	public:
@@ -26,6 +28,12 @@ class World
 	void add_obj(std::string file, bool is_lights); // Add an obj, indicate if it is all lights
 
 	tinybvh::BVH bvh(); // Build the bvh
+
+	std::vector<triangular_light> get_triangular_lights();
+
+	private:
+	std::vector<int> all_material_ids;
+	std::vector<int> light_material_ids;
 };
 
 #endif

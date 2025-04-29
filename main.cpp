@@ -1,6 +1,5 @@
 #include "material.h"
 #include "rtweekend.h"
-#include "triangular_light.h"
 #include "world.hpp"
 
 int main() {
@@ -20,7 +19,7 @@ int main() {
 
     World *world = new World();
     world->add_obj("objects/suzanne.obj", false);
-    world->add_obj("objects/bigCubeLight.obj", true);
+    world->add_obj("objects/twoBigCubeLights.obj", true);
 
     tinybvh::bvhvec4 transpose =
             tinybvh::bvhvec4(0, 40, -1, 0);
@@ -31,30 +30,8 @@ int main() {
     }
 
 
-    triangular_light simple_light(
-        vec3(10, 60, -2),
-        vec3(-10, 60, 0),
-        vec3(10, 80, 2),
-        color(.0f, .0f, 1.0f),
-        1.0f
-    );
-
-    triangular_light simple_light_2(
-        vec3(10, 20, -2),
-        vec3(-10, 20, 0),
-        vec3(10, 20, 2),
-        color(1.0f, 0.f, 0.f),
-        1.0f
-    );
-
-    triangular_light simple_light_3(
-        vec3(10, 30, 0),
-        vec3(-10, 50, 0),
-        vec3(10, 30, 0),
-        color(1.0f, 1.f, 1.f),
-        1.0f
-    );
-
+    std::vector<triangular_light> lights = world->get_triangular_lights();
     tinybvh::BVH bvh = world->bvh();
-    cam.render(bvh, {simple_light, simple_light_2, simple_light_3}, {m}, "image.ppm");
+
+    cam.render(bvh, lights, {m}, "image.ppm");
 }
