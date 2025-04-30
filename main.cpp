@@ -7,6 +7,7 @@
 #include "rtweekend.h"
 #include "world.hpp"
 #include "camera2.h"
+#include "light_sampler.h"
 
 std::string get_frame_filename(int i) {
     std::ostringstream oss;
@@ -15,13 +16,16 @@ std::string get_frame_filename(int i) {
 }
 
 void render(Camera2& cam, World& world, int framecount){
-
+    auto bvh = world.bvh();
+    auto lights = world.get_triangular_lights();
+    auto mats = world.get_materials();
+    auto light_sampler = restir_light_sampler(cam.image_width, cam.image_height, lights);
     for(int i = 0; i < framecount; i ++){
         // potentially update camera position
         auto hit_infos = cam.get_hit_info_from_camera_per_frame(bvh);
         
-        /// send hit infos to ReSTIR
-        // auto sampler_results = ??.sample_lights(hit_infos, bvh);
+        // send hit infos to ReSTIR
+        auto light_samples_per_ray = light_sampler.sample_lights(hit_infos, bvh);
 
         /// do the color calculation
         // ?????

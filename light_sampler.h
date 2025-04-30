@@ -7,13 +7,6 @@
 #include "triangular_light.h"
 #include "ray.h"
 
-class temp_hit_info {
-public:
-    ray r;
-    float t;
-    vec3 triangle[3]; // the vertices of the triangle in the right order for normal calculation
-    vec3 triangle_normal;
-};
 
 struct sampler_result {
     vec3 light_point;
@@ -70,7 +63,7 @@ public:
         lights = lights_vec.data();
     }
 
-    std::vector<std::vector<sampler_result>> sample_lights(std::vector<std::vector<temp_hit_info> > hit_infos,
+    std::vector<std::vector<sampler_result>> sample_lights(std::vector<std::vector<hit_info> > hit_infos,
                                                             tinybvh::BVH &bvh) {
         // Swap the current and previous reservoirs
         next_frame();
@@ -84,7 +77,7 @@ public:
         for (int y = 0; y < y_pixels; y++) {
             std::vector<sampler_result> row;
             for (int x = 0; x < x_pixels; x++) {
-                temp_hit_info &hi = hit_infos.at(y).at(x);
+                hit_info &hi = hit_infos.at(y).at(x);
                 set_initial_sample(x, y, hi);
                 visibility_check(x, y, hi, bvh);
                 temporal_update(x, y);
@@ -103,7 +96,7 @@ public:
         return results;
     }
 
-    void set_initial_sample(int x, int y, temp_hit_info &hi) {
+    void set_initial_sample(int x, int y, hit_info &hi) {
         // Create a reservoir for the pixel
         reservoir &res = current_reservoirs.at(y).at(x);
         res.reset();
@@ -111,11 +104,11 @@ public:
         for (int k = 0; k < m; k++) {
             triangular_light l = pick_light();
             point3 sample_point = sample_on_light(l);
-            res.update(l, sample_point, get_light_weight(l, sample_point, hi.r.at(t)));
+            res.update(l, sample_point, get_light_weight(l, sample_point, hi));
         }
     }
 
-    void visibility_check(int x, int y, temp_hit_info &hi, tinybvh::BVH &bvh) {
+    void visibility_check(int x, int y, hit_info &hi, tinybvh::BVH &bvh) {
         // Check visibility of the light sample
         auto &res = current_reservoirs.at(y).at(x);
         // Shadow dir = light sample - hit point
@@ -185,13 +178,13 @@ private:
         return lights[index];
     }
 
-    static float get_light_weight(triangular_light &light, point3 light_point, temp_hit_info &hi) {
+    static float get_light_weight(triangular_light &light, point3 light_point, hit_info &hi) {
         point3 hit_point = hi.r.at(hi.t);
         // w = light_intensity * cos(theta) * solid_angle
         // theta = angle between light direction and triangle normal
         // solid_angle = area of light / distance^2
         vec3 light_dir = light_point - hit_point;
-        float cos_theta = dot(unit_vector(light_dir), hi.triangle_normal);
+        float cos_theta = dot(unit_vector(light_dir), to_vec3(hi.normal));
         float distance = light_dir.length();
         float area_of_light = 0.5f * cross(light.v1 - light.v0, light.v2 - light.v0).length();
         float solid_angle = area_of_light / (distance * distance);
