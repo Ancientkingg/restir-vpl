@@ -63,7 +63,7 @@ inline reservoir merge_reservoirs(const std::vector<reservoir> &reservoirs) {
 
 class restir_light_sampler {
 public:
-    restir_light_sampler(u_int x, u_int y, std::vector<triangular_light> &lights_vec) : x_pixels(x), y_pixels(y) {
+    restir_light_sampler(int x, int y, std::vector<triangular_light> &lights_vec) : x_pixels(x), y_pixels(y) {
         prev_reservoirs = std::vector<std::vector<reservoir>>(y, std::vector<reservoir>(x));
         current_reservoirs = std::vector<std::vector<reservoir>>(y, std::vector<reservoir>(x));
         num_lights = lights_vec.size();
@@ -81,9 +81,9 @@ public:
         // 4. Spatial update - update the current reservoir with the neighbors
         // 5. Return the sample in the current reservoir
         std::vector<std::vector<sampler_result> > results;
-        for (u_int y = 0; y < y_pixels; y++) {
+        for (int y = 0; y < y_pixels; y++) {
             std::vector<sampler_result> row;
-            for (u_int x = 0; x < x_pixels; x++) {
+            for (int x = 0; x < x_pixels; x++) {
                 temp_hit_info &hi = hit_infos.at(y).at(x);
                 set_initial_sample(x, y, hi);
                 visibility_check(x, y, hi, bvh);
@@ -103,7 +103,7 @@ public:
         return results;
     }
 
-    void set_initial_sample(u_int x, u_int y, temp_hit_info &hi) {
+    void set_initial_sample(int x, int y, temp_hit_info &hi) {
         // Create a reservoir for the pixel
         reservoir &res = current_reservoirs.at(y).at(x);
         res.reset();
@@ -115,7 +115,7 @@ public:
         }
     }
 
-    void visibility_check(u_int x, u_int y, temp_hit_info &hi, tinybvh::BVH &bvh) {
+    void visibility_check(int x, int y, temp_hit_info &hi, tinybvh::BVH &bvh) {
         // Check visibility of the light sample
         auto &res = current_reservoirs.at(y).at(x);
         // Shadow dir = light sample - hit point
@@ -131,14 +131,14 @@ public:
         }
     }
 
-    void temporal_update(u_int x, u_int y) {
+    void temporal_update(int x, int y) {
         // Update the current reservoir with the previous one
         auto &prev_res = prev_reservoirs.at(y).at(x);
         auto &curr_res = current_reservoirs.at(y).at(x);
         curr_res.update(prev_res.sample, prev_res.sample_pos, prev_res.W);
     }
 
-    void spatial_update(u_int x, u_int y) {
+    void spatial_update(int x, int y) {
         // Update the current reservoir with the neighbors
         std::vector<reservoir> all_reservoirs;
         auto &curr_res = current_reservoirs.at(y).at(x);
@@ -159,7 +159,7 @@ public:
         curr_res.update(merged_res.sample, merged_res.sample_pos, merged_res.W);
     }
 
-    void spatial_update(u_int x, u_int y, int radius) {
+    void spatial_update(int x, int y, int radius) {
         for (int r = 0; r < radius; r++) {
             spatial_update(x, y);
         }
@@ -171,13 +171,13 @@ public:
     }
 
 private:
-    u_int m = 4;
-    u_int x_pixels;
-    u_int y_pixels;
+    int m = 4;
+    int x_pixels;
+    int y_pixels;
     std::vector<std::vector<reservoir>> prev_reservoirs;
     std::vector<std::vector<reservoir>> current_reservoirs;
     triangular_light *lights;
-    u_int num_lights;
+    int num_lights;
 
     triangular_light pick_light() const {
         // Pick a random light source uniformly (standard, change this if you want to use a different sampling strategy)

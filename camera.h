@@ -81,7 +81,7 @@ private:
         int i, int j) {
         // for now using only one material
         // get material at index 0
-        auto m = materials.at(0);
+        // auto m = materials.at(0);
 
 
         auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
@@ -127,6 +127,9 @@ private:
 
         // L = k_d * I * max(0, N . L) + k_s * I * max(0, R . H)^p
         auto h = unit_vector(light_direction + ray_direction);
+
+        int m_id =  bvh.verts[r.hit.prim * 3][3];
+        material m = materials[m_id];
 
         color L_d = m.k_d * light.intensity * light.c * std::max(0.0f, dot(triangle_normal, light_direction));
         color L_s = m.k_s * light.intensity * light.c * std::pow(std::max(0.0f, dot(triangle_normal, h)), m.p);

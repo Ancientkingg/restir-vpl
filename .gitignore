@@ -8,6 +8,8 @@ build/*
 
 cmake-build-*/
 cmake-build-*/*
+.vscode
+build
 
 *.o
 *.so
