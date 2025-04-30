@@ -74,12 +74,17 @@ public:
         // 5. Return the sample in the current reservoir
         std::vector<std::vector<sampler_result> > results;
         for (int y = 0; y < y_pixels; y++) {
-            std::vector<sampler_result> row;
             for (int x = 0; x < x_pixels; x++) {
                 hit_info &hi = hit_infos.at(y).at(x);
                 set_initial_sample(x, y, hi);
                 visibility_check(x, y, hi, bvh);
                 temporal_update(x, y);
+            }
+        }
+        for (int y = 0; y < y_pixels; y++) {
+            std::vector<sampler_result> row;
+            for (int x = 0; x < x_pixels; x++) {
+                hit_info &hi = hit_infos.at(y).at(x);
                 spatial_update(x, y);
                 auto res = current_reservoirs.at(y).at(x);
                 sampler_result result
