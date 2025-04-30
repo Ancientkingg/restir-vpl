@@ -1,6 +1,13 @@
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
+
+#include "camera2.h"
 #include "material.h"
 #include "rtweekend.h"
 #include "triangular_light.h"
+
 
 void load_obj_file(std::vector<tinybvh::bvhvec4> &triangle_soup, std::string file_name) {
     // Load the OBJ file using tinyobjloader
@@ -51,6 +58,30 @@ void load_obj_file(std::vector<tinybvh::bvhvec4> &triangle_soup, std::string fil
 
     // Print the number of triangles loaded
     std::clog << "Loaded " << triangle_soup.size() / 3 << " triangles from " << file_name << std::endl;
+}
+
+std::string get_frame_filename(int i) {
+    std::ostringstream oss;
+    oss << "frame" << std::setfill('0') << std::setw(4) << i << ".ppm";
+    return oss.str();
+}
+
+void render(Camera2& cam, tinybvh::BVH& bvh, int framecount){
+    for(int i = 0; i < framecount; i ++){
+        // potentially update camera position
+        auto hit_infos = cam.get_hit_info_from_camera_per_frame(bvh);
+        
+        /// send hit infos to ReSTIR
+        // auto sampler_results = ??.sample_lights(hit_infos, bvh);
+
+        /// do the color calculation
+        // ?????
+        // std::vector<std::vector<glm::vec3?>> colors = ???.??(sampler_results, ???);
+
+        /// output frame
+        auto filename = get_frame_filename(i);
+        // write_image(filename, colors);
+    }
 }
 
 int main() {
@@ -110,6 +141,10 @@ int main() {
     size_t num_triangles = triangle_soup.size() / 3;
 
     bvh.Build(triangles, num_triangles);
+
+    // TODO:
+    // Camera2 cam2;
+    // render(cam2, bvh);
 
     cam.render(bvh, {simple_light, simple_light_2, simple_light_3}, {m}, "image.ppm");
 }
