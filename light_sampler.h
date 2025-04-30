@@ -70,7 +70,7 @@ public:
         lights = lights_vec.data();
     }
 
-    std::vector<std::vector<sampler_result> > sample_lights(std::vector<std::vector<temp_hit_info> > hit_infos,
+    std::vector<std::vector<sampler_result>> sample_lights(std::vector<std::vector<temp_hit_info> > hit_infos,
                                                             tinybvh::BVH &bvh) {
         // Swap the current and previous reservoirs
         next_frame();
