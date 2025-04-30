@@ -3,10 +3,10 @@
 #include <sstream>
 #include <string>
 
-#include "camera2.h"
 #include "material.h"
 #include "rtweekend.h"
 #include "world.hpp"
+#include "camera2.h"
 
 std::string get_frame_filename(int i) {
     std::ostringstream oss;
@@ -39,28 +39,28 @@ int main() {
     cam.image_width = 500;
     cam.spp = 100;
 
-    World *world = new World();
-    world->add_obj("objects/whiteMonkey.obj", false);
-    world->add_obj("objects/blueMonkey_rotated.obj", false);
+    World world;
+    world.add_obj("objects/whiteMonkey.obj", false);
+    world.add_obj("objects/blueMonkey_rotated.obj", false);
 
-    world->add_obj("objects/bigCubeLight.obj", true);
+    world.add_obj("objects/bigCubeLight.obj", true);
 
     tinybvh::bvhvec4 transpose =
             tinybvh::bvhvec4(0, 40, -1, 0);
 
     // Move the mesh 100 units back in the z direction
-    for (int i = 0; i < world->triangle_soup.size(); i++) {
-        world->triangle_soup[i] = transpose + world->triangle_soup[i];
+    for (int i = 0; i < world.triangle_soup.size(); i++) {
+        world.triangle_soup[i] = transpose + world.triangle_soup[i];
     }
 
 
-    std::vector<triangular_light> lights = world->get_triangular_lights();
-    tinybvh::BVH bvh = world->bvh();
-    std::vector<material> mats = world->get_materials();
+    std::vector<triangular_light> lights = world.get_triangular_lights();
+    tinybvh::BVH bvh = world.bvh();
+    std::vector<material> mats = world.get_materials();
 
+    Camera2 cam2;
     // TODO:
-    // Camera2 cam2;
-    // render(cam2, bvh);
+    // render(cam2, bvh); (add more arguments as needed)
 
     cam.render(bvh, lights, mats, "image.ppm");
 }

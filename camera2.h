@@ -5,7 +5,6 @@
 #include <iostream>
 #include <vector>
 
-#include "lib/tiny_bvh.h"
 #include "ray.h"
 
 struct hit_info {
@@ -28,7 +27,7 @@ tinybvh::Ray toBVHRay(const ray& r) {
     return tinybvh::Ray(toBVHVec(r.origin()), toBVHVec(r.direction()));
 }
 
-glm::vec3 to_glm_vec3(const tinybvh::Vec3& v) {
+glm::vec3 to_glm_vec3(const tinybvh::bvhvec3& v) {
     return glm::vec3(v.x, v.y, v.z);
 }
 
@@ -64,8 +63,8 @@ class Camera2 {
     const glm::vec3 viewport_u = glm::vec3(viewport_width, 0, 0);
     const glm::vec3 viewport_v = glm::vec3(0, -viewport_height, 0);
     // Calculate the horizontal and vertical delta vectors from pixel to pixel.
-    const glm::vec3 pixel_delta_u = (1.0 / image_width) * viewport_u;
-    const glm::vec3 pixel_delta_v = viewport_v / image_height;
+    const glm::vec3 pixel_delta_u = float(1.0 / image_width) * viewport_u;
+    const glm::vec3 pixel_delta_v = viewport_v / float(image_height);
     const float tanfov = 2.0f * focal_length / viewport_height;
 
     std::vector<std::vector<ray>> generate_rays_for_frame(){
@@ -105,16 +104,13 @@ class Camera2 {
                 hit_infos[i][j].normal = glm::normalize(
                     glm::cross(hit_infos[i][j].triangle[1] - hit_infos[i][j].triangle[0],
                                hit_infos[i][j].triangle[2] - hit_infos[i][j].triangle[0]));
-                if (dot(hit_infos[i][j].normal, rays[i][j].direction()) > 0.0f)
+                if (dot(hit_infos[i][j].normal, to_glm_vec3(rays[i][j].direction())) > 0.0f)
                     hit_infos[i][j].normal = -hit_infos[i][j].normal;
             }
         }
 
         return hit_infos;
     }
-}
-
-
-
+};
 
 #endif // CAMERA2_H_
