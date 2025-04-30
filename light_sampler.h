@@ -24,7 +24,7 @@ public:
     reservoir() : sample({0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, 0), sample_pos(0, 0, 0), M(0), W(0) {
     }
 
-    void update(triangular_light new_sample, point3 sample_point, float w_i) {
+    void update(const triangular_light &new_sample, const point3 sample_point, const float w_i) {
         M++;
         if (W == 0) {
             W = w_i;
@@ -32,8 +32,7 @@ public:
             return;
         }
         W += w_i;
-        float p = float(w_i) / float(W);
-        if (rand() / float(RAND_MAX) < p) {
+        if (const float p = static_cast<float>(w_i) / static_cast<float>(W); rand() / static_cast<float>(RAND_MAX) < p) {
             sample = new_sample;
             sample_pos = sample_point;
         }
@@ -64,7 +63,7 @@ public:
     }
 
     std::vector<std::vector<sampler_result>> sample_lights(std::vector<std::vector<hit_info> > hit_infos,
-                                                            tinybvh::BVH &bvh) {
+                                                            const tinybvh::BVH &bvh) {
         // Swap the current and previous reservoirs
         next_frame();
         // For every pixel:
@@ -96,25 +95,25 @@ public:
         return results;
     }
 
-    void set_initial_sample(int x, int y, hit_info &hi) {
+    void set_initial_sample(const int x, const int y, const hit_info &hi) {
         // Create a reservoir for the pixel
         reservoir &res = current_reservoirs.at(y).at(x);
         res.reset();
         // Sample M times from the light sources
         for (int k = 0; k < m; k++) {
             triangular_light l = pick_light();
-            point3 sample_point = sample_on_light(l);
+            const point3 sample_point = sample_on_light(l);
             res.update(l, sample_point, get_light_weight(l, sample_point, hi));
         }
     }
 
-    void visibility_check(int x, int y, hit_info &hi, tinybvh::BVH &bvh) {
+    void visibility_check(const int x, const int y, const hit_info &hi, const tinybvh::BVH &bvh) {
         // Check visibility of the light sample
         auto &res = current_reservoirs.at(y).at(x);
         // Shadow dir = light sample - hit point
-        vec3 shadow_dir = res.sample_pos - hi.r.at(hi.t);
+        const vec3 shadow_dir = res.sample_pos - hi.r.at(hi.t);
         // Create a ray from the hit point to the light sample
-        ray shadow(hi.r.at(hi.t), unit_vector(shadow_dir));
+        const ray shadow(hi.r.at(hi.t), unit_vector(shadow_dir));
         // Check if the ray intersects with the scene
         tinybvh::Ray shadow_ray(toBVHVec(shadow.origin()), toBVHVec(shadow.direction()));
         bvh.Intersect(shadow_ray);
@@ -124,14 +123,14 @@ public:
         }
     }
 
-    void temporal_update(int x, int y) {
+    void temporal_update(const int x, const int y) {
         // Update the current reservoir with the previous one
-        auto &prev_res = prev_reservoirs.at(y).at(x);
+        const auto &prev_res = prev_reservoirs.at(y).at(x);
         auto &curr_res = current_reservoirs.at(y).at(x);
         curr_res.update(prev_res.sample, prev_res.sample_pos, prev_res.W);
     }
 
-    void spatial_update(int x, int y) {
+    void spatial_update(const int x, const int y) {
         // Update the current reservoir with the neighbors
         std::vector<reservoir> all_reservoirs;
         auto &curr_res = current_reservoirs.at(y).at(x);
@@ -139,20 +138,19 @@ public:
         for (int xx = -1; xx <= 1; xx++) {
             for (int yy = -1; yy <= 1; yy++) {
                 if (xx == 0 && yy == 0) continue;
-                int nx = x + xx;
-                int ny = y + yy;
-                if (nx >= 0 && nx < x_pixels && ny >= 0 && ny < y_pixels) {
+                const int nx = x + xx;
+                if (const int ny = y + yy; nx >= 0 && nx < x_pixels && ny >= 0 && ny < y_pixels) {
                     all_reservoirs.push_back(current_reservoirs.at(ny).at(nx));
                 }
             }
         }
         // Merge the reservoirs
-        auto merged_res = merge_reservoirs(all_reservoirs);
+        const auto merged_res = merge_reservoirs(all_reservoirs);
         // Update the current reservoir with the merged one
         curr_res.update(merged_res.sample, merged_res.sample_pos, merged_res.W);
     }
 
-    void spatial_update(int x, int y, int radius) {
+    void spatial_update(const int x, const int y, const int radius) {
         for (int r = 0; r < radius; r++) {
             spatial_update(x, y);
         }
@@ -174,20 +172,20 @@ private:
 
     triangular_light pick_light() const {
         // Pick a random light source uniformly (standard, change this if you want to use a different sampling strategy)
-        int index = rand() % num_lights;
+        const int index = rand() % num_lights;
         return lights[index];
     }
 
-    static float get_light_weight(triangular_light &light, point3 light_point, hit_info &hi) {
-        point3 hit_point = hi.r.at(hi.t);
+    static float get_light_weight(const triangular_light &light, const point3 light_point, const hit_info &hi) {
+        const point3 hit_point = hi.r.at(hi.t);
         // w = light_intensity * cos(theta) * solid_angle
         // theta = angle between light direction and triangle normal
         // solid_angle = area of light / distance^2
-        vec3 light_dir = light_point - hit_point;
-        float cos_theta = dot(unit_vector(light_dir), to_vec3(hi.normal));
-        float distance = light_dir.length();
-        float area_of_light = 0.5f * cross(light.v1 - light.v0, light.v2 - light.v0).length();
-        float solid_angle = area_of_light / (distance * distance);
+        const vec3 light_dir = light_point - hit_point;
+        const float cos_theta = dot(unit_vector(light_dir), to_vec3(hi.normal));
+        const float distance = light_dir.length();
+        const float area_of_light = 0.5f * cross(light.v1 - light.v0, light.v2 - light.v0).length();
+        const float solid_angle = area_of_light / (distance * distance);
 
         return light.intensity * cos_theta * solid_angle;
     }
