@@ -7,33 +7,14 @@
 
 #include "ray.h"
 #include "material.h"
-
-struct hit_info {
-    ray r;
-    float t;
-    glm::vec3 triangle[3];
-    glm::vec3 normal;
-    material mat;
-};
+#include "hit_info.h"
 
 
-glm::vec3 to_glm_vec3(const vec3& v) {
-    return glm::vec3(v.x(), v.y(), v.z());
-}
-
-vec3 to_vec3(const glm::vec3& v) {
-    return vec3(v.x, v.y, v.z);
-}
-
-tinybvh::Ray toBVHRay(const ray& r) {
+tinybvh::Ray toBVHRay(const Ray& r) {
     return tinybvh::Ray(toBVHVec(r.origin()), toBVHVec(r.direction()));
 }
-
-glm::vec3 to_glm_vec3(const tinybvh::bvhvec3& v) {
-    return glm::vec3(v.x, v.y, v.z);
-}
-
 // TODO: Cache ray hits (so we dont compute the same thing) when camera does not move
+
 class Camera2 {
     public:
 
@@ -69,8 +50,8 @@ class Camera2 {
     const glm::vec3 pixel_delta_v = viewport_v / float(image_height);
     const float tanfov = 2.0f * focal_length / viewport_height;
 
-    std::vector<std::vector<ray>> generate_rays_for_frame(){
-        std::vector<std::vector<ray>> rays(image_height, std::vector<ray>(image_width));
+    std::vector<std::vector<Ray>> generate_rays_for_frame(){
+        std::vector<std::vector<Ray>> rays(image_height, std::vector<Ray>(image_width));
 
         for(int i = 0; i < image_height; i++){
             for(int j = 0; j < image_width; j++){
@@ -79,7 +60,7 @@ class Camera2 {
                         image_height * right -
                     (0.5f - float(j) / image_height) * 2.f * tanfov * up;
 
-                rays[i][j] = ray(to_vec3(position), to_vec3(glm::normalize(pixel_direction)));
+                rays[i][j] = Ray(position, glm::normalize(pixel_direction));
             }
         }
 
@@ -100,18 +81,18 @@ class Camera2 {
                 bvh.Intersect(r);
                 hit_infos[i][j].t = r.hit.t;
                 
-                hit_infos[i][j].triangle[0] = to_glm_vec3(bvh.verts[r.hit.prim * 3 + 0]);
-                hit_infos[i][j].triangle[1] = to_glm_vec3(bvh.verts[r.hit.prim * 3 + 1]);
-                hit_infos[i][j].triangle[2] = to_glm_vec3(bvh.verts[r.hit.prim * 3 + 2]);
+                hit_infos[i][j].triangle[0] = toGLMVec(bvh.verts[r.hit.prim * 3 + 0]);
+                hit_infos[i][j].triangle[1] = toGLMVec(bvh.verts[r.hit.prim * 3 + 1]);
+                hit_infos[i][j].triangle[2] = toGLMVec(bvh.verts[r.hit.prim * 3 + 2]);
 
                 hit_infos[i][j].normal = glm::normalize(
                     glm::cross(hit_infos[i][j].triangle[1] - hit_infos[i][j].triangle[0],
                                hit_infos[i][j].triangle[2] - hit_infos[i][j].triangle[0]));
-                if (dot(hit_infos[i][j].normal, to_glm_vec3(rays[i][j].direction())) > 0.0f)
+                if (glm::dot(hit_infos[i][j].normal, rays[i][j].direction()) > 0.0f)
                     hit_infos[i][j].normal = -hit_infos[i][j].normal;
 
                 int m_id = bvh.verts[r.hit.prim * 3][3];
-                hit_infos[i][j].mat = mats[m_id];
+                hit_infos[i][j].mat = &mats[m_id];
             }
         }
 

@@ -6,20 +6,26 @@ set(CMAKE_CXX_STANDARD 20)
 
 set(GLM ${CMAKE_CURRENT_SOURCE_DIR}/lib/glm)
 
-add_executable(RayTracerInOneWeekend main.cpp
-        vec3.h
-        color.h
-        ray.h
-        rtweekend.h
-        camera.h
-        camera2.h
-        lib/tiny_bvh.h
-        lib/tiny_obj_loader.h
-        triangular_light.h
-        material.h
-        light_sampler.h
-        world.cpp
-)
+include_directories(${GLM})
+link_directories(${GLM})
+
+add_executable(RayTracerInOneWeekend 
+        
+        "main.cpp"
+        "color.h"
+        "ray.h"
+        "rtweekend.h"
+        "camera.h"
+        "camera2.h"
+        "lib/tiny_obj_loader.h"
+        "triangular_light.h"
+        "material.h"
+        "light_sampler.h"
+        "world.cpp"
+        "texture.h" 
+        "hit_info.h" "tiny_bvh_types.h" "util.cpp" "util.h")
+
+file(COPY ${CMAKE_SOURCE_DIR}/objects DESTINATION ${CMAKE_BINARY_DIR})
 
 # Add the include directory for GLM
 target_include_directories(RayTracerInOneWeekend PUBLIC ${GLM})
