@@ -181,7 +181,7 @@ private:
         return lights[index];
     }
 
-    static float get_light_weight(const triangular_light &light, const point3 light_point, const hit_info &hi) {
+    float get_light_weight(const triangular_light &light, const point3 light_point, const hit_info &hi) const {
         const point3 hit_point = hi.r.at(hi.t);
         // w = light_intensity * cos(theta) * solid_angle
         // theta = angle between light direction and triangle normal
@@ -192,7 +192,10 @@ private:
         const float area_of_light = 0.5f * cross(light.v1 - light.v0, light.v2 - light.v0).length();
         const float solid_angle = area_of_light / (distance * distance);
 
-        return light.intensity * cos_theta * solid_angle;
+        const float target = light.intensity * cos_theta * solid_angle;
+        const float source = 1.0f / num_lights;
+
+        return source / target;
     }
 };
 
