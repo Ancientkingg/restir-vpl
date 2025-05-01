@@ -6,12 +6,14 @@
 #include <vector>
 
 #include "ray.h"
+#include "material.h"
 
 struct hit_info {
     ray r;
     float t;
     glm::vec3 triangle[3];
     glm::vec3 normal;
+    material mat;
 };
 
 
@@ -84,7 +86,8 @@ class Camera2 {
         return rays;
     }
 
-    std::vector<std::vector<hit_info>> get_hit_info_from_camera_per_frame(tinybvh::BVH &bvh) {
+    std::vector<std::vector<hit_info>> get_hit_info_from_camera_per_frame(
+        tinybvh::BVH& bvh, std::vector<material>& mats) {
         std::vector<std::vector<hit_info>> hit_infos(
             image_height, std::vector<hit_info>(image_width));
 
@@ -106,6 +109,9 @@ class Camera2 {
                                hit_infos[i][j].triangle[2] - hit_infos[i][j].triangle[0]));
                 if (dot(hit_infos[i][j].normal, to_glm_vec3(rays[i][j].direction())) > 0.0f)
                     hit_infos[i][j].normal = -hit_infos[i][j].normal;
+
+                int m_id = bvh.verts[r.hit.prim * 3][3];
+                hit_infos[i][j].mat = mats[m_id];
             }
         }
 

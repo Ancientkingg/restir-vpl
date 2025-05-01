@@ -22,7 +22,7 @@ void render(Camera2& cam, World& world, int framecount){
     auto light_sampler = restir_light_sampler(cam.image_width, cam.image_height, lights);
     for(int i = 0; i < framecount; i ++){
         // potentially update camera position
-        auto hit_infos = cam.get_hit_info_from_camera_per_frame(bvh);
+        auto hit_infos = cam.get_hit_info_from_camera_per_frame(bvh, mats);
         
         // send hit infos to ReSTIR
         auto light_samples_per_ray = light_sampler.sample_lights(hit_infos, bvh);
