@@ -13,6 +13,7 @@ struct hit_info {
     glm::vec3 triangle[3];
     glm::vec3 normal;
     material* mat;
+    Material* mat_ptr;
 };
 
 #endif
