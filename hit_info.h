@@ -6,6 +6,7 @@
 #include "ray.h"
 
 struct material;
+class Material;
 
 struct hit_info {
     Ray r;

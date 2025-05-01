@@ -21,15 +21,6 @@ inline triangular_light sample_light(const std::vector<triangular_light>& lights
 }
 
 
-//glm::vec3 shade(const hit_info& hit, const reservoir& reservoir) {
-//    const LightSample& s = reservoir.get();
-//
-//    // Evaluate BRDF, cosine term, incoming radiance, etc.
-//    glm::vec3 brdf = hit.mat_ptr->scatter(hit, s.direction);
-//    float cos_theta = glm::dot(hit.normal, s.direction);
-//    return (brdf * s.radiance * cos_theta) / s.pdf;
-//}
-
 class camera {
 public:
     /* Public Camera Parameters Here */

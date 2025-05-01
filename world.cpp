@@ -1,6 +1,7 @@
 #include "world.hpp"
 
 #include <glm/glm.hpp>
+#include "camera2.hpp"
 
 void load_one_obj(std::vector<tinybvh::bvhvec4> &triangle_soup, std::vector<tinyobj::material_t> &materials, std::vector<int> &mat_ids, std::string &file_path) {
 	// this function is copied from Rafayels original implementation with slight changes
@@ -86,6 +87,38 @@ tinybvh::BVH World::bvh(){
 	tinybvh::BVH out;
 	out.Build(triangle_soup.data(), triangle_soup.size()/3);
 	return out;
+}
+
+bool World::intersect(Ray& ray, hit_info& hit) {
+	tinybvh::Ray r = toBVHRay(ray);
+	tinybvh::BVH bvhInstance = this->bvh();
+	bvhInstance.Intersect(r);
+	if (r.hit.t == 1E30f) {
+		return false; // No intersection
+	}
+
+	hit.t = r.hit.t;
+	hit.r = ray;
+	hit.triangle[0] = toGLMVec(bvhInstance.verts[r.hit.prim * 3 + 0]);
+	hit.triangle[1] = toGLMVec(bvhInstance.verts[r.hit.prim * 3 + 1]);
+	hit.triangle[2] = toGLMVec(bvhInstance.verts[r.hit.prim * 3 + 2]);
+	hit.normal = glm::normalize(
+		glm::cross(hit.triangle[1] - hit.triangle[0],
+			hit.triangle[2] - hit.triangle[0]));
+
+	if (glm::dot(hit.normal, ray.direction()) > 0.0f) {
+		hit.normal = -hit.normal;
+	}
+
+	int m_id = bvhInstance.verts[r.hit.prim * 3][3];
+	if (m_id < 0 || m_id >= all_materials.size()) {
+		std::cerr << "Error: Material ID out of range." << std::endl;
+		return false;
+	}
+
+	hit.mat = &get_materials()[m_id];
+
+	return true;
 }
 
 std::vector<triangular_light> World::get_triangular_lights(){

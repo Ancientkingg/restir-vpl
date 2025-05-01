@@ -8,6 +8,7 @@
 #include "util.h"
 
 #include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
 
 struct material {
 	glm::vec3 c;
@@ -19,6 +20,8 @@ struct material {
 class Material {
 public:
 	virtual bool scatter(const Ray& r_In, const hit_info& hit, glm::vec3& attenuation, Ray& scattered) const = 0;
+	virtual glm::vec3 evaluate(const hit_info& hit, const glm::vec3& wi) const = 0;
+	virtual bool emits_light() const { return false; }
 };
 
 class Lambertian : public Material {
@@ -35,20 +38,28 @@ public:
 
 		scattered = Ray(hit.r.at(hit.t), scatter_dir);
 	}
+
+	virtual glm::vec3 evaluate(const hit_info& hit, const glm::vec3& wi) const {
+		if (glm::dot(hit.normal, wi) <= 0.0f) {
+			return glm::vec3(0.0f);
+		}
+
+		return albedo->value(0, 0, hit.r.at(hit.t)) * glm::dot(hit.normal, wi) / glm::pi<float>();
+	}
 };
 
-class Metal : public Material {
-	Texture* albedo;
-	float fuzz;
+class Emissive : public Material {
+	Texture* emit;
 public:
-	Metal(const glm::vec3& a, float f) : albedo(new SolidColor(a)), fuzz(f < 1 ? f : 1) {}
-	Metal(Texture* a, float f) : albedo(a), fuzz(f < 1 ? f : 1) {}
+	Emissive(const glm::vec3& a) : emit(new SolidColor(a)) {}
+	Emissive(Texture* a) : emit(a) {}
 	virtual bool scatter(const Ray& r_in, const hit_info& hit, glm::vec3& attenuation, Ray& scattered) const {
-		glm::vec3 reflected = reflect(glm::normalize(r_in.direction()), hit.normal);
-		scattered = Ray(hit.r.at(hit.t), reflected + fuzz * random_in_unit_sphere());
-		attenuation = albedo->value(0, 0, hit.r.at(hit.t));
-		return (glm::dot(scattered.direction(), hit.normal) > 0);
+		return false;
 	}
+	virtual glm::vec3 evaluate(const hit_info& hit, const glm::vec3& wi) const {
+		return emit->value(0, 0, hit.r.at(hit.t));
+	}
+	virtual bool emits_light() const { return true; }
 };
 
 #endif

@@ -5,8 +5,8 @@
 
 #include "material.h"
 #include "rtweekend.h"
+#include "camera2.hpp"
 #include "world.hpp"
-#include "camera2.h"
 #include "light_sampler.h"
 
 #include <filesystem>
