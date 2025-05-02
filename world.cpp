@@ -116,7 +116,7 @@ bool World::intersect(Ray& ray, hit_info& hit) {
 		return false;
 	}
 
-	hit.mat = &get_materials()[m_id];
+	hit.mat_ptr = get_materials()[m_id];
 
 	return true;
 }
@@ -144,8 +144,8 @@ std::vector<triangular_light> World::get_triangular_lights(){
 	return out;
 }
 
-std::vector<material> World::get_materials(){
-	std::vector<material> out;
+std::vector<Material*> World::get_materials(){
+	std::vector<Material*> out;
 	for(int id = 0; id < *std::max_element(all_material_ids.begin(), all_material_ids.end()); id++){
 		tinyobj::material_t mat = all_materials[id];
 		glm::vec3 c = glm::vec3(
@@ -153,11 +153,12 @@ std::vector<material> World::get_materials(){
 			mat.diffuse[1],
 			mat.diffuse[2]
 		);
-		float k_d = (mat.diffuse[0] + mat.diffuse[1] + mat.diffuse[2]) / 3;
-		float k_s = *mat.specular;
-		float p = mat.shininess;
+		// float k_d = (mat.diffuse[0] + mat.diffuse[1] + mat.diffuse[2]) / 3;
+		// float k_s = *mat.specular;
+		// float p = mat.shininess;
+		Lambertian end_mat = Lambertian({mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]});
 
-		out.push_back({c, k_d, k_s, p});
+		out.push_back(&end_mat);
 
 	}
 	return out;

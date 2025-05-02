@@ -74,7 +74,7 @@ std::vector<std::vector<Ray>> Camera2::generate_rays_for_frame() {
 }
 
 std::vector<std::vector<hit_info>> Camera2::get_hit_info_from_camera_per_frame(
-    tinybvh::BVH& bvh, std::vector<material>& mats) {
+    tinybvh::BVH& bvh, std::vector<Material *>& mats) {
     std::vector<std::vector<hit_info>> hit_infos(
         image_height, std::vector<hit_info>(image_width));
 
@@ -98,7 +98,7 @@ std::vector<std::vector<hit_info>> Camera2::get_hit_info_from_camera_per_frame(
                 hit_infos[i][j].normal = -hit_infos[i][j].normal;
 
             int m_id = bvh.verts[r.hit.prim * 3][3];
-            hit_infos[i][j].mat = &mats[m_id];
+            hit_infos[i][j].mat_ptr = mats[m_id];
         }
     }
 

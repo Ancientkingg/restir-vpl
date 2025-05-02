@@ -94,7 +94,7 @@ int main() {
 
     std::vector<triangular_light> lights = world.get_triangular_lights();
     tinybvh::BVH bvh = world.bvh();
-    std::vector<material> mats = world.get_materials();
+    std::vector<Material *> mats = world.get_materials();
 
     Camera2 cam2;
     // TODO:
