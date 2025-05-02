@@ -27,7 +27,7 @@ void render(Camera2& cam, World& world, int framecount){
         auto hit_infos = cam.get_hit_info_from_camera_per_frame(bvh, mats);
         
         // send hit infos to ReSTIR
-        auto light_samples_per_ray = light_sampler.sample_lights(hit_infos, bvh);
+        auto light_samples_per_ray = light_sampler.sample_lights(hit_infos, world);
 
 		std::vector<std::vector<glm::vec3>> colors = std::vector<std::vector<glm::vec3>>(cam.image_height, std::vector<glm::vec3>(cam.image_width, glm::vec3(0.0f)));
 
