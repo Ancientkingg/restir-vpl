@@ -126,16 +126,17 @@ std::vector<triangular_light> World::get_triangular_lights(){
 
 	int face_id = 0;
 	for(int i = 0; i < lights.size(); i += 3){
+		glm::vec3 c = glm::vec3(
+			light_materials[light_material_ids[face_id]].emission[0],
+			light_materials[light_material_ids[face_id]].emission[1],
+			light_materials[light_material_ids[face_id]].emission[2]
+		);
 		triangular_light tl{
 			glm::vec3(lights[i][0],lights[i][1],lights[i][2]),
 			glm::vec3(lights[i+1][0],lights[i+1][1],lights[i+1][2]),
 			glm::vec3(lights[i+2][0],lights[i+2][1],lights[i+2][2]),
-			glm::vec3(
-				light_materials[light_material_ids[face_id]].emission[0],
-				light_materials[light_material_ids[face_id]].emission[1],
-				light_materials[light_material_ids[face_id]].emission[2]
-			),
-			1.0f
+			c,
+			(c[0] + c[1] + c[2]) / 3
 		};
 		out.push_back(tl);
 		face_id++;
