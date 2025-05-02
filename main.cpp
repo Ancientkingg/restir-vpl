@@ -29,9 +29,20 @@ void render(Camera2& cam, World& world, int framecount){
         // send hit infos to ReSTIR
         auto light_samples_per_ray = light_sampler.sample_lights(hit_infos, bvh);
 
-        /// do the color calculation
-        // ?????
-        // std::vector<std::vector<glm::vec3?>> colors = ???.??(sampler_results, ???);
+		std::vector<std::vector<glm::vec3>> colors = std::vector<std::vector<glm::vec3>>(cam.image_height, std::vector<glm::vec3>(cam.image_width, glm::vec3(0.0f)));
+
+        // loop over hit_infos and light_samples_per_ray at the same time and feed them into the shade 
+        for (size_t j = 0; j < hit_infos.size(); j++) {
+			if (hit_infos[j].empty()) continue; // No hits for this 
+            for (size_t i = 0; i < hit_infos[0].size(); i++) {
+				hit_info hit = hit_infos[j][i];
+				sampler_result sample = light_samples_per_ray[j][i];
+
+                float pdf = 1.0 / sample.light.area();
+				glm::vec3 color = shade(hit, sample, pdf, world);
+				colors[j][i] += color;
+            }
+        }
 
         /// output frame
         auto filename = get_frame_filename(i);

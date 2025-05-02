@@ -24,6 +24,13 @@ public:
         const glm::vec3 edge2 = v2 - v0;
         normal = glm::normalize(cross(edge1, edge2));
     }
+
+
+    float area() const {
+        glm::vec3 edge1 = v1 - v0;
+        glm::vec3 edge2 = v2 - v0;
+        return 0.5f * glm::length(glm::cross(edge1, edge2));
+    }
 };
 
 inline glm::vec3 sample_on_light(const triangular_light &light) {

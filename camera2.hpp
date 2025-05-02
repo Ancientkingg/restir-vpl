@@ -1,7 +1,7 @@
 #ifndef CAMERA2_H_
 #define CAMERA2_H_
 
-#include <glm/glm.hpp>
+#include "lib/glm/glm/glm.hpp"
 #include <iostream>
 #include <vector>
 
