@@ -8,6 +8,8 @@
 #include "ray.h"
 #include <glm/vec3.hpp>
 
+#include "world.hpp"
+
 
 struct sampler_result {
     glm::vec3 light_point;
@@ -22,7 +24,8 @@ public:
     int M;
     float W;
 
-    reservoir() : sample(glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0), sample_pos(0, 0, 0), M(0), W(0) {
+    reservoir() : sample(glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0), sample_pos(0, 0, 0), M(0),
+                  W(0) {
     }
 
     void update(const triangular_light &new_sample, const glm::vec3 sample_point, const float w_i) {
@@ -33,14 +36,15 @@ public:
             return;
         }
         W += w_i;
-        if (const float p = static_cast<float>(w_i) / static_cast<float>(W); rand() / static_cast<float>(RAND_MAX) < p) {
+        if (const float p = static_cast<float>(w_i) / static_cast<float>(W);
+            rand() / static_cast<float>(RAND_MAX) < p) {
             sample = new_sample;
             sample_pos = sample_point;
         }
     }
 
     void reset() {
-        sample = { glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0};
+        sample = {glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0};
         M = 0;
         W = 0;
     }
@@ -57,14 +61,14 @@ inline reservoir merge_reservoirs(const std::vector<reservoir> &reservoirs) {
 class restir_light_sampler {
 public:
     restir_light_sampler(int x, int y, std::vector<triangular_light> &lights_vec) : x_pixels(x), y_pixels(y) {
-        prev_reservoirs = std::vector<std::vector<reservoir>>(y, std::vector<reservoir>(x));
-        current_reservoirs = std::vector<std::vector<reservoir>>(y, std::vector<reservoir>(x));
+        prev_reservoirs = std::vector<std::vector<reservoir> >(y, std::vector<reservoir>(x));
+        current_reservoirs = std::vector<std::vector<reservoir> >(y, std::vector<reservoir>(x));
         num_lights = lights_vec.size();
         lights = lights_vec.data();
     }
 
-    std::vector<std::vector<sampler_result>> sample_lights(std::vector<std::vector<hit_info> > hit_infos,
-                                                            const tinybvh::BVH &bvh) {
+    std::vector<std::vector<sampler_result> > sample_lights(std::vector<std::vector<hit_info> > hit_infos,
+                                                            World &world) {
         // Swap the current and previous reservoirs
         next_frame();
         // For every pixel:
@@ -78,7 +82,7 @@ public:
             for (int x = 0; x < x_pixels; x++) {
                 hit_info &hi = hit_infos.at(y).at(x);
                 set_initial_sample(x, y, hi);
-                visibility_check(x, y, hi, bvh);
+                visibility_check(x, y, hi, world);
                 temporal_update(x, y);
             }
         }
@@ -113,18 +117,18 @@ public:
         }
     }
 
-    void visibility_check(const int x, const int y, const hit_info &hi, const tinybvh::BVH &bvh) {
+    void visibility_check(const int x, const int y, const hit_info &hi, World &world) {
         // Check visibility of the light sample
         auto &res = current_reservoirs.at(y).at(x);
         // Shadow dir = light sample - hit point
         const glm::vec3 shadow_dir = res.sample_pos - hi.r.at(hi.t);
         // Create a ray from the hit point to the light sample
-        const Ray shadow(hi.r.at(hi.t), glm::normalize(shadow_dir));
+        Ray shadow(hi.r.at(hi.t), glm::normalize(shadow_dir));
         // Check if the ray intersects with the scene
-        tinybvh::Ray shadow_ray(toBVHVec(shadow.origin()), toBVHVec(shadow.direction()));
-        bvh.Intersect(shadow_ray);
+        hit_info shadow_hit;
+        world.intersect(shadow, shadow_hit);
         // If the ray intersects with the scene, discard the sample
-        if (shadow_ray.hit.t < shadow_dir.length()) {
+        if (shadow_hit.t < glm::length(shadow_dir)) {
             res.reset();
         }
     }
@@ -171,8 +175,8 @@ private:
     int m = 4;
     int x_pixels;
     int y_pixels;
-    std::vector<std::vector<reservoir>> prev_reservoirs;
-    std::vector<std::vector<reservoir>> current_reservoirs;
+    std::vector<std::vector<reservoir> > prev_reservoirs;
+    std::vector<std::vector<reservoir> > current_reservoirs;
     triangular_light *lights;
     int num_lights;
 
