@@ -6,25 +6,26 @@
 #define LIGHT_SAMPLER_H
 #include "triangular_light.h"
 #include "ray.h"
+#include <glm/vec3.hpp>
 
 
 struct sampler_result {
-    vec3 light_point;
-    vec3 light_dir;
+    glm::vec3 light_point;
+    glm::vec3 light_dir;
     triangular_light light;
 };
 
 class reservoir {
 public:
     triangular_light sample;
-    point3 sample_pos;
+    glm::vec3 sample_pos;
     int M;
     float W;
 
-    reservoir() : sample({0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, 0), sample_pos(0, 0, 0), M(0), W(0) {
+    reservoir() : sample(glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0), sample_pos(0, 0, 0), M(0), W(0) {
     }
 
-    void update(const triangular_light &new_sample, const point3 sample_point, const float w_i) {
+    void update(const triangular_light &new_sample, const glm::vec3 sample_point, const float w_i) {
         M++;
         if (W == 0) {
             W = w_i;
@@ -39,7 +40,7 @@ public:
     }
 
     void reset() {
-        sample = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, 0};
+        sample = { glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0};
         M = 0;
         W = 0;
     }
@@ -90,7 +91,7 @@ public:
                 sampler_result result
                 {
                     res.sample_pos,
-                    unit_vector(res.sample_pos - hi.r.at(hi.t)),
+                    glm::normalize(res.sample_pos - hi.r.at(hi.t)),
                     res.sample
                 };
                 row.push_back(result);
@@ -107,7 +108,7 @@ public:
         // Sample M times from the light sources
         for (int k = 0; k < m; k++) {
             triangular_light l = pick_light();
-            const point3 sample_point = sample_on_light(l);
+            const glm::vec3 sample_point = sample_on_light(l);
             res.update(l, sample_point, get_light_weight(l, sample_point, hi));
         }
     }
@@ -116,9 +117,9 @@ public:
         // Check visibility of the light sample
         auto &res = current_reservoirs.at(y).at(x);
         // Shadow dir = light sample - hit point
-        const vec3 shadow_dir = res.sample_pos - hi.r.at(hi.t);
+        const glm::vec3 shadow_dir = res.sample_pos - hi.r.at(hi.t);
         // Create a ray from the hit point to the light sample
-        const ray shadow(hi.r.at(hi.t), unit_vector(shadow_dir));
+        const Ray shadow(hi.r.at(hi.t), glm::normalize(shadow_dir));
         // Check if the ray intersects with the scene
         tinybvh::Ray shadow_ray(toBVHVec(shadow.origin()), toBVHVec(shadow.direction()));
         bvh.Intersect(shadow_ray);
@@ -181,13 +182,13 @@ private:
         return lights[index];
     }
 
-    float get_light_weight(const triangular_light &light, const point3 light_point, const hit_info &hi) const {
-        const point3 hit_point = hi.r.at(hi.t);
+    float get_light_weight(const triangular_light &light, const glm::vec3 light_point, const hit_info &hi) const {
+        const glm::vec3 hit_point = hi.r.at(hi.t);
         // w = light_intensity * cos(theta) * solid_angle
         // theta = angle between light direction and triangle normal
         // solid_angle = area of light / distance^2
-        const vec3 light_dir = light_point - hit_point;
-        const float cos_theta = dot(unit_vector(light_dir), to_vec3(hi.normal));
+        const glm::vec3 light_dir = light_point - hit_point;
+        const float cos_theta = glm::dot(glm::normalize(light_dir), hi.normal);
         const float distance = light_dir.length();
         const float area_of_light = 0.5f * cross(light.v1 - light.v0, light.v2 - light.v0).length();
         const float solid_angle = area_of_light / (distance * distance);

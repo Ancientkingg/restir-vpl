@@ -5,9 +5,11 @@
 
 #include "material.h"
 #include "rtweekend.h"
+#include "camera2.hpp"
 #include "world.hpp"
-#include "camera2.h"
 #include "light_sampler.h"
+
+#include <filesystem>
 
 std::string get_frame_filename(int i) {
     std::ostringstream oss;
@@ -44,6 +46,7 @@ int main() {
     cam.image_width = 500;
     cam.spp = 100;
 
+
     World world;
     world.add_obj("objects/whiteMonkey.obj", false);
     world.add_obj("objects/blueMonkey_rotated.obj", false);
@@ -51,7 +54,7 @@ int main() {
     world.add_obj("objects/bigCubeLight.obj", true);
 
     tinybvh::bvhvec4 transpose =
-            tinybvh::bvhvec4(0, 40, -1, 0);
+            tinybvh::bvhvec4(0.0f, 40.0f, -1.0f, 0.0f);
 
     // Move the mesh 100 units back in the z direction
     for (int i = 0; i < world.triangle_soup.size(); i++) {

@@ -5,24 +5,24 @@
 #ifndef RAY_H
 #define RAY_H
 
-#include "vec3.h"
+#include <glm/vec3.hpp>
 
-class ray {
+class Ray {
 public:
-    ray() {}
+    Ray() {}
 
-    ray(const point3& origin, const vec3& direction) : orig(origin), dir(direction) {}
+    Ray(const glm::vec3& origin, const glm::vec3& direction) : orig(origin), dir(direction) {}
 
-    const point3& origin() const  { return orig; }
-    const vec3& direction() const { return dir; }
+    const glm::vec3& origin() const  { return orig; }
+    const glm::vec3 &direction() const { return dir; }
 
-    point3 at(double t) const {
-        return orig + t*dir;
+    glm::vec3 at(float t) const {
+        return orig + dir * t;
     }
 
 private:
-    point3 orig;
-    vec3 dir;
+    glm::vec3 orig;
+    glm::vec3 dir;
 };
 
 #endif

@@ -10,6 +10,7 @@ cmake-build-*/
 cmake-build-*/*
 .vscode
 build
+.vs
 
 *.o
 *.so
