@@ -23,7 +23,8 @@ add_executable(RayTracerInOneWeekend
         "light_sampler.h"
         "world.cpp"
         "texture.h" 
-        "hit_info.h" "tiny_bvh_types.h" "util.cpp" "util.h")
+        "hit_info.h" "tiny_bvh_types.h" "util.cpp" "util.h"
+        image_writer.h)
 
 file(COPY ${CMAKE_SOURCE_DIR}/objects DESTINATION ${CMAKE_BINARY_DIR})
 

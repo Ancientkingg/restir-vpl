@@ -34,4 +34,6 @@ inline double degrees_to_radians(double degrees) {
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "lib/tiny_obj_loader.h"
 
+
+
 #endif //RTWEEKEND_H

@@ -11,28 +11,30 @@
 
 #include <filesystem>
 
+#include "image_writer.h"
+
 std::string get_frame_filename(int i) {
     std::ostringstream oss;
-    oss << "frame" << std::setfill('0') << std::setw(4) << i << ".ppm";
+    oss << "frame" << std::setfill('0') << std::setw(4) << i << ".png";
     return oss.str();
 }
 
-void write_image(std::vector<std::vector<glm::vec3>> colors) {
-    // write vector as ppm to image file
-	std::ofstream out("image.ppm");
-	out << "P3\n" << colors[0].size() << ' ' << colors.size() << "\n255\n";
-	for (const auto& row : colors) {
-		for (const auto& color : row) {
-			int r = static_cast<int>(std::clamp(color.r * 255.0f, 0.0f, 255.0f));
-			int g = static_cast<int>(std::clamp(color.g * 255.0f, 0.0f, 255.0f));
-			int b = static_cast<int>(std::clamp(color.b * 255.0f, 0.0f, 255.0f));
-			out << r << ' ' << g << ' ' << b << '\n';
-		}
-	}
-	out.close();
-
-	std::cout << "Image saved as image.ppm" << std::endl;
-}
+// void write_image(std::vector<std::vector<glm::vec3>> colors) {
+//     // write vector as ppm to image file
+// 	std::ofstream out("image.ppm");
+// 	out << "P3\n" << colors[0].size() << ' ' << colors.size() << "\n255\n";
+// 	for (const auto& row : colors) {
+// 		for (const auto& color : row) {
+// 			int r = static_cast<int>(std::clamp(color.r * 255.0f, 0.0f, 255.0f));
+// 			int g = static_cast<int>(std::clamp(color.g * 255.0f, 0.0f, 255.0f));
+// 			int b = static_cast<int>(std::clamp(color.b * 255.0f, 0.0f, 255.0f));
+// 			out << r << ' ' << g << ' ' << b << '\n';
+// 		}
+// 	}
+// 	out.close();
+//
+// 	std::cout << "Image saved as image.ppm" << std::endl;
+// }
 
 void render(Camera2& cam, World& world, int framecount){
     auto bvh = world.bvh();
@@ -63,7 +65,7 @@ void render(Camera2& cam, World& world, int framecount){
 
         /// output frame
         auto filename = get_frame_filename(i);
-        write_image(colors);
+        save_image(colors, "images/" + filename);
     }
 }
 
