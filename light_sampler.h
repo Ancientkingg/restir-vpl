@@ -36,7 +36,7 @@ public:
             return;
         }
         W += w_i;
-        if (const float p = static_cast<float>(w_i) / static_cast<float>(W);
+        if (const float p = w_i / W;
             rand() / static_cast<float>(RAND_MAX) < p) {
             sample = new_sample;
             sample_pos = sample_point;
@@ -60,10 +60,10 @@ inline reservoir merge_reservoirs(const std::vector<reservoir> &reservoirs) {
 
 class restir_light_sampler {
 public:
-    restir_light_sampler(int x, int y, std::vector<triangular_light> &lights_vec) : x_pixels(x), y_pixels(y) {
-        prev_reservoirs = std::vector<std::vector<reservoir> >(y, std::vector<reservoir>(x));
-        current_reservoirs = std::vector<std::vector<reservoir> >(y, std::vector<reservoir>(x));
-        num_lights = lights_vec.size();
+    restir_light_sampler(const int x, const int y, std::vector<triangular_light> &lights_vec) : x_pixels(x), y_pixels(y) {
+        prev_reservoirs = std::vector(y, std::vector<reservoir>(x));
+        current_reservoirs = std::vector(y, std::vector<reservoir>(x));
+        num_lights = static_cast<int>(lights_vec.size());
         lights = lights_vec.data();
     }
 
@@ -95,7 +95,7 @@ public:
                 sampler_result result
                 {
                     res.sample_pos,
-                    glm::normalize(res.sample_pos - hi.r.at(hi.t)),
+                    normalize(res.sample_pos - hi.r.at(hi.t)),
                     res.sample
                 };
                 row.push_back(result);
@@ -123,12 +123,12 @@ public:
         // Shadow dir = light sample - hit point
         const glm::vec3 shadow_dir = res.sample_pos - hi.r.at(hi.t);
         // Create a ray from the hit point to the light sample
-        Ray shadow(hi.r.at(hi.t), glm::normalize(shadow_dir));
+        Ray shadow(hi.r.at(hi.t), normalize(shadow_dir));
         // Check if the ray intersects with the scene
         hit_info shadow_hit;
         world.intersect(shadow, shadow_hit);
         // If the ray intersects with the scene, discard the sample
-        if (shadow_hit.t < glm::length(shadow_dir)) {
+        if (shadow_hit.t < length(shadow_dir)) {
             res.reset();
         }
     }
@@ -180,25 +180,25 @@ private:
     triangular_light *lights;
     int num_lights;
 
-    triangular_light pick_light() const {
+    [[nodiscard]] triangular_light pick_light() const {
         // Pick a random light source uniformly (standard, change this if you want to use a different sampling strategy)
         const int index = rand() % num_lights;
         return lights[index];
     }
 
-    float get_light_weight(const triangular_light &light, const glm::vec3 light_point, const hit_info &hi) const {
+    [[nodiscard]] float get_light_weight(const triangular_light &light, const glm::vec3 light_point, const hit_info &hi) const {
         const glm::vec3 hit_point = hi.r.at(hi.t);
         // w = light_intensity * cos(theta) * solid_angle
         // theta = angle between light direction and triangle normal
         // solid_angle = area of light / distance^2
         const glm::vec3 light_dir = light_point - hit_point;
         const float cos_theta = glm::dot(glm::normalize(light_dir), hi.normal);
-        const float distance = light_dir.length();
-        const float area_of_light = 0.5f * cross(light.v1 - light.v0, light.v2 - light.v0).length();
+        const float distance = length(light_dir);
+        const float area_of_light = 0.5f * length(cross(light.v1 - light.v0, light.v2 - light.v0));
         const float solid_angle = area_of_light / (distance * distance);
 
         const float target = light.intensity * cos_theta * solid_angle;
-        const float source = 1.0f / num_lights;
+        const float source = 1.0f / static_cast<float>(num_lights);
 
         return source / target;
     }
