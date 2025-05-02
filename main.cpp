@@ -17,12 +17,29 @@ std::string get_frame_filename(int i) {
     return oss.str();
 }
 
+void write_image(std::vector<std::vector<glm::vec3>> colors) {
+    // write vector as ppm to image file
+	std::ofstream out("image.ppm");
+	out << "P3\n" << colors[0].size() << ' ' << colors.size() << "\n255\n";
+	for (const auto& row : colors) {
+		for (const auto& color : row) {
+			int r = static_cast<int>(std::clamp(color.r * 255.0f, 0.0f, 255.0f));
+			int g = static_cast<int>(std::clamp(color.g * 255.0f, 0.0f, 255.0f));
+			int b = static_cast<int>(std::clamp(color.b * 255.0f, 0.0f, 255.0f));
+			out << r << ' ' << g << ' ' << b << '\n';
+		}
+	}
+	out.close();
+
+	std::cout << "Image saved as image.ppm" << std::endl;
+}
+
 void render(Camera2& cam, World& world, int framecount){
     auto bvh = world.bvh();
     auto lights = world.get_triangular_lights();
     auto mats = world.get_materials();
     auto light_sampler = restir_light_sampler(cam.image_width, cam.image_height, lights);
-    for(int i = 0; i < framecount; i ++){
+    for(int i = 0; i < framecount; i++){
         // potentially update camera position
         auto hit_infos = cam.get_hit_info_from_camera_per_frame(bvh, mats);
         
@@ -46,7 +63,7 @@ void render(Camera2& cam, World& world, int framecount){
 
         /// output frame
         auto filename = get_frame_filename(i);
-        // write_image(filename, colors);
+        write_image(colors);
     }
 }
 
@@ -81,5 +98,7 @@ int main() {
     // TODO:
     // render(cam2, bvh); (add more arguments as needed)
 
-    cam.render(bvh, lights, mats, "image.ppm");
+    render(cam2, world, 1);
+
+    //cam.render(bvh, lights, mats, "image.ppm");
 }
