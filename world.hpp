@@ -33,7 +33,7 @@ class World
 	tinybvh::BVH bvh(); // Build the bvh
 
 	std::vector<triangular_light> get_triangular_lights();
-	std::vector<material> get_materials();
+	std::vector<Material*> get_materials();
 
 
 	private:
