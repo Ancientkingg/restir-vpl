@@ -28,7 +28,7 @@ glm::vec3 shade(const hit_info& hit, const sampler_result& sample, float pdf, Wo
     hit_info shadow_hit;
 
     bool intersected = scene.intersect(shadow_ray, shadow_hit);
-    bool is_light = shadow_hit.mat_ptr->emits_light();
+    bool is_light = intersected && shadow_hit.mat_ptr->emits_light();
 
     if (intersected && shadow_hit.mat_ptr->emits_light() == false) {
         return glm::vec3(0.0f); // Occluded

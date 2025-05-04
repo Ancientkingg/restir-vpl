@@ -156,9 +156,9 @@ std::vector<Material*> World::get_materials(){
 		// float k_d = (mat.diffuse[0] + mat.diffuse[1] + mat.diffuse[2]) / 3;
 		// float k_s = *mat.specular;
 		// float p = mat.shininess;
-		Lambertian end_mat = Lambertian({mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]});
+		Lambertian* end_mat = new Lambertian({mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]});
 
-		out.push_back(&end_mat);
+		out.push_back(end_mat);
 
 	}
 	return out;
