@@ -37,6 +37,9 @@ public:
 		}
 
 		scattered = Ray(hit.r.at(hit.t), scatter_dir);
+		attenuation = albedo->value(0, 0, hit.r.at(hit.t));
+
+		return true;
 	}
 
 	virtual glm::vec3 evaluate(const hit_info& hit, const glm::vec3& wi) const {

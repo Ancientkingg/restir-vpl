@@ -65,7 +65,7 @@ void render(Camera2& cam, World& world, int framecount){
 
         /// output frame
         auto filename = get_frame_filename(i);
-        save_image(colors, "images/" + filename);
+        save_image(colors, "./images/" + filename);
     }
 }
 
