@@ -128,7 +128,7 @@ public:
         hit_info shadow_hit;
         world.intersect(shadow, shadow_hit);
         // If the ray intersects with the scene, discard the sample
-        if (shadow_hit.t < length(shadow_dir)) {
+        if (shadow_hit.t > 1e-3f && shadow_hit.t < length(shadow_dir)) {
             res.reset();
         }
     }

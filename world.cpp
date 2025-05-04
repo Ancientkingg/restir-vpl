@@ -132,7 +132,7 @@ std::vector<triangular_light> World::get_triangular_lights(){
 			light_materials[light_material_ids[face_id]].emission[2]
 		);
 		triangular_light tl{
-			glm::vec3(lights[i][0],lights[i][1],lights[i][2]),
+			glm::vec3(lights[i+0][0],lights[i+0][1],lights[i+0][2]),
 			glm::vec3(lights[i+1][0],lights[i+1][1],lights[i+1][2]),
 			glm::vec3(lights[i+2][0],lights[i+2][1],lights[i+2][2]),
 			c,
@@ -146,30 +146,20 @@ std::vector<triangular_light> World::get_triangular_lights(){
 
 std::vector<Material*> World::get_materials(){
 	std::vector<Material*> out;
-	for(int id = 0; id < *std::max_element(all_material_ids.begin(), all_material_ids.end()); id++){
+	for(int id = 0; id <= *std::max_element(all_material_ids.begin(), all_material_ids.end()); id++){
 		tinyobj::material_t mat = all_materials[id];
-		glm::vec3 c = glm::vec3(
-			mat.diffuse[0],
-			mat.diffuse[1],
-			mat.diffuse[2]
-		);
-		// float k_d = (mat.diffuse[0] + mat.diffuse[1] + mat.diffuse[2]) / 3;
-		// float k_s = *mat.specular;
-		// float p = mat.shininess;
-
-		Material * end_mat;
 
 		bool is_light = std::any_of(light_materials.begin(), light_materials.end(), [&](const tinyobj::material_t& m) {
 			return m.name == mat.name;
 		});
 		if(is_light){
-			Lambertian * end_mat = new Lambertian({mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]});
+			Emissive * end_mat = new Emissive({mat.emission[0], mat.emission[1], mat.emission[2]});
+			out.push_back(end_mat);
 		}
 		else{
-			Emissive * end_mat = new Emissive({mat.emission[0], mat.emission[1], mat.emission[2]});
+			Lambertian * end_mat = new Lambertian({mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]});
+			out.push_back(end_mat);
 		}
-		out.push_back(end_mat);
-
 	}
 	return out;
 }
