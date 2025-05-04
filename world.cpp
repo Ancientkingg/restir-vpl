@@ -156,9 +156,19 @@ std::vector<Material*> World::get_materials(){
 		// float k_d = (mat.diffuse[0] + mat.diffuse[1] + mat.diffuse[2]) / 3;
 		// float k_s = *mat.specular;
 		// float p = mat.shininess;
-		Lambertian end_mat = Lambertian({mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]});
 
-		out.push_back(&end_mat);
+		Material * end_mat;
+
+		bool is_light = std::any_of(light_materials.begin(), light_materials.end(), [&](const tinyobj::material_t& m) {
+			return m.name == mat.name;
+		});
+		if(is_light){
+			Lambertian * end_mat = new Lambertian({mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]});
+		}
+		else{
+			Emissive * end_mat = new Emissive({mat.emission[0], mat.emission[1], mat.emission[2]});
+		}
+		out.push_back(end_mat);
 
 	}
 	return out;
