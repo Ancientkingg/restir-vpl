@@ -50,23 +50,33 @@ Camera2::Camera2() : Camera2(glm::vec3(0, 40, 1), glm::vec3(0, 40, 0)) {}
 
 Camera2::Camera2(glm::vec3 camera_position, glm::vec3 camera_target)
     : position(camera_position), target(camera_target) {
-    direction = glm::normalize(target - position); // Forward vector
-    right = glm::normalize(
-        glm::cross(glm::vec3(0, 1, 0), direction));  // Right vector
-    up = glm::cross(direction, right);  // Up vector in camera space
+    direction = glm::normalize(target - position);
+    glm::vec3 world_up = glm::vec3(0, 1, 0);
+    right = glm::normalize(glm::cross(direction, world_up)); 
+    up = glm::normalize(glm::cross(right, direction));
 }
 
 std::vector<std::vector<Ray>> Camera2::generate_rays_for_frame() {
     std::vector<std::vector<Ray>> rays(image_height, std::vector<Ray>(image_width));
 
+    float halfWidth = float(image_width) * 0.5f;
+    float halfHeight = float(image_height) * 0.5f;
+
+    float scaleX = tan(fov/2) * focal_length;
+    float scaleY = scaleX / aspect_ratio;
+
+    // (0, 0) = top_right; first one is height second one is width;
     for (int i = 0; i < image_height; i++) {
         for (int j = 0; j < image_width; j++) {
-            glm::vec3 pixel_direction = direction -
-                (float(i) / image_width - 0.5f) * 2.f * tanfov * image_width /
-                image_height * right -
-                (0.5f - float(j) / image_height) * 2.f * tanfov * up;
+        
+            // Centered pixel coordinates in [–1, +1]
+            float ndc_x = (j - halfWidth) / halfWidth;
+            float ndc_y = (i - halfHeight) / halfHeight;
 
-            rays[i][j] = Ray(position, glm::normalize(pixel_direction));
+            glm::vec3 ray_dir =
+                direction + ndc_x * scaleX * right + ndc_y * scaleY * up;
+
+            rays[i][j] = Ray(position, glm::normalize(ray_dir));
         }
     }
 

@@ -72,12 +72,6 @@ void render(Camera2& cam, World& world, int framecount){
 }
 
 int main() {
-    camera cam;
-
-    cam.aspect_ratio = 16.0 / 9; // Ratio of image width over height
-    cam.image_width = 500;
-    cam.spp = 100;
-
     auto loading_start = std::chrono::high_resolution_clock::now();
     World world;
     world.add_obj("objects/whiteMonkey.obj", false);
@@ -98,18 +92,10 @@ int main() {
     std::cout << "Loading took ";
     std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(loading_stop - loading_start).count();
     std::cout << " milliseconds" << std::endl;
-
-
-    std::vector<triangular_light> lights = world.get_triangular_lights();
-    tinybvh::BVH bvh = world.bvh();
-    std::vector<Material *> mats = world.get_materials();
-
-    Camera2 cam2;
-    // TODO:
-    // render(cam2, bvh); (add more arguments as needed)
-
+    
     auto render_start = std::chrono::high_resolution_clock::now();
-
+    
+    Camera2 cam2;
     render(cam2, world, 1);
 
     auto render_stop = std::chrono::high_resolution_clock::now();
@@ -117,6 +103,4 @@ int main() {
     std::cout << "Rendering took ";
     std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(render_stop - render_start).count();
     std::cout << " milliseconds" << std::endl;
-
-    //cam.render(bvh, lights, mats, "image.ppm");
 }
