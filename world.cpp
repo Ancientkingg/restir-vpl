@@ -76,6 +76,7 @@ World::World(){
 
 	all_material_ids   = {};
 	light_material_ids = {};
+	mats_small         = {};
 }
 
 void World::add_obj(std::string file_path, bool is_lights){
@@ -116,7 +117,7 @@ bool World::intersect(Ray& ray, hit_info& hit) {
 		return false;
 	}
 
-	hit.mat_ptr = get_materials()[m_id];
+	hit.mat_ptr = mats_small[m_id];
 
 	return true;
 }
@@ -146,9 +147,7 @@ std::vector<triangular_light> World::get_triangular_lights(){
 
 std::vector<Material*> World::get_materials(){
 	std::vector<Material*> out;
-	for(int id = 0; id <= *std::max_element(all_material_ids.begin(), all_material_ids.end()); id++){
-		tinyobj::material_t mat = all_materials[id];
-
+	for(tinyobj::material_t mat : all_materials){
 		bool is_light = std::any_of(light_materials.begin(), light_materials.end(), [&](const tinyobj::material_t& m) {
 			return m.name == mat.name;
 		});
@@ -161,5 +160,6 @@ std::vector<Material*> World::get_materials(){
 			out.push_back(end_mat);
 		}
 	}
+	mats_small = out;
 	return out;
 }

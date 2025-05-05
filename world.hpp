@@ -39,6 +39,7 @@ class World
 	private:
 	std::vector<int> all_material_ids;
 	std::vector<int> light_material_ids;
+	std::vector<Material*> mats_small;
 };
 
 #endif
