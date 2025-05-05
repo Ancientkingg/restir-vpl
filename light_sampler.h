@@ -82,7 +82,7 @@ public:
             for (int x = 0; x < x_pixels; x++) {
                 hit_info &hi = hit_infos.at(y).at(x);
                 set_initial_sample(x, y, hi);
-                visibility_check(x, y, hi, world);
+                // visibility_check(x, y, hi, world);
                 temporal_update(x, y);
             }
         }
@@ -172,7 +172,7 @@ public:
     }
 
 private:
-    int m = 4;
+    int m = 2;
     int x_pixels;
     int y_pixels;
     std::vector<std::vector<reservoir> > prev_reservoirs;
@@ -188,16 +188,11 @@ private:
 
     [[nodiscard]] float get_light_weight(const triangular_light &light, const glm::vec3 light_point, const hit_info &hi) const {
         const glm::vec3 hit_point = hi.r.at(hi.t);
-        // w = light_intensity * cos(theta) * solid_angle
-        // theta = angle between light direction and triangle normal
-        // solid_angle = area of light / distance^2
         const glm::vec3 light_dir = light_point - hit_point;
         const float cos_theta = glm::dot(glm::normalize(light_dir), hi.normal);
-        const float distance = length(light_dir);
-        const float area_of_light = 0.5f * length(cross(light.v1 - light.v0, light.v2 - light.v0));
-        const float solid_angle = area_of_light / (distance * distance);
+        const glm::vec3 brdf = hi.mat_ptr->evaluate(hi, light_dir);
 
-        const float target = light.intensity * cos_theta * solid_angle;
+        const float target = cos_theta * glm::length(brdf);
         const float source = 1.0f / static_cast<float>(num_lights);
 
         return source / target;

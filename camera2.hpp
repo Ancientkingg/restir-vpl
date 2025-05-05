@@ -36,7 +36,7 @@ public:
     /* Public Camera Parameters Here */
     const float aspect_ratio = 16.0 / 9; // Ratio of image width over height
     const float focal_length = 1.0;
-    const int image_width = 16; // Rendered image width in pixel count
+    const int image_width = 160; // Rendered image width in pixel count
     const int image_height = (int(image_width / aspect_ratio) < 1) ? 1 : int(image_width / aspect_ratio); // Rendered image height in pixel count
     const float viewport_height = 2.0;
     const float viewport_width = viewport_height * (float(image_width) / image_height);

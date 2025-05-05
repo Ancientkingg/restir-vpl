@@ -10,6 +10,8 @@
 #include "light_sampler.h"
 
 #include <filesystem>
+#include <chrono>
+
 
 #include "image_writer.h"
 
@@ -76,7 +78,7 @@ int main() {
     cam.image_width = 500;
     cam.spp = 100;
 
-
+    auto loading_start = std::chrono::high_resolution_clock::now();
     World world;
     world.add_obj("objects/whiteMonkey.obj", false);
     world.add_obj("objects/blueMonkey_rotated.obj", false);
@@ -91,6 +93,12 @@ int main() {
         world.triangle_soup[i] = transpose + world.triangle_soup[i];
     }
 
+    auto loading_stop = std::chrono::high_resolution_clock::now();
+
+    std::cout << "Loading took ";
+    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(loading_stop - loading_start).count();
+    std::cout << " milliseconds" << std::endl;
+
 
     std::vector<triangular_light> lights = world.get_triangular_lights();
     tinybvh::BVH bvh = world.bvh();
@@ -100,7 +108,15 @@ int main() {
     // TODO:
     // render(cam2, bvh); (add more arguments as needed)
 
+    auto render_start = std::chrono::high_resolution_clock::now();
+
     render(cam2, world, 1);
+
+    auto render_stop = std::chrono::high_resolution_clock::now();
+
+    std::cout << "Rendering took ";
+    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(render_stop - render_start).count();
+    std::cout << " milliseconds" << std::endl;
 
     //cam.render(bvh, lights, mats, "image.ppm");
 }
