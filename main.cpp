@@ -53,6 +53,7 @@ void render(Camera2& cam, World& world, int framecount){
 		std::vector<std::vector<glm::vec3>> colors = std::vector<std::vector<glm::vec3>>(cam.image_height, std::vector<glm::vec3>(cam.image_width, glm::vec3(0.0f)));
 
         // loop over hit_infos and light_samples_per_ray at the same time and feed them into the shade 
+        #pragma omp parallel for
         for (size_t j = 0; j < hit_infos.size(); j++) {
 			if (hit_infos[j].empty()) continue; // No hits for this 
             for (size_t i = 0; i < hit_infos[0].size(); i++) {

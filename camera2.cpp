@@ -65,6 +65,8 @@ std::vector<std::vector<Ray>> Camera2::generate_rays_for_frame() {
     float scaleX = tan(fov/2) * focal_length;
     float scaleY = scaleX / aspect_ratio;
 
+
+    #pragma omp parallel for
     // (0, 0) = top_right; first one is height second one is width;
     for (int i = 0; i < image_height; i++) {
         for (int j = 0; j < image_width; j++) {
@@ -90,6 +92,7 @@ std::vector<std::vector<hit_info>> Camera2::get_hit_info_from_camera_per_frame(
 
     auto rays = generate_rays_for_frame();
 
+    #pragma omp parallel for
     for (int i = 0; i < image_height; i++) {
         for (int j = 0; j < image_width; j++) {
             hit_infos[i][j].r = rays[i][j];

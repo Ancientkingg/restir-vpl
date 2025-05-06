@@ -15,6 +15,8 @@ struct sampler_result {
     glm::vec3 light_point;
     glm::vec3 light_dir;
     triangular_light light;
+
+    sampler_result() : light_point(0.0), light_dir(0.0), light(glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0) {}
 };
 
 class reservoir {
@@ -77,7 +79,7 @@ public:
         // 3. Temporal update - update the current reservoir with the previous one
         // 4. Spatial update - update the current reservoir with the neighbors
         // 5. Return the sample in the current reservoir
-        std::vector<std::vector<sampler_result> > results;
+        
         for (int y = 0; y < y_pixels; y++) {
             for (int x = 0; x < x_pixels; x++) {
                 hit_info &hi = hit_infos.at(y).at(x);
@@ -86,21 +88,18 @@ public:
                 temporal_update(x, y);
             }
         }
+        
+        std::vector<std::vector<sampler_result>> results(y_pixels, std::vector<sampler_result>(x_pixels));
+        #pragma omp parallel for
         for (int y = 0; y < y_pixels; y++) {
-            std::vector<sampler_result> row;
             for (int x = 0; x < x_pixels; x++) {
                 hit_info &hi = hit_infos.at(y).at(x);
                 spatial_update(x, y);
                 auto res = current_reservoirs.at(y).at(x);
-                sampler_result result
-                {
-                    res.sample_pos,
-                    normalize(res.sample_pos - hi.r.at(hi.t)),
-                    res.sample
-                };
-                row.push_back(result);
+                results[y][x].light_point = res.sample_pos;
+                results[y][x].light_dir = normalize(res.sample_pos - hi.r.at(hi.t));
+                results[y][x].light = res.sample;
             }
-            results.push_back(row);
         }
         return results;
     }

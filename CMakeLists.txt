@@ -4,6 +4,8 @@ project(RayTracerInOneWeekend)
 set(CMAKE_OSX_ARCHITECTURES "arm64")
 set(CMAKE_CXX_STANDARD 20)
 
+find_package(OpenMP REQUIRED)
+
 set(GLM ${CMAKE_CURRENT_SOURCE_DIR}/lib/glm)
 
 include_directories(${GLM})
@@ -30,3 +32,5 @@ file(COPY ${CMAKE_SOURCE_DIR}/objects DESTINATION ${CMAKE_BINARY_DIR})
 
 # Add the include directory for GLM
 target_include_directories(RayTracerInOneWeekend PUBLIC ${GLM})
+
+target_link_libraries(RayTracerInOneWeekend PUBLIC OpenMP::OpenMP_CXX)
