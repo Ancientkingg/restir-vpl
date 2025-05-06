@@ -15,6 +15,10 @@ tinybvh::Ray toBVHRay(const Ray& r) {
     return tinybvh::Ray(toBVHVec(r.origin()), toBVHVec(r.direction()));
 }
 
+tinybvh::Ray toBVHRay(const Ray& r, const float max_t) {
+    return tinybvh::Ray(toBVHVec(r.origin()), toBVHVec(r.direction()), max_t);
+}
+
 // Example shade function
 glm::vec3 shade(const hit_info& hit, const sampler_result& sample, float pdf, World& scene) {
     // Compute cosine between surface normal and light direction
@@ -23,16 +27,13 @@ glm::vec3 shade(const hit_info& hit, const sampler_result& sample, float pdf, Wo
         return glm::vec3(0.0f);
     }
 
-    // Check if the light is visible (shadow ray)
-    // Ray shadow_ray(hit.r.at(hit.t) + 1e-3f * sample.light_dir, sample.light_dir);
-    // hit_info shadow_hit;
-    //
-    // bool intersected = scene.intersect(shadow_ray, shadow_hit);
-    // bool is_light = intersected && shadow_hit.mat_ptr->emits_light();
-    //
-    // if (intersected && shadow_hit.mat_ptr->emits_light() == false) {
-    //     return glm::vec3(0.0f); // Occluded
-    // }
+    glm::vec3 I = hit.r.at(hit.t);
+    glm::vec3 L = sample.light_dir;
+    float dist = glm::length(sample.light_point - I);
+
+    if (Ray r = Ray(I + 0.001f * L, L); scene.is_occluded(r, dist)) {
+        return glm::vec3(0.0f); // Shadowed
+    }
 
     // Evaluate BRDF at the hit point
     glm::vec3 brdf = hit.mat_ptr->evaluate(hit, sample.light_dir);
@@ -52,7 +53,7 @@ Camera2::Camera2(glm::vec3 camera_position, glm::vec3 camera_target)
     : position(camera_position), target(camera_target) {
     direction = glm::normalize(target - position);
     glm::vec3 world_up = glm::vec3(0, 1, 0);
-    right = glm::normalize(glm::cross(direction, world_up)); 
+    right = glm::normalize(glm::cross(direction, world_up));
     up = glm::normalize(glm::cross(right, direction));
 }
 
@@ -70,7 +71,7 @@ std::vector<std::vector<Ray>> Camera2::generate_rays_for_frame() {
     // (0, 0) = top_right; first one is height second one is width;
     for (int i = 0; i < image_height; i++) {
         for (int j = 0; j < image_width; j++) {
-        
+
             // Centered pixel coordinates in [–1, +1]
             float ndc_x = (j - halfWidth) / halfWidth;
             float ndc_y = (i - halfHeight) / halfHeight;

@@ -88,5 +88,5 @@ int main() {
 
 
     Camera2 cam2;
-    render(cam2, world, 1);
+    render(cam2, world, 20);
 }

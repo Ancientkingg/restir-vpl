@@ -68,15 +68,15 @@ void load_one_obj(std::vector<tinybvh::bvhvec4> &triangle_soup, std::vector<tiny
 
 }
 
-World::World(){
-	triangle_soup   = {};
-	all_materials   = {};
-	lights          = {};
+World::World() {
+	triangle_soup = {};
+	all_materials = {};
+	lights = {};
 	light_materials = {};
 
-	all_material_ids   = {};
+	all_material_ids = {};
 	light_material_ids = {};
-	mats_small         = {};
+	mats_small = {};
 }
 
 void World::add_obj(std::string file_path, bool is_lights){
@@ -84,15 +84,25 @@ void World::add_obj(std::string file_path, bool is_lights){
 	if(is_lights) load_one_obj(lights, light_materials, light_material_ids , file_path);
 }
 
-tinybvh::BVH World::bvh(){
-	tinybvh::BVH out;
-	out.Build(triangle_soup.data(), triangle_soup.size()/3);
-	return out;
+tinybvh::BVH& World::bvh(){
+	// Check if this->bvhInstance is already built
+	if (bvh_built) {
+		std::clog << "BVH built, not building" << std::endl;
+		return this->bvhInstance;
+	}
+	std::clog << "BVH not built, building" << std::endl;
+	bvh_built = true;
+	bvhInstance.Build(triangle_soup.data(), triangle_soup.size()/3);
+
+	return bvhInstance;
 }
 
 bool World::intersect(Ray& ray, hit_info& hit) {
 	tinybvh::Ray r = toBVHRay(ray);
-	tinybvh::BVH bvhInstance = this->bvh();
+	if (!bvh_built) {
+		std::cerr << "Error: BVH not built. Call bvh() before intersect()." << std::endl;
+		return false;
+	}
 	bvhInstance.Intersect(r);
 	if (r.hit.t == 1E30f) {
 		return false; // No intersection
@@ -121,6 +131,12 @@ bool World::intersect(Ray& ray, hit_info& hit) {
 
 	return true;
 }
+
+bool World::is_occluded(const Ray &ray, float dist) {
+	tinybvh::Ray r = toBVHRay(ray, dist);
+	return this->bvhInstance.IsOccluded(toBVHRay(ray));
+}
+
 
 std::vector<triangular_light> World::get_triangular_lights(){
 	std::vector<triangular_light> out;

@@ -26,11 +26,13 @@ class World
 	
 	
 	World(); // constructor makes an empty world
-	
+
 	void add_obj(std::string file, bool is_lights); // Add an obj, indicate if it is all lights
 
 	bool intersect(Ray& ray, hit_info& hit);
-	tinybvh::BVH bvh(); // Build the bvh
+	bool is_occluded(const Ray &ray, float dist);
+
+	tinybvh::BVH& bvh(); // Build the bvh
 
 	std::vector<triangular_light> get_triangular_lights();
 	std::vector<Material*> get_materials();
@@ -40,6 +42,8 @@ class World
 	std::vector<int> all_material_ids;
 	std::vector<int> light_material_ids;
 	std::vector<Material*> mats_small;
+	tinybvh::BVH bvhInstance;
+	bool bvh_built = false;
 };
 
 #endif
