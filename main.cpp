@@ -118,18 +118,18 @@ void render_live(Camera2 &cam, World &world, bool progressive = true) {
                     cam.position -= cam.forward * 0.1f;
                 } else if (e.key.keysym.sym == SDLK_p) {
                     progressive = !progressive;
-                    frame = 0;
                 }
-
                 camera_moved = true;
             }
         }
 
         if (camera_moved) {
+            std::clog << "Camera moved, resetting light sampler" << std::endl;
             light_sampler.reset();
             accumulated_colors =
                     std::vector(cam.image_height,
                                 std::vector<glm::vec3>(cam.image_width, glm::vec3(0.0f)));
+            frame = 0;
             camera_moved = false;
         }
 
@@ -193,7 +193,7 @@ int main() {
     world.add_obj("objects/whiteMonkey.obj", false);
     world.add_obj("objects/blueMonkey_rotated.obj", false);
 
-    world.add_obj("objects/bigCubeLight.obj", true);
+    world.add_obj("objects/multiple_color_lights.obj", true);
 
 
     tinybvh::bvhvec4 transpose =
