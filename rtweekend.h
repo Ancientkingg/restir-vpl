@@ -28,6 +28,7 @@ inline double degrees_to_radians(double degrees) {
 #include "triangular_light.h"
 #include "camera.h"
 
+
 #define TINYBVH_IMPLEMENTATION
 #include "lib/tiny_bvh.h"
 

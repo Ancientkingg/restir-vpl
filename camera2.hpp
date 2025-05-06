@@ -37,7 +37,7 @@ public:
     /* Public Camera Parameters Here */
     const float aspect_ratio = 16.0 / 9; // Ratio of image width over height
     const float focal_length = 1.0;
-    const int image_width = 800; // Rendered image width in pixel count
+    const int image_width = 400; // Rendered image width in pixel count
     const int image_height = (int(image_width / aspect_ratio) < 1) ? 1 : int(image_width / aspect_ratio); // Rendered image height in pixel count
     const float fov = glm::radians(75.0f); // horizontal fov
 
