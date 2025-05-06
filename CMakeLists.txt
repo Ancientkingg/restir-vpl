@@ -34,3 +34,28 @@ file(COPY ${CMAKE_SOURCE_DIR}/objects DESTINATION ${CMAKE_BINARY_DIR})
 target_include_directories(RayTracerInOneWeekend PUBLIC ${GLM})
 
 target_link_libraries(RayTracerInOneWeekend PUBLIC OpenMP::OpenMP_CXX)
+
+message(STATUS "Host processor: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+# Determine if we're building for ARM
+if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "aarch64" OR CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "arm64")
+    include(CheckCXXCompilerFlag)
+
+    # Check for the ARMv8 SIMD flag
+    check_cxx_compiler_flag("-march=armv8-a+simd" COMPILER_SUPPORTS_ARMV8_SIMD)
+    if(COMPILER_SUPPORTS_ARMV8_SIMD)
+        target_compile_options(RayTracerInOneWeekend
+                PRIVATE
+                $<$<CXX_COMPILER_ID:GNU,Clang>:-march=armv8-a+simd>
+        )
+        message(STATUS "Enabling -march=armv8-a+simd for NEON support")
+    else()
+        message(WARNING "ARM host, but compiler does not support -march=armv8-a+simd; building without NEON")
+    endif()
+else()
+    message(STATUS "Non-ARM host (${CMAKE_HOST_SYSTEM_PROCESSOR}); skipping NEON flags")
+endif()
+
+target_compile_definitions(RayTracerInOneWeekend
+        PRIVATE
+        __ARM_NEON__=1            # pretend the compiler defined this
+)

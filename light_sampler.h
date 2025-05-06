@@ -16,7 +16,9 @@ struct sampler_result {
     glm::vec3 light_dir;
     triangular_light light;
 
-    sampler_result() : light_point(0.0), light_dir(0.0), light(glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0) {}
+    sampler_result() : light_point(0.0), light_dir(0.0),
+                       light(glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0) {
+    }
 };
 
 class reservoir {
@@ -62,15 +64,15 @@ inline reservoir merge_reservoirs(const std::vector<reservoir> &reservoirs) {
 
 class restir_light_sampler {
 public:
-    restir_light_sampler(const int x, const int y, std::vector<triangular_light> &lights_vec) : x_pixels(x), y_pixels(y) {
+    restir_light_sampler(const int x, const int y,
+                         std::vector<triangular_light> &lights_vec) : x_pixels(x), y_pixels(y) {
         prev_reservoirs = std::vector(y, std::vector<reservoir>(x));
         current_reservoirs = std::vector(y, std::vector<reservoir>(x));
         num_lights = static_cast<int>(lights_vec.size());
         lights = lights_vec.data();
     }
 
-    std::vector<std::vector<sampler_result> > sample_lights(std::vector<std::vector<hit_info> > hit_infos,
-                                                            World &world) {
+    std::vector<std::vector<sampler_result> > sample_lights(std::vector<std::vector<hit_info> > hit_infos) {
         // Swap the current and previous reservoirs
         next_frame();
         // For every pixel:
@@ -79,7 +81,8 @@ public:
         // 3. Temporal update - update the current reservoir with the previous one
         // 4. Spatial update - update the current reservoir with the neighbors
         // 5. Return the sample in the current reservoir
-        
+
+#pragma omp parallel for
         for (int y = 0; y < y_pixels; y++) {
             for (int x = 0; x < x_pixels; x++) {
                 hit_info &hi = hit_infos.at(y).at(x);
@@ -88,9 +91,9 @@ public:
                 temporal_update(x, y);
             }
         }
-        
-        std::vector<std::vector<sampler_result>> results(y_pixels, std::vector<sampler_result>(x_pixels));
-        #pragma omp parallel for
+
+        std::vector<std::vector<sampler_result> > results(y_pixels, std::vector<sampler_result>(x_pixels));
+#pragma omp parallel for
         for (int y = 0; y < y_pixels; y++) {
             for (int x = 0; x < x_pixels; x++) {
                 hit_info &hi = hit_infos.at(y).at(x);
@@ -185,7 +188,8 @@ private:
         return lights[index];
     }
 
-    [[nodiscard]] float get_light_weight(const triangular_light &light, const glm::vec3 light_point, const hit_info &hi) const {
+    [[nodiscard]] float get_light_weight(const triangular_light &light, const glm::vec3 light_point,
+                                         const hit_info &hi) const {
         const glm::vec3 hit_point = hi.r.at(hi.t);
         const glm::vec3 light_dir = light_point - hit_point;
         const float cos_theta = glm::dot(glm::normalize(light_dir), hi.normal);

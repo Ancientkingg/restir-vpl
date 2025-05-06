@@ -24,15 +24,15 @@ glm::vec3 shade(const hit_info& hit, const sampler_result& sample, float pdf, Wo
     }
 
     // Check if the light is visible (shadow ray)
-    Ray shadow_ray(hit.r.at(hit.t) + 1e-4f * sample.light_dir, sample.light_dir);
-    hit_info shadow_hit;
-
-    bool intersected = scene.intersect(shadow_ray, shadow_hit);
-    bool is_light = intersected && shadow_hit.mat_ptr->emits_light();
-
-    if (intersected && shadow_hit.mat_ptr->emits_light() == false) {
-        return glm::vec3(0.0f); // Occluded
-    }
+    // Ray shadow_ray(hit.r.at(hit.t) + 1e-3f * sample.light_dir, sample.light_dir);
+    // hit_info shadow_hit;
+    //
+    // bool intersected = scene.intersect(shadow_ray, shadow_hit);
+    // bool is_light = intersected && shadow_hit.mat_ptr->emits_light();
+    //
+    // if (intersected && shadow_hit.mat_ptr->emits_light() == false) {
+    //     return glm::vec3(0.0f); // Occluded
+    // }
 
     // Evaluate BRDF at the hit point
     glm::vec3 brdf = hit.mat_ptr->evaluate(hit, sample.light_dir);

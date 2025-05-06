@@ -21,34 +21,19 @@ std::string get_frame_filename(int i) {
     return oss.str();
 }
 
-// void write_image(std::vector<std::vector<glm::vec3>> colors) {
-//     // write vector as ppm to image file
-// 	std::ofstream out("image.ppm");
-// 	out << "P3\n" << colors[0].size() << ' ' << colors.size() << "\n255\n";
-// 	for (const auto& row : colors) {
-// 		for (const auto& color : row) {
-// 			int r = static_cast<int>(std::clamp(color.r * 255.0f, 0.0f, 255.0f));
-// 			int g = static_cast<int>(std::clamp(color.g * 255.0f, 0.0f, 255.0f));
-// 			int b = static_cast<int>(std::clamp(color.b * 255.0f, 0.0f, 255.0f));
-// 			out << r << ' ' << g << ' ' << b << '\n';
-// 		}
-// 	}
-// 	out.close();
-//
-// 	std::cout << "Image saved as image.ppm" << std::endl;
-// }
-
 void render(Camera2& cam, World& world, int framecount){
     auto bvh = world.bvh();
     auto lights = world.get_triangular_lights();
     auto mats = world.get_materials();
     auto light_sampler = restir_light_sampler(cam.image_width, cam.image_height, lights);
     for(int i = 0; i < framecount; i++){
+        auto render_start = std::chrono::high_resolution_clock::now();
+
         // potentially update camera position
         auto hit_infos = cam.get_hit_info_from_camera_per_frame(bvh, mats);
         
         // send hit infos to ReSTIR
-        auto light_samples_per_ray = light_sampler.sample_lights(hit_infos, world);
+        auto light_samples_per_ray = light_sampler.sample_lights(hit_infos);
 
 		std::vector<std::vector<glm::vec3>> colors = std::vector<std::vector<glm::vec3>>(cam.image_height, std::vector<glm::vec3>(cam.image_width, glm::vec3(0.0f)));
 
@@ -66,6 +51,12 @@ void render(Camera2& cam, World& world, int framecount){
             }
         }
 
+        auto render_stop = std::chrono::high_resolution_clock::now();
+
+        std::clog << "Rendering frame " << i << " took ";
+        std::clog << std::chrono::duration_cast<std::chrono::milliseconds>(render_stop - render_start).count();
+        std::clog << " milliseconds" << std::endl;
+
         /// output frame
         auto filename = get_frame_filename(i);
         save_image(colors, "./images/" + filename);
@@ -80,6 +71,7 @@ int main() {
 
     world.add_obj("objects/bigCubeLight.obj", true);
 
+
     tinybvh::bvhvec4 transpose =
             tinybvh::bvhvec4(0.0f, 40.0f, -1.0f, 0.0f);
 
@@ -90,18 +82,11 @@ int main() {
 
     auto loading_stop = std::chrono::high_resolution_clock::now();
 
-    std::cout << "Loading took ";
-    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(loading_stop - loading_start).count();
-    std::cout << " milliseconds" << std::endl;
-    
-    auto render_start = std::chrono::high_resolution_clock::now();
-    
+    std::clog << "Loading took ";
+    std::clog << std::chrono::duration_cast<std::chrono::milliseconds>(loading_stop - loading_start).count();
+    std::clog << " milliseconds" << std::endl;
+
+
     Camera2 cam2;
     render(cam2, world, 1);
-
-    auto render_stop = std::chrono::high_resolution_clock::now();
-
-    std::cout << "Rendering took ";
-    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(render_stop - render_start).count();
-    std::cout << " milliseconds" << std::endl;
 }

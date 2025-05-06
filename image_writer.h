@@ -29,6 +29,13 @@ inline void save_image(const std::vector<std::vector<glm::vec3>>& pixels, const 
         }
     }
 
+    // Check if the folder exists, if not create it
+    std::filesystem::path path = filename;
+    std::filesystem::path dir = path.parent_path();
+    if (!std::filesystem::exists(dir)) {
+        std::filesystem::create_directories(dir);
+    }
+    // Write the image to a file
     stbi_write_png(filename.c_str(), width, height, 3, data.data(), width * 3);
 }
 
