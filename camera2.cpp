@@ -55,6 +55,7 @@ Camera2::Camera2(glm::vec3 camera_position, glm::vec3 camera_target)
     glm::vec3 world_up = glm::vec3(0, 1, 0);
     right = glm::normalize(glm::cross(direction, world_up));
     up = glm::normalize(glm::cross(right, direction));
+    forward = glm::normalize(glm::cross(up, right));
 }
 
 std::vector<std::vector<Ray>> Camera2::generate_rays_for_frame() {

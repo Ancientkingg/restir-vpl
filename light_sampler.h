@@ -72,6 +72,16 @@ public:
         lights = lights_vec.data();
     }
 
+    void reset() {
+        // Reset the reservoirs
+        for (int y = 0; y < y_pixels; y++) {
+            for (int x = 0; x < x_pixels; x++) {
+                current_reservoirs.at(y).at(x).reset();
+                prev_reservoirs.at(y).at(x).reset();
+            }
+        }
+    }
+
     std::vector<std::vector<sampler_result> > sample_lights(std::vector<std::vector<hit_info> > hit_infos) {
         // Swap the current and previous reservoirs
         next_frame();

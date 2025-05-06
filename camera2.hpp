@@ -33,6 +33,7 @@ public:
     glm::vec3 direction;
     glm::vec3 right;
     glm::vec3 up;
+    glm::vec3 forward;
 
     /* Public Camera Parameters Here */
     const float aspect_ratio = 16.0 / 9; // Ratio of image width over height

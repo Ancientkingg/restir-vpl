@@ -65,7 +65,7 @@ void render(Camera2 &cam, World &world, int framecount) {
     }
 }
 
-void render_live(Camera2 &cam, World &world) {
+void render_live(Camera2 &cam, World &world, bool progressive = true) {
     auto bvh = world.bvh();
     auto lights = world.get_triangular_lights();
     auto mats = world.get_materials();
@@ -87,7 +87,13 @@ void render_live(Camera2 &cam, World &world) {
 
     // --- Your rendering loop (or however you fill `pixels`) ---
     bool running = true;
+    bool camera_moved = false;
     SDL_Event e;
+
+    std::vector<std::vector<glm::vec3> > accumulated_colors =
+            std::vector(cam.image_height,
+                        std::vector<glm::vec3>(cam.image_width, glm::vec3(0.0f)));
+    int frame = 0;
 
     while (running) {
         // 3) Handle events
@@ -95,6 +101,33 @@ void render_live(Camera2 &cam, World &world) {
             if (e.type == SDL_QUIT) {
                 running = false;
             }
+
+            if (e.type == SDL_KEYDOWN) {
+                // Change camera direction
+                if (e.key.keysym.sym == SDLK_UP) {
+                    cam.position += cam.up * 0.1f;
+                } else if (e.key.keysym.sym == SDLK_DOWN) {
+                    cam.position -= cam.up * 0.1f;
+                } else if (e.key.keysym.sym == SDLK_LEFT) {
+                    cam.position -= cam.right * 0.1f;
+                } else if (e.key.keysym.sym == SDLK_RIGHT) {
+                    cam.position += cam.right * 0.1f;
+                } else if (e.key.keysym.sym == SDLK_w) {
+                    cam.position += cam.forward * 0.1f;
+                } else if (e.key.keysym.sym == SDLK_s) {
+                    cam.position -= cam.forward * 0.1f;
+                }
+
+                camera_moved = true;
+            }
+        }
+
+        if (camera_moved) {
+            light_sampler.reset();
+            accumulated_colors =
+                    std::vector(cam.image_height,
+                                std::vector<glm::vec3>(cam.image_width, glm::vec3(0.0f)));
+            camera_moved = false;
         }
 
         auto render_start = std::chrono::high_resolution_clock::now();
@@ -124,12 +157,25 @@ void render_live(Camera2 &cam, World &world) {
 
         auto render_stop = std::chrono::high_resolution_clock::now();
 
-        std::clog << "Rendering frame took ";
+        std::clog << "Rendering frame " << frame << " took ";
         std::clog << std::chrono::duration_cast<std::chrono::milliseconds>(render_stop - render_start).count();
         std::clog << " milliseconds" << std::endl;
 
+        // update the accumulated colors
+        for (int j = 0; j < cam.image_height; j++) {
+            for (int i = 0; i < cam.image_width; i++) {
+                accumulated_colors[j][i] = ((accumulated_colors[j][i] * static_cast<float>(frame)) + colors[j][i]) /
+                                           static_cast<float>(frame + 1);
+            }
+        }
+        frame++;
+
         /// output frame
-        update_and_present(renderer, texture, colors);
+        if (progressive) {
+            update_and_present(renderer, texture, accumulated_colors);
+        } else {
+            update_and_present(renderer, texture, colors);
+        }
     }
     // Clean up
     SDL_DestroyTexture(texture);
