@@ -193,7 +193,7 @@ int main() {
     world.add_obj("objects/whiteMonkey.obj", false);
     world.add_obj("objects/blueMonkey_rotated.obj", false);
 
-    world.add_obj("objects/multiple_color_lights.obj", true);
+    world.add_obj("objects/bigCubeLight.obj", true);
 
 
     tinybvh::bvhvec4 transpose =
