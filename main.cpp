@@ -116,6 +116,8 @@ void render_live(Camera2 &cam, World &world, bool progressive = true) {
                     cam.position += cam.forward * 0.1f;
                 } else if (e.key.keysym.sym == SDLK_s) {
                     cam.position -= cam.forward * 0.1f;
+                } else if (e.key.keysym.sym == SDLK_p) {
+                    progressive = !progressive;
                 }
 
                 camera_moved = true;
