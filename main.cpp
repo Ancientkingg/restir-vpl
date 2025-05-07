@@ -114,6 +114,8 @@ void render_live(Camera2 &cam, World &world, bool progressive = true) {
     KeyState keys;
     SDL_SetRelativeMouseMode(SDL_TRUE);
 
+    std::clog << "=======================================================" << "\r\n";
+
     while (running) {
         // 3) Handle events
         while (SDL_PollEvent(&e)) {
@@ -178,7 +180,7 @@ void render_live(Camera2 &cam, World &world, bool progressive = true) {
         }
 
         if (camera_moved) {
-            std::clog << "Camera moved, resetting light sampler" << std::endl;
+            //std::clog << "Camera moved, resetting light sampler" << std::endl;
             light_sampler.reset();
             accumulated_colors =
                     std::vector(cam.image_height,
@@ -216,7 +218,7 @@ void render_live(Camera2 &cam, World &world, bool progressive = true) {
 
         std::clog << "Rendering frame " << frame << " took ";
         std::clog << std::chrono::duration_cast<std::chrono::milliseconds>(render_stop - render_start).count();
-        std::clog << " milliseconds" << std::endl;
+        std::clog << " milliseconds" << "\r";
 
         // update the accumulated colors
         for (int j = 0; j < cam.image_height; j++) {
