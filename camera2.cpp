@@ -69,6 +69,17 @@ void Camera2::rotate(float angle, glm::vec3 axis) {
     forward = glm::normalize(glm::cross(up, right));
 }
 
+void Camera2::updateDirection() {
+    glm::vec3 dir;
+    dir.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    dir.y = sin(glm::radians(pitch));
+    dir.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    direction = glm::normalize(dir);
+
+    right = glm::normalize(glm::cross(direction, glm::vec3(0.0f, 1.0f, 0.0f))); // world up
+    up = glm::normalize(glm::cross(right, direction));
+    forward = direction;
+}
 
 std::vector<std::vector<Ray>> Camera2::generate_rays_for_frame() {
     std::vector<std::vector<Ray>> rays(image_height, std::vector<Ray>(image_width));

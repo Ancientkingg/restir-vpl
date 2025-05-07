@@ -16,7 +16,7 @@ link_directories(${GLM})
 
 add_executable(RayTracerInOneWeekend 
         
-        
+        "main.cpp"
         "color.h"
         "ray.h"
         "rtweekend.h"

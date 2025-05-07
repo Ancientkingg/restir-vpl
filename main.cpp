@@ -65,6 +65,21 @@ void render(Camera2 &cam, World &world, int framecount) {
     }
 }
 
+const float moveSpeed = 0.1f;
+const float mouseSensitivity = 0.02f;
+
+int mouseDeltaX = 0;
+int mouseDeltaY = 0;
+
+struct KeyState {
+    bool w = false;
+    bool a = false;
+    bool s = false;
+    bool d = false;
+    bool space = false;
+    bool shift = false;
+};
+
 void render_live(Camera2 &cam, World &world, bool progressive = true) {
     auto bvh = world.bvh();
     auto lights = world.get_triangular_lights();
@@ -95,6 +110,10 @@ void render_live(Camera2 &cam, World &world, bool progressive = true) {
                         std::vector<glm::vec3>(cam.image_width, glm::vec3(0.0f)));
     int frame = 0;
 
+    // Handle key input such as combos
+    KeyState keys;
+    SDL_SetRelativeMouseMode(SDL_TRUE);
+
     while (running) {
         // 3) Handle events
         while (SDL_PollEvent(&e)) {
@@ -102,35 +121,60 @@ void render_live(Camera2 &cam, World &world, bool progressive = true) {
                 running = false;
             }
 
-            if (e.type == SDL_KEYDOWN) {
-                // Change camera direction
-                if (e.key.keysym.sym == SDLK_UP) {
-                    cam.position += cam.up * 0.1f;
-                } else if (e.key.keysym.sym == SDLK_DOWN) {
-                    cam.position -= cam.up * 0.1f;
-                } else if (e.key.keysym.sym == SDLK_LEFT) {
-                    cam.position -= cam.right * 0.1f;
-                } else if (e.key.keysym.sym == SDLK_RIGHT) {
-                    cam.position += cam.right * 0.1f;
-                } else if (e.key.keysym.sym == SDLK_w) {
-                    cam.position += cam.forward * 0.1f;
-                } else if (e.key.keysym.sym == SDLK_s) {
-                    cam.position -= cam.forward * 0.1f;
-                } // rotation
-                else if (e.key.keysym.sym == SDLK_a) {
-                    cam.rotate(0.1f, cam.up);
-                } else if (e.key.keysym.sym == SDLK_d) {
-                    cam.rotate(-0.1f, cam.up);
-                } else if (e.key.keysym.sym == SDLK_q) {
-                    cam.rotate(0.1f, cam.right);
-                } else if (e.key.keysym.sym == SDLK_e) {
-                    cam.rotate(-0.1f, cam.right);
-                } // toggle progressive rendering
-                else if (e.key.keysym.sym == SDLK_p) {
-                    progressive = !progressive;
+            if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) {
+                const bool isDown = (e.type == SDL_KEYDOWN);
+                SDL_Keycode key = e.key.keysym.sym;
+
+                switch (key) {
+				case SDLK_ESCAPE:
+					running = false;
+					break;
+                case SDLK_w: keys.w = isDown; break;
+                case SDLK_a: keys.a = isDown; break;
+                case SDLK_s: keys.s = isDown; break;
+                case SDLK_d: keys.d = isDown; break;
+                case SDLK_SPACE: keys.space = isDown; break;
+                case SDLK_LSHIFT: keys.shift = isDown; break;
+                case SDLK_p:
+                    if (isDown) progressive = !progressive;
+                    break;
+                default: break;
                 }
-                camera_moved = true;
             }
+
+            if (e.type == SDL_MOUSEMOTION) {
+                mouseDeltaX += e.motion.xrel;
+                mouseDeltaY += e.motion.yrel;
+            }
+        }
+
+        // Apply camera movement
+        glm::vec3 movement(0.0f);
+        if (keys.w) movement += cam.forward;
+        if (keys.s) movement -= cam.forward;
+        if (keys.a) movement -= cam.right;
+        if (keys.d) movement += cam.right;
+        if (keys.space) movement += cam.up;
+        if (keys.shift) movement -= cam.up;
+
+        if (glm::length(movement) > 0.0f) {
+            cam.position += glm::normalize(movement) * moveSpeed;
+            camera_moved = true;
+        }
+
+        // Apply camera rotation from mouse
+        if (mouseDeltaX != 0 || mouseDeltaY != 0) {
+            cam.yaw += mouseDeltaX * mouseSensitivity;
+            cam.pitch -= mouseDeltaY * mouseSensitivity;
+
+            // Clamp pitch to prevent flipping
+            cam.pitch = glm::clamp(cam.pitch, -89.0f, 89.0f);
+
+            cam.updateDirection(); // Recalculate vectors
+            camera_moved = true;
+
+            mouseDeltaX = 0;
+            mouseDeltaY = 0;
         }
 
         if (camera_moved) {
