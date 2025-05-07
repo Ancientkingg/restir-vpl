@@ -140,13 +140,14 @@ bool World::is_occluded(const Ray &ray, float dist) {
 
 std::vector<triangular_light> World::get_triangular_lights(){
 	std::vector<triangular_light> out;
+	float  max_pdf = -1;
 
 	int face_id = 0;
 	for(int i = 0; i < lights.size(); i += 3){
 		glm::vec3 c = glm::vec3(
-			light_materials[light_material_ids[face_id]].emission[0],
-			light_materials[light_material_ids[face_id]].emission[1],
-			light_materials[light_material_ids[face_id]].emission[2]
+			light_materials[light_material_ids[face_id]].ambient[0],
+			light_materials[light_material_ids[face_id]].ambient[1],
+			light_materials[light_material_ids[face_id]].ambient[2]
 		);
 		triangular_light tl{
 			glm::vec3(lights[i+0][0],lights[i+0][1],lights[i+0][2]),
@@ -155,9 +156,14 @@ std::vector<triangular_light> World::get_triangular_lights(){
 			c,
 			(c[0] + c[1] + c[2]) / 3
 		};
+		tl.pdf = 1.0 / tl.area();
 		out.push_back(tl);
+
+		max_pdf = tl.pdf > max_pdf ? tl.pdf : max_pdf;
 		face_id++;
 	}
+
+	for(triangular_light &tl : out) tl.pdf = tl.pdf / max_pdf;	
 	return out;
 }
 
@@ -168,7 +174,7 @@ std::vector<Material*> World::get_materials(){
 			return m.name == mat.name;
 		});
 		if(is_light){
-			Emissive * end_mat = new Emissive({mat.emission[0], mat.emission[1], mat.emission[2]});
+			Emissive * end_mat = new Emissive({mat.ambient[0], mat.ambient[1], mat.ambient[2]});
 			out.push_back(end_mat);
 		}
 		else{

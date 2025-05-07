@@ -16,6 +16,7 @@ public:
     glm::vec3 normal;    // Normal vector of the triangle
     glm::vec3 c;     // Color of the light
     float intensity; // Intensity of the light
+    float pdf;
 
     triangular_light (const glm::vec3 v0, const glm::vec3 v1, const glm::vec3 v2, const glm::vec3 c, const float intensity)
         : v0(v0), v1(v1), v2(v2), c(c), intensity(intensity) {
@@ -23,6 +24,7 @@ public:
         const glm::vec3 edge1 = v1 - v0;
         const glm::vec3 edge2 = v2 - v0;
         normal = glm::normalize(cross(edge1, edge2));
+        pdf = 1;
     }
 
 

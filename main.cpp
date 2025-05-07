@@ -152,7 +152,7 @@ void render_live(Camera2 &cam, World &world, bool progressive = true) {
                 hit_info hit = hit_infos[j][i];
                 sampler_result sample = light_samples_per_ray[j][i];
 
-                float pdf = 1.0 / sample.light.area();
+                float pdf = sample.light.pdf;
                 glm::vec3 color = shade(hit, sample, pdf, world);
                 colors[j][i] += color;
             }
@@ -190,10 +190,12 @@ void render_live(Camera2 &cam, World &world, bool progressive = true) {
 int main() {
     auto loading_start = std::chrono::high_resolution_clock::now();
     World world;
-    world.add_obj("objects/whiteMonkey.obj", false);
-    world.add_obj("objects/blueMonkey_rotated.obj", false);
-
-    world.add_obj("objects/bigCubeLight.obj", true);
+//     world.add_obj("objects/whiteMonkey.obj", false);
+//     world.add_obj("objects/blueMonkey_rotated.obj", false);
+// 
+//     world.add_obj("objects/bigCubeLight.obj", true);
+    world.add_obj("objects/bistro_normal.obj", false);
+    world.add_obj("objects/bistro_lights.obj", true);
 
 
     tinybvh::bvhvec4 transpose =
