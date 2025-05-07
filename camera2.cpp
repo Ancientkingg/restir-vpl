@@ -43,12 +43,6 @@ glm::vec3 shade(const hit_info& hit, const sampler_result& sample, float pdf, Wo
 
     // Final contribution
     glm::vec3 out = (brdf * Li * cos_theta) / pdf;
-
-    // print out color
-	std::clog << "Color: " << out.x << ", " << out.y << ", " << out.z << "\n";
-    // print sample.light.intensity
-
-
     return out;
 }
 
