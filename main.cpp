@@ -116,7 +116,17 @@ void render_live(Camera2 &cam, World &world, bool progressive = true) {
                     cam.position += cam.forward * 0.1f;
                 } else if (e.key.keysym.sym == SDLK_s) {
                     cam.position -= cam.forward * 0.1f;
-                } else if (e.key.keysym.sym == SDLK_p) {
+                } // rotation
+                else if (e.key.keysym.sym == SDLK_a) {
+                    cam.rotate(0.1f, cam.up);
+                } else if (e.key.keysym.sym == SDLK_d) {
+                    cam.rotate(-0.1f, cam.up);
+                } else if (e.key.keysym.sym == SDLK_q) {
+                    cam.rotate(0.1f, cam.right);
+                } else if (e.key.keysym.sym == SDLK_e) {
+                    cam.rotate(-0.1f, cam.right);
+                } // toggle progressive rendering
+                else if (e.key.keysym.sym == SDLK_p) {
                     progressive = !progressive;
                 }
                 camera_moved = true;

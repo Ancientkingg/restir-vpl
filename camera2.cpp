@@ -1,7 +1,7 @@
 #include "camera2.hpp"
 
 #include <glm/glm.hpp>
-#include <iostream>
+#include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 
 #include "ray.h"
@@ -57,6 +57,18 @@ Camera2::Camera2(glm::vec3 camera_position, glm::vec3 camera_target)
     up = glm::normalize(glm::cross(right, direction));
     forward = glm::normalize(glm::cross(up, right));
 }
+
+void Camera2::rotate(float angle, glm::vec3 axis) {
+    // Change the direction of the camera and recalculate the right up and forward vectors
+    // Create rotation matrix for the direction vector, around the axis, starting at camera pos
+    glm::mat4 rotation_matrix = glm::rotate(glm::mat4(1.0f), angle, axis);
+    glm::vec4 new_direction = rotation_matrix * glm::vec4(direction, 1.0f);
+    direction = glm::normalize(glm::vec3(new_direction));
+    right = glm::normalize(glm::cross(direction, up));
+    up = glm::normalize(glm::cross(right, direction));
+    forward = glm::normalize(glm::cross(up, right));
+}
+
 
 std::vector<std::vector<Ray>> Camera2::generate_rays_for_frame() {
     std::vector<std::vector<Ray>> rays(image_height, std::vector<Ray>(image_width));
