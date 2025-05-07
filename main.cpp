@@ -78,6 +78,7 @@ struct KeyState {
     bool d = false;
     bool space = false;
     bool shift = false;
+    bool ctrl = false;
 };
 
 void render_live(Camera2 &cam, World &world, bool progressive = true) {
@@ -136,7 +137,8 @@ void render_live(Camera2 &cam, World &world, bool progressive = true) {
                 case SDLK_s: keys.s = isDown; break;
                 case SDLK_d: keys.d = isDown; break;
                 case SDLK_SPACE: keys.space = isDown; break;
-                case SDLK_LSHIFT: keys.shift = isDown; break;
+                case SDLK_LCTRL: keys.ctrl = isDown; break;
+				case SDLK_LSHIFT: keys.shift = isDown; break;
                 case SDLK_p:
                     if (isDown) progressive = !progressive;
                     break;
@@ -157,7 +159,9 @@ void render_live(Camera2 &cam, World &world, bool progressive = true) {
         if (keys.a) movement -= cam.right;
         if (keys.d) movement += cam.right;
         if (keys.space) movement += cam.up;
-        if (keys.shift) movement -= cam.up;
+        if (keys.ctrl) movement -= cam.up;
+
+		if (keys.shift) movement *= 3.0f; // Speed up when shift is pressed
 
         if (glm::length(movement) > 0.0f) {
             cam.position += glm::normalize(movement) * moveSpeed;
