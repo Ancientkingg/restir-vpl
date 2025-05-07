@@ -35,6 +35,8 @@ public:
     glm::vec3 up;
     glm::vec3 forward;
 
+    void rotate(float angle, glm::vec3 axis);
+
     /* Public Camera Parameters Here */
     const float aspect_ratio = 16.0 / 9; // Ratio of image width over height
     const float focal_length = 1.0;
