@@ -39,7 +39,7 @@ glm::vec3 shade(const hit_info& hit, const sampler_result& sample, float pdf, Wo
     glm::vec3 brdf = hit.mat_ptr->evaluate(hit, sample.light_dir);
 
     // Evaluate light radiance from the light sample
-    float Li = sample.light.intensity;
+    glm::vec3 Li = sample.light.intensity * sample.light.c;
 
     // Final contribution
     return (brdf * Li * cos_theta) / pdf;
