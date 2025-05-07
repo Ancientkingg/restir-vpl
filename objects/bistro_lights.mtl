@@ -1,0 +1,211 @@
+# Blender 3.6.2 MTL File: 'None'
+# www.blender.org
+
+newmtl Banner_Metal
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Banner_Metal_BaseColor.dds
+map_Ks /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Banner_Metal_Specular.dds
+map_d /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Banner_Metal_BaseColor.dds
+map_Bump -bm 1.000000 /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Banner_Metal_Normal.dds
+
+newmtl Emissive_StreetLight
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ni 1.450000
+illum 3
+map_Kd /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Emissive_StreetLight_BaseColor.dds
+map_Ks /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Emissive_StreetLight_Specular.dds
+map_Ke /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Emissive_StreetLight_Emissive.dds
+map_d /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Emissive_StreetLight_BaseColor.dds
+map_Bump -bm 1.000000 /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Emissive_StreetLight_Normal.dds
+
+newmtl LanternEmissive
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/LanternEmissive_BaseColor.dds
+map_Ks /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/LanternEmissive_Specular.dds
+map_d /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/LanternEmissive_BaseColor.dds
+map_Bump -bm 1.000000 /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/LanternEmissive_Normal.dds
+
+newmtl MASTER_Bistro_Main_Door
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/MASTER_Bistro_Main_Door_BaseColor.dds
+map_Ks /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/MASTER_Bistro_Main_Door_Specular.dds
+map_d /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/MASTER_Bistro_Main_Door_BaseColor.dds
+map_Bump -bm 1.000000 /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/MASTER_Bistro_Main_Door_Normal.dds
+
+newmtl Paris_StringLights_01_Blue_Color_Emissive
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ni 1.450000
+illum 3
+map_Kd /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Blue_Color_Emissive_BaseColor.dds
+map_Ks /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Blue_Color_Emissive_Specular.dds
+map_Ke /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Blue_Color_Emissive_Emissive.dds
+map_d /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Blue_Color_Emissive_BaseColor.dds
+map_Bump -bm 1.000000 /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Blue_Color_Emissive_Normal.dds
+
+newmtl Paris_StringLights_01_Green_Color_Emissive
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ni 1.450000
+illum 3
+map_Kd /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Green_Color_Emissive_BaseColor.dds
+map_Ks /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Green_Color_Emissive_Specular.dds
+map_Ke /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Green_Color_Emissive_Emissive.dds
+map_d /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Green_Color_Emissive_BaseColor.dds
+map_Bump -bm 1.000000 /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Green_Color_Emissive_Normal.dds
+
+newmtl Paris_StringLights_01_Orange_Color_Emissive
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ni 1.450000
+illum 3
+map_Kd /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Orange_Color_Emissive_BaseColor.dds
+map_Ks /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Orange_Color_Emissive_Specular.dds
+map_Ke /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Orange_Color_Emissive_Emissive.dds
+map_d /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Orange_Color_Emissive_BaseColor.dds
+map_Bump -bm 1.000000 /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Orange_Color_Emissive_Normal.dds
+
+newmtl Paris_StringLights_01_Pink_Color_Emissive
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ni 1.450000
+illum 3
+map_Kd /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Pink_Color_Emissive_BaseColor.dds
+map_Ks /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Pink_Color_Emissive_Specular.dds
+map_Ke /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Pink_Color_Emissive_Emissive.dds
+map_d /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Pink_Color_Emissive_BaseColor.dds
+map_Bump -bm 1.000000 /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Pink_Color_Emissive_Normal.dds
+
+newmtl Paris_StringLights_01_Red_Color_Emissive
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ni 1.450000
+illum 3
+map_Kd /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Red_Color_Emissive_BaseColor.dds
+map_Ks /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Red_Color_Emissive_Specular.dds
+map_Ke /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Red_Color_Emissive_Emissive.dds
+map_d /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Red_Color_Emissive_BaseColor.dds
+map_Bump -bm 1.000000 /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_Red_Color_Emissive_Normal.dds
+
+newmtl Paris_StringLights_01_White_Color
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_White_Color_BaseColor.dds
+map_Ks /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_White_Color_Specular.dds
+map_d /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_White_Color_BaseColor.dds
+map_Bump -bm 1.000000 /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_White_Color_Normal.dds
+
+newmtl Paris_StringLights_01_White_Color_Emissive
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ni 1.450000
+illum 3
+map_Kd /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_White_Color_Emissive_BaseColor.dds
+map_Ks /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_White_Color_Emissive_Specular.dds
+map_Ke /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_White_Color_Emissive_Emissive.dds
+map_d /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_White_Color_Emissive_BaseColor.dds
+map_Bump -bm 1.000000 /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Paris_StringLights_01_White_Color_Emissive_Normal.dds
+
+newmtl Spotlight_Emissive
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Spotlight_Emissive_BaseColor.dds
+map_Ks /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Spotlight_Emissive_Specular.dds
+map_d /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Spotlight_Emissive_BaseColor.dds
+map_Bump -bm 1.000000 /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Spotlight_Emissive_Normal.dds
+
+newmtl Spotlight_Glass_Emissive
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ni 1.450000
+illum 3
+map_Kd /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Spotlight_Glass_Emissive_BaseColor.dds
+map_Ks /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Spotlight_Glass_Emissive_Specular.dds
+map_Ke /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Spotlight_Glass_Emissive_Emissive.dds
+map_d /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Spotlight_Glass_Emissive_BaseColor.dds
+map_Bump -bm 1.000000 /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Spotlight_Glass_Emissive_Normal.dds
+
+newmtl Spotlight_Main
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Spotlight_Main_BaseColor.dds
+map_Ks /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Spotlight_Main_Specular.dds
+map_d /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Spotlight_Main_BaseColor.dds
+map_Bump -bm 1.000000 /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Spotlight_Main_Normal.dds
+
+newmtl Streetlight_Chains
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Streetlight_Chains_BaseColor.dds
+map_Ks /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Streetlight_Chains_Specular.dds
+map_d /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Streetlight_Chains_BaseColor.dds
+map_Bump -bm 1.000000 /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Streetlight_Chains_Normal.dds
+
+newmtl Streetlight_Metal
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Streetlight_Metal_BaseColor.dds
+map_Ks /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Streetlight_Metal_Specular.dds
+map_d /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Streetlight_Metal_BaseColor.dds
+map_Bump -bm 1.000000 /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Streetlight_Metal_Normal.dds
+
+newmtl Streetlight_Support_Bulb
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Streetlight_Support_Bulb_BaseColor.dds
+map_Ks /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Streetlight_Support_Bulb_Specular.dds
+map_d /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Streetlight_Support_Bulb_BaseColor.dds
+map_Bump -bm 1.000000 /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Streetlight_Support_Bulb_Normal.dds
+
+newmtl Stringlights
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Stringlights_BaseColor.dds
+map_Ks /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Stringlights_Specular.dds
+map_d /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Stringlights_BaseColor.dds
+map_Bump -bm 1.000000 /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Stringlights_Normal.dds
+
+newmtl Trashcan
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Trashcan_BaseColor.dds
+map_Ks /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Trashcan_Specular.dds
+map_d /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Trashcan_BaseColor.dds
+map_Bump -bm 1.000000 /Users/rgardishyan/Downloads/Bistro_v5_2/Textures/Trashcan_Normal.dds
