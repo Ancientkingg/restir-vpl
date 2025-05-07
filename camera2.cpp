@@ -42,7 +42,14 @@ glm::vec3 shade(const hit_info& hit, const sampler_result& sample, float pdf, Wo
     glm::vec3 Li = sample.light.intensity * sample.light.c;
 
     // Final contribution
-    return (brdf * Li * cos_theta) / pdf;
+    glm::vec3 out = (brdf * Li * cos_theta) / pdf;
+
+    // print out color
+	std::clog << "Color: " << out.x << ", " << out.y << ", " << out.z << "\n";
+    // print sample.light.intensity
+
+
+    return out;
 }
 
 // TODO: Cache ray hits (so we dont compute the same thing) when camera does not move

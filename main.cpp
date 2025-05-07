@@ -65,7 +65,7 @@ void render(Camera2 &cam, World &world, int framecount) {
     }
 }
 
-const float moveSpeed = 0.1f;
+const float moveSpeed = 0.5f;
 const float mouseSensitivity = 0.02f;
 
 int mouseDeltaX = 0;
@@ -161,7 +161,7 @@ void render_live(Camera2 &cam, World &world, bool progressive = true) {
         if (keys.space) movement += cam.up;
         if (keys.ctrl) movement -= cam.up;
 
-		if (keys.shift) movement *= 3.0f; // Speed up when shift is pressed
+		if (keys.shift) movement *= 7.0f; // Speed up when shift is pressed
 
         if (glm::length(movement) > 0.0f) {
             cam.position += glm::normalize(movement) * moveSpeed;
