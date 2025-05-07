@@ -16,7 +16,7 @@ link_directories(${GLM})
 
 add_executable(RayTracerInOneWeekend 
         
-        "main.cpp"
+        
         "color.h"
         "ray.h"
         "rtweekend.h"
@@ -39,6 +39,7 @@ file(COPY ${CMAKE_SOURCE_DIR}/objects DESTINATION ${CMAKE_BINARY_DIR})
 target_include_directories(RayTracerInOneWeekend PUBLIC ${GLM})
 
 target_link_libraries(RayTracerInOneWeekend PUBLIC OpenMP::OpenMP_CXX ${SDL2_LIBRARIES})
+target_link_libraries(RayTracerInOneWeekend PRIVATE SDL2::SDL2 SDL2::SDL2main)
 
 message(STATUS "Host processor: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
 # Determine if we're building for ARM

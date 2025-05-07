@@ -41,9 +41,9 @@ void render(Camera2 &cam, World &world, int framecount) {
 
         // loop over hit_infos and light_samples_per_ray at the same time and feed them into the shade 
 #pragma omp parallel for
-        for (size_t j = 0; j < hit_infos.size(); j++) {
+        for (int j = 0; j < hit_infos.size(); j++) {
             if (hit_infos[j].empty()) continue; // No hits for this
-            for (size_t i = 0; i < hit_infos[0].size(); i++) {
+            for (int i = 0; i < hit_infos[0].size(); i++) {
                 hit_info hit = hit_infos[j][i];
                 sampler_result sample = light_samples_per_ray[j][i];
 
@@ -146,9 +146,9 @@ void render_live(Camera2 &cam, World &world, bool progressive = true) {
 
         // loop over hit_infos and light_samples_per_ray at the same time and feed them into the shade
 #pragma omp parallel for
-        for (size_t j = 0; j < hit_infos.size(); j++) {
+        for (int j = 0; j < hit_infos.size(); j++) {
             if (hit_infos[j].empty()) continue; // No hits for this
-            for (size_t i = 0; i < hit_infos[0].size(); i++) {
+            for (int i = 0; i < hit_infos[0].size(); i++) {
                 hit_info hit = hit_infos[j][i];
                 sampler_result sample = light_samples_per_ray[j][i];
 
@@ -187,7 +187,7 @@ void render_live(Camera2 &cam, World &world, bool progressive = true) {
     shutdown_sdl();
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     auto loading_start = std::chrono::high_resolution_clock::now();
     World world;
 //     world.add_obj("objects/whiteMonkey.obj", false);
@@ -216,4 +216,6 @@ int main() {
     Camera2 cam2;
     // render(cam2, world, 20);
     render_live(cam2, world);
+
+    return 0;
 }
