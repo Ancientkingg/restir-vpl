@@ -1,6 +1,10 @@
 #pragma once
 
 #include <glm/vec3.hpp>
+#include <vector>
+#include <array>
+#include <span>
+#include <random>
 
 #include "triangular_light.hpp"
 #include "ray.hpp"
@@ -27,7 +31,7 @@ public:
     void reset();
 };
 
-inline Reservoir merge_reservoirs(const std::vector<Reservoir>& reservoirs);
+inline Reservoir merge_reservoirs(std::span<const Reservoir> reservoirs);
 
 class RestirLightSampler {
 public:
@@ -36,7 +40,7 @@ public:
 
     void reset();
 
-    std::vector<std::vector<SamplerResult> > sample_lights(std::vector<std::vector<HitInfo> > hit_infos);
+    std::vector<std::vector<SamplerResult> > sample_lights(std::vector<HitInfo> hit_infos);
 
     void set_initial_sample(const int x, const int y, const HitInfo& hi);
 
@@ -54,12 +58,14 @@ private:
     int m = 2;
     int x_pixels;
     int y_pixels;
-    std::vector<std::vector<Reservoir> > prev_reservoirs;
-    std::vector<std::vector<Reservoir> > current_reservoirs;
+    std::vector<Reservoir> prev_reservoirs;
+    std::vector<Reservoir> current_reservoirs;
     TriangularLight* lights;
     int num_lights;
 
     [[nodiscard]] TriangularLight pick_light() const;
+
+    [[nodiscard]] int sampleLightIndex() const;
 
     [[nodiscard]] float get_light_weight(const TriangularLight& light, const glm::vec3 light_point,
         const HitInfo& hi) const;

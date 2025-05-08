@@ -22,27 +22,26 @@ std::vector<std::vector<glm::vec3>> raytrace(ShadingMode render_mode, RenderInfo
 
     // loop over hit_infos and light_samples_per_ray at the same time and feed them into the shade
 #pragma omp parallel for
-    for (int j = 0; j < hit_infos.size(); j++) {
-        if (hit_infos[j].empty()) continue; // No hits for this
-        for (int i = 0; i < hit_infos[0].size(); i++) {
-            HitInfo hit = hit_infos[j][i];
-            SamplerResult sample = light_samples_per_ray[j][i];
-
-            float pdf = sample.light.pdf;
-
-            glm::vec3 color;
-            if (render_mode == RENDER_SHADING) {
-                color = shade(hit, sample, pdf, info.world);
-            }
-            else if (render_mode == RENDER_DEBUG) {
-                color = shade_debug(hit, sample, pdf, info.world);
-            }
-            else if (render_mode == RENDER_NORMALS) {
-                color = shade_normal(hit, sample, pdf, info.world);
-            }
-
-            colors[j][i] += color;
+    for (int i = 0; i < hit_infos.size(); i++) {
+        HitInfo hit = hit_infos[i];
+		int j = i / info.cam.image_width;
+		int k = i % info.cam.image_width;
+        SamplerResult sample = light_samples_per_ray[j][k];
+        
+        float pdf = sample.light.pdf;
+        
+        glm::vec3 color;
+        if (render_mode == RENDER_SHADING) {
+            color = shade(hit, sample, pdf, info.world);
         }
+        else if (render_mode == RENDER_DEBUG) {
+            color = shade_debug(hit, sample, pdf, info.world);
+        }
+        else if (render_mode == RENDER_NORMALS) {
+            color = shade_normal(hit, sample, pdf, info.world);
+        }
+
+        colors[j][k] += color;
     }
 
     return colors;
