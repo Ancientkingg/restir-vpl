@@ -81,6 +81,8 @@ struct KeyState {
     bool ctrl = false;
 };
 
+View view = VIEW_SHADING;
+
 void render_live(Camera2 &cam, World &world, bool progressive = true) {
     auto bvh = world.bvh();
     auto lights = world.get_triangular_lights();
@@ -139,6 +141,9 @@ void render_live(Camera2 &cam, World &world, bool progressive = true) {
                 case SDLK_SPACE: keys.space = isDown; break;
                 case SDLK_LCTRL: keys.ctrl = isDown; break;
 				case SDLK_LSHIFT: keys.shift = isDown; break;
+				case SDLK_b: view = VIEW_DEBUG; break;
+				case SDLK_n: view = VIEW_NORMALS; break;
+				case SDLK_v: view = VIEW_SHADING; break;
                 case SDLK_p:
                     if (isDown) progressive = !progressive;
                     break;
@@ -213,7 +218,18 @@ void render_live(Camera2 &cam, World &world, bool progressive = true) {
                 sampler_result sample = light_samples_per_ray[j][i];
 
                 float pdf = sample.light.pdf;
-                glm::vec3 color = shade(hit, sample, pdf, world);
+
+                glm::vec3 color;
+				if (view == VIEW_SHADING) {
+					color = shade(hit, sample, pdf, world);
+				}
+				else if (view == VIEW_DEBUG) {
+					color = shade_debug(hit, sample, pdf, world);
+				}
+				else if (view == VIEW_NORMALS) {
+					color = shade_normal(hit, sample, pdf, world);
+				}
+
                 colors[j][i] += color;
             }
         }
@@ -225,6 +241,7 @@ void render_live(Camera2 &cam, World &world, bool progressive = true) {
         std::clog << "Frame " << frame
             << " | Time: " << duration_ms << " ms"
             << " | Camera: (" << cam.position.x << ", " << cam.position.y << ", " << cam.position.z << ")"
+			<< " | View: " << ((view == VIEW_SHADING) ? "Shading" : (view == VIEW_DEBUG) ? "Debug" : "Normals")
             << "         \r" << std::flush;
 
         // update the accumulated colors

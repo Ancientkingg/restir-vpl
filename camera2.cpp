@@ -10,7 +10,9 @@
 #include "light_sampler.h"
 #include "world.hpp"
 
-#define DEBUG glm::vec3(1.0f,0.0f,0.0f)
+#define RED glm::vec3(1.0f,0.0f,0.0f)
+#define GREEN glm::vec3(0.0f,1.0f,0.0f)
+#define BLUE glm::vec3(0.0f,0.0f,1.0f)
 
 tinybvh::Ray toBVHRay(const Ray& r) {
     return tinybvh::Ray(toBVHVec(r.origin()), toBVHVec(r.direction()));
@@ -25,6 +27,22 @@ glm::vec3 sky_color(const glm::vec3& direction) {
     glm::vec3 top = glm::vec3(0.5f, 0.7f, 1.0f);    // Sky blue
     glm::vec3 bottom = glm::vec3(1.0f);            // Horizon white
     return (1.0f - t) * bottom + t * top;
+}
+
+glm::vec3 shade_normal(const hit_info& hit, const sampler_result& sample, float pdf, World& scene) {
+    return hit.normal;
+}
+
+glm::vec3 shade_debug(const hit_info& hit, const sampler_result& sample, float pdf, World& scene) {
+    return sample.light_dir;
+ //   float cos_theta = glm::dot(hit.normal, sample.light_dir);
+
+	//if (cos_theta < 0.0f) {
+	//	return glm::vec3(-cos_theta, 0.0f, 0.0f); // Red
+	//}
+	//else {
+	//	return glm::vec3(0.0f, cos_theta, 0.0f); // Green
+	//}
 }
 
 glm::vec3 shade(const hit_info& hit, const sampler_result& sample, float pdf, World& scene) {
@@ -45,7 +63,7 @@ glm::vec3 shade(const hit_info& hit, const sampler_result& sample, float pdf, Wo
     if (cos_theta <= 0.0f || pdf <= 0.0f) {
         // Still apply ambient sky light even if direct light is not contributing
         return ambient * 0.05f;
-    }
+	}
 
     glm::vec3 I = hit.r.at(hit.t);
     glm::vec3 L = sample.light_dir;
