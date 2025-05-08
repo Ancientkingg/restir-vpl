@@ -34,15 +34,14 @@ glm::vec3 shade_normal(const hit_info& hit, const sampler_result& sample, float 
 }
 
 glm::vec3 shade_debug(const hit_info& hit, const sampler_result& sample, float pdf, World& scene) {
-    return sample.light_dir;
- //   float cos_theta = glm::dot(hit.normal, sample.light_dir);
+    float x = sample.light_dir.y;
 
-	//if (cos_theta < 0.0f) {
-	//	return glm::vec3(-cos_theta, 0.0f, 0.0f); // Red
-	//}
-	//else {
-	//	return glm::vec3(0.0f, cos_theta, 0.0f); // Green
-	//}
+	if (x < 0.0f) {
+		return glm::vec3(-x, 0.0f, 0.0f); // Red
+	}
+	else {
+		return glm::vec3(0.0f, x, 0.0f); // Green
+	}
 }
 
 glm::vec3 shade(const hit_info& hit, const sampler_result& sample, float pdf, World& scene) {
@@ -84,15 +83,15 @@ glm::vec3 shade(const hit_info& hit, const sampler_result& sample, float pdf, Wo
     glm::vec3 brdf = hit.mat_ptr->evaluate(hit, sample.light_dir);
 
     // Calculate geometry term for solid angle
-    glm::vec3 light_normal = sample.light.normal;
-    float cos_theta_prime = glm::dot(-sample.light_dir, light_normal);
-    float dist2 = dist * dist;
-    float geometry_term = cos_theta_prime / dist2;
+    //glm::vec3 light_normal = sample.light.normal;
+    //float cos_theta_prime = glm::dot(-sample.light_dir, light_normal);
+    //float dist2 = dist * dist;
+    //float geometry_term = cos_theta_prime / dist2;
 
 
     // Final contribution
-    glm::vec3 direct = (brdf * Li * cos_theta * geometry_term) / pdf;
-    return ambient * direct;
+    glm::vec3 direct = (brdf * Li * cos_theta);
+    return ambient * 0.2f + direct;
 }
 
 // TODO: Cache ray hits (so we dont compute the same thing) when camera does not move

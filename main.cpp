@@ -283,9 +283,13 @@ int main(int argc, char* argv[]) {
             tinybvh::bvhvec4(0.0f, 40.0f, -1.0f, 0.0f);
 
     // Move the mesh 100 units back in the z direction
-    for (int i = 0; i < world.triangle_soup.size(); i++) {
-        world.triangle_soup[i] = transpose + world.triangle_soup[i];
-    }
+    //for (int i = 0; i < world.triangle_soup.size(); i++) {
+    //    world.triangle_soup[i] = transpose + world.triangle_soup[i];
+    //}
+
+    //for (int i = 0; i < world.lights.size(); i++) {
+    //    world.lights[i] = transpose + world.lights[i];
+    //}
 
     auto loading_stop = std::chrono::high_resolution_clock::now();
 
