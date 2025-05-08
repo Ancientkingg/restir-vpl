@@ -185,6 +185,8 @@ void render_live(Camera& cam, World& world, bool progressive) {
     std::clog << "=======================================================" << "\r\n";
 
     while (running) {
+        const Uint8* state = SDL_GetKeyboardState(NULL);
+
         // 3) Handle events
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) {
@@ -205,7 +207,7 @@ void render_live(Camera& cam, World& world, bool progressive) {
                 case SDLK_d: keys.d = isDown; break;
                 case SDLK_SPACE: keys.space = isDown; break;
                 case SDLK_LCTRL: keys.ctrl = isDown; break;
-                case SDLK_LSHIFT: keys.shift = isDown; break;
+				case SDLK_LSHIFT: keys.shift = isDown; break;
                 case SDLK_b: render_mode = RENDER_DEBUG; break;
                 case SDLK_n: render_mode = RENDER_NORMALS; break;
                 case SDLK_v: render_mode = RENDER_SHADING; break;
@@ -231,10 +233,13 @@ void render_live(Camera& cam, World& world, bool progressive) {
         if (keys.space) movement += glm::vec3(0.0f, 1.0f, 0.0f);
         if (keys.ctrl) movement -= glm::vec3(0.0f, 1.0f, 0.0f);
 
-        if (keys.shift) movement *= 7.0f; // Speed up when shift is pressed
+        float sprintSpeed = 1.0f;
+		if (keys.shift) {
+			sprintSpeed *= 6.0f;
+		}
 
         if (glm::length(movement) > 0.0f) {
-            cam.position += glm::normalize(movement) * moveSpeed;
+            cam.position += glm::normalize(movement) * moveSpeed * sprintSpeed;
             camera_moved = true;
         }
 
