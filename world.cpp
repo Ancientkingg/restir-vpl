@@ -206,7 +206,7 @@ bool World::intersect(Ray& ray, hit_info& hit) {
 
 bool World::is_occluded(const Ray &ray, float dist) {
 	tinybvh::Ray r = toBVHRay(ray, dist);
-	return this->bvhInstance.IsOccluded(toBVHRay(ray));
+	return this->bvhInstance.IsOccluded(r);
 }
 
 

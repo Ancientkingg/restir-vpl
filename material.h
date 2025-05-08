@@ -69,6 +69,10 @@ public:
 		return emit->value(hit.uv.x, hit.uv.y, hit.r.at(hit.t));
 	}
 	virtual bool emits_light() const { return true; }
+
+	virtual glm::vec3 albedo(const hit_info& hit) const override {
+		return emit->value(hit.uv.x, hit.uv.y, hit.r.at(hit.t));
+	}
 };
 
 #endif
