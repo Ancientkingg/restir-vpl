@@ -28,6 +28,7 @@ class World
 	World(); // constructor makes an empty world
 
 	void add_obj(std::string file, bool is_lights); // Add an obj, indicate if it is all lights
+	void place_obj(std::string file, bool is_lights, glm::vec3 position);
 
 	bool intersect(Ray& ray, hit_info& hit);
 	bool is_occluded(const Ray &ray, float dist);

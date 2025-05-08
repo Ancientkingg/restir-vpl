@@ -10,6 +10,7 @@
 #include "light_sampler.h"
 #include "world.hpp"
 
+#define DEBUG glm::vec3(1.0f,0.0f,0.0f)
 
 tinybvh::Ray toBVHRay(const Ray& r) {
     return tinybvh::Ray(toBVHVec(r.origin()), toBVHVec(r.direction()));
@@ -30,6 +31,11 @@ glm::vec3 shade(const hit_info& hit, const sampler_result& sample, float pdf, Wo
     // Ray has no intersection
     if (hit.t == 1E30f) {
         return sky_color(hit.r.direction());
+    }
+
+    // If the material emits light, return the emitted radiance directly
+    if (hit.mat_ptr->emits_light()) {
+        return hit.mat_ptr->albedo(hit);
     }
 
     glm::vec3 ambient = sky_color(hit.normal) * hit.mat_ptr->albedo(hit);

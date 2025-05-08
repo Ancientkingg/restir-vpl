@@ -158,8 +158,8 @@ void render_live(Camera2 &cam, World &world, bool progressive = true) {
         if (keys.s) movement -= cam.forward;
         if (keys.a) movement -= cam.right;
         if (keys.d) movement += cam.right;
-        if (keys.space) movement += cam.up;
-        if (keys.ctrl) movement -= cam.up;
+        if (keys.space) movement += glm::vec3(0.0f,1.0f,0.0f);
+        if (keys.ctrl) movement -= glm::vec3(0.0f, 1.0f, 0.0f);
 
 		if (keys.shift) movement *= 7.0f; // Speed up when shift is pressed
 
@@ -220,9 +220,12 @@ void render_live(Camera2 &cam, World &world, bool progressive = true) {
 
         auto render_stop = std::chrono::high_resolution_clock::now();
 
-        std::clog << "Rendering frame " << frame << " took ";
-        std::clog << std::chrono::duration_cast<std::chrono::milliseconds>(render_stop - render_start).count();
-        std::clog << " milliseconds" << "\r";
+        float duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(render_stop - render_start).count();
+
+        std::clog << "Frame " << frame
+            << " | Time: " << duration_ms << " ms"
+            << " | Camera: (" << cam.position.x << ", " << cam.position.y << ", " << cam.position.z << ")"
+            << "         \r" << std::flush;
 
         // update the accumulated colors
         for (int j = 0; j < cam.image_height; j++) {
@@ -253,9 +256,10 @@ int main(int argc, char* argv[]) {
 //     world.add_obj("objects/whiteMonkey.obj", false);
 //     world.add_obj("objects/blueMonkey_rotated.obj", false);
 // 
-//     world.add_obj("objects/bigCubeLight.obj", true);
+    //world.add_obj("objects/bigCubeLight.obj", true);
     world.add_obj("objects/bistro_normal.obj", false);
-    world.add_obj("objects/bistro_lights.obj", true);
+    world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(3, 23, -27));
+    //world.add_obj("objects/bistro_lights.obj", true);
 
 
     tinybvh::bvhvec4 transpose =
