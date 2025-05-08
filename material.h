@@ -22,13 +22,15 @@ public:
 	virtual bool scatter(const Ray& r_In, const hit_info& hit, glm::vec3& attenuation, Ray& scattered) const = 0;
 	virtual glm::vec3 evaluate(const hit_info& hit, const glm::vec3& wi) const = 0;
 	virtual bool emits_light() const { return false; }
+
+	virtual glm::vec3 albedo(const hit_info& hit) const { return glm::vec3(1.0f); }
 };
 
 class Lambertian : public Material {
-	Texture* albedo;
+	Texture* _albedo;
 public:
-	Lambertian(const glm::vec3& a) : albedo(new SolidColor(a)) {}
-	Lambertian(Texture* a) : albedo(a) {}
+	Lambertian(const glm::vec3& a) : _albedo(new SolidColor(a)) {}
+	Lambertian(Texture* a) : _albedo(a) {}
 	virtual bool scatter(const Ray& r_in, const hit_info& hit, glm::vec3& attenuation, Ray& scattered) const {
 		glm::vec3 scatter_dir = random_in_hemisphere(hit.normal);
 
@@ -37,7 +39,7 @@ public:
 		}
 
 		scattered = Ray(hit.r.at(hit.t), scatter_dir);
-		attenuation = albedo->value(0, 0, hit.r.at(hit.t));
+		attenuation = _albedo->value(hit.uv.x, hit.uv.y, hit.r.at(hit.t));
 
 		return true;
 	}
@@ -47,7 +49,11 @@ public:
 			return glm::vec3(0.0f);
 		}
 
-		return albedo->value(0, 0, hit.r.at(hit.t)) * glm::dot(hit.normal, wi) / glm::pi<float>();
+		return _albedo->value(hit.uv.x, hit.uv.y, hit.r.at(hit.t)) * glm::dot(hit.normal, wi) / glm::pi<float>();
+	}
+
+	virtual glm::vec3 albedo(const hit_info& hit) const override {
+		return _albedo->value(hit.uv.x, hit.uv.y, hit.r.at(hit.t));
 	}
 };
 
@@ -60,7 +66,7 @@ public:
 		return false;
 	}
 	virtual glm::vec3 evaluate(const hit_info& hit, const glm::vec3& wi) const {
-		return emit->value(0, 0, hit.r.at(hit.t));
+		return emit->value(hit.uv.x, hit.uv.y, hit.r.at(hit.t));
 	}
 	virtual bool emits_light() const { return true; }
 };

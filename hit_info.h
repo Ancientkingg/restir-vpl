@@ -15,6 +15,7 @@ struct hit_info {
     glm::vec3 normal;
     material* mat;
     Material* mat_ptr;
+    glm::vec2 uv;
 };
 
 #endif

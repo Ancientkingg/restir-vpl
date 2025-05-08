@@ -19,31 +19,56 @@ tinybvh::Ray toBVHRay(const Ray& r, const float max_t) {
     return tinybvh::Ray(toBVHVec(r.origin()), toBVHVec(r.direction()), max_t);
 }
 
-// Example shade function
+glm::vec3 sky_color(const glm::vec3& direction) {
+    float t = 0.5f * (direction.y + 1.0f);
+    glm::vec3 top = glm::vec3(0.5f, 0.7f, 1.0f);    // Sky blue
+    glm::vec3 bottom = glm::vec3(1.0f);            // Horizon white
+    return (1.0f - t) * bottom + t * top;
+}
+
 glm::vec3 shade(const hit_info& hit, const sampler_result& sample, float pdf, World& scene) {
+    // Ray has no intersection
+    if (hit.t == 1E30f) {
+        return sky_color(hit.r.direction());
+    }
+
+    glm::vec3 ambient = sky_color(hit.normal) * hit.mat_ptr->albedo(hit);
+
     // Compute cosine between surface normal and light direction
     float cos_theta = glm::dot(hit.normal, sample.light_dir);
     if (cos_theta <= 0.0f || pdf <= 0.0f) {
-        return glm::vec3(0.0f);
+        // Still apply ambient sky light even if direct light is not contributing
+        return ambient * 0.05f;
     }
 
     glm::vec3 I = hit.r.at(hit.t);
     glm::vec3 L = sample.light_dir;
     float dist = glm::length(sample.light_point - I);
 
-    if (Ray r = Ray(I + 0.001f * L, L); scene.is_occluded(r, dist)) {
-        return glm::vec3(0.0f); // Shadowed
+    glm::vec3 Li;
+
+    if (Ray shadow_ray = Ray(I + 0.001f * L, L); scene.is_occluded(shadow_ray, dist)) {
+        // Use sky radiance instead if light is occluded
+        Li = sky_color(L);
+    }
+    else {
+        // Use direct light sample radiance
+        Li = sample.light.intensity * sample.light.c;
     }
 
     // Evaluate BRDF at the hit point
     glm::vec3 brdf = hit.mat_ptr->evaluate(hit, sample.light_dir);
 
-    // Evaluate light radiance from the light sample
-    glm::vec3 Li = sample.light.intensity * sample.light.c;
+    // Calculate geometry term for solid angle
+    glm::vec3 light_normal = sample.light.normal;
+    float cos_theta_prime = glm::dot(-sample.light_dir, light_normal);
+    float dist2 = dist * dist;
+    float geometry_term = cos_theta_prime / dist2;
+
 
     // Final contribution
-    glm::vec3 out = (brdf * Li * cos_theta) / pdf;
-    return out;
+    glm::vec3 direct = (brdf * Li * cos_theta * geometry_term) / pdf;
+    return ambient * direct;
 }
 
 // TODO: Cache ray hits (so we dont compute the same thing) when camera does not move
