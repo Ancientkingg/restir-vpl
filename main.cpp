@@ -5,7 +5,7 @@
 
 #include "material.h"
 #include "rtweekend.h"
-#include "camera2.hpp"
+#include "camera.hpp"
 #include "world.hpp"
 #include "light_sampler.h"
 
@@ -22,7 +22,7 @@ std::string get_frame_filename(int i) {
     return oss.str();
 }
 
-void render(Camera2 &cam, World &world, int framecount) {
+void render(Camera &cam, World &world, int framecount) {
     auto bvh = world.bvh();
     auto lights = world.get_triangular_lights();
     auto mats = world.get_materials();
@@ -83,7 +83,7 @@ struct KeyState {
 
 View view = VIEW_SHADING;
 
-void render_live(Camera2 &cam, World &world, bool progressive = true) {
+void render_live(Camera &cam, World &world, bool progressive = true) {
     auto bvh = world.bvh();
     auto lights = world.get_triangular_lights();
     auto mats = world.get_materials();
@@ -279,8 +279,8 @@ int main(int argc, char* argv[]) {
     //world.add_obj("objects/bistro_lights.obj", true);
 
 
-    tinybvh::bvhvec4 transpose =
-            tinybvh::bvhvec4(0.0f, 40.0f, -1.0f, 0.0f);
+    //tinybvh::bvhvec4 transpose =
+    //        tinybvh::bvhvec4(0.0f, 40.0f, -1.0f, 0.0f);
 
     // Move the mesh 100 units back in the z direction
     //for (int i = 0; i < world.triangle_soup.size(); i++) {
@@ -298,9 +298,9 @@ int main(int argc, char* argv[]) {
     std::clog << " milliseconds" << std::endl;
 
 
-    Camera2 cam2;
-    // render(cam2, world, 20);
-    render_live(cam2, world);
+    Camera cam;
+    // render(cam, world, 20);
+    render_live(cam, world);
 
     return 0;
 }

@@ -1,5 +1,5 @@
-#ifndef CAMERA2_H_
-#define CAMERA2_H_
+#ifndef CAMERA_H_
+#define CAMERA_H_
 
 #include "lib/glm/glm/glm.hpp"
 #include <iostream>
@@ -28,12 +28,12 @@ glm::vec3 shade_debug(const hit_info& hit, const sampler_result& sample, float p
 
 // TODO: Cache ray hits (so we dont compute the same thing) when camera does not move
 
-class Camera2 {
+class Camera {
 public:
 
-    Camera2();
+    Camera();
 
-    Camera2(glm::vec3 camera_position, glm::vec3 camera_target);
+    Camera(glm::vec3 camera_position, glm::vec3 camera_target);
 
     // this can be modified externally 
     glm::vec3 position;
@@ -63,4 +63,4 @@ public:
         tinybvh::BVH& bvh, std::vector<Material *>& mats);
 };
 
-#endif // CAMERA2_H_
+#endif // CAMERA_H_

@@ -1,4 +1,4 @@
-#include "camera2.hpp"
+#include "camera.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -81,9 +81,9 @@ glm::vec3 shade(const hit_info& hit, const sampler_result& sample, float pdf, Wo
 
 // TODO: Cache ray hits (so we dont compute the same thing) when camera does not move
 
-Camera2::Camera2() : Camera2(glm::vec3(0, 40, 1), glm::vec3(0, 40, 0)) {}
+Camera::Camera() : Camera(glm::vec3(0, 40, 1), glm::vec3(0, 40, 0)) {}
 
-Camera2::Camera2(glm::vec3 camera_position, glm::vec3 camera_target)
+Camera::Camera(glm::vec3 camera_position, glm::vec3 camera_target)
     : position(camera_position), target(camera_target) {
     direction = glm::normalize(target - position);
     glm::vec3 world_up = glm::vec3(0, 1, 0);
@@ -92,7 +92,7 @@ Camera2::Camera2(glm::vec3 camera_position, glm::vec3 camera_target)
     forward = glm::normalize(glm::cross(up, right));
 }
 
-void Camera2::rotate(float angle, glm::vec3 axis) {
+void Camera::rotate(float angle, glm::vec3 axis) {
     // Change the direction of the camera and recalculate the right up and forward vectors
     // Create rotation matrix for the direction vector, around the axis, starting at camera pos
     glm::mat4 rotation_matrix = glm::rotate(glm::mat4(1.0f), angle, axis);
@@ -103,7 +103,7 @@ void Camera2::rotate(float angle, glm::vec3 axis) {
     forward = glm::normalize(glm::cross(up, right));
 }
 
-void Camera2::updateDirection() {
+void Camera::updateDirection() {
     glm::vec3 dir;
     dir.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
     dir.y = sin(glm::radians(pitch));
@@ -115,7 +115,7 @@ void Camera2::updateDirection() {
     forward = direction;
 }
 
-std::vector<std::vector<Ray>> Camera2::generate_rays_for_frame() {
+std::vector<std::vector<Ray>> Camera::generate_rays_for_frame() {
     std::vector<std::vector<Ray>> rays(image_height, std::vector<Ray>(image_width));
 
     float halfWidth = float(image_width) * 0.5f;
@@ -144,7 +144,7 @@ std::vector<std::vector<Ray>> Camera2::generate_rays_for_frame() {
     return rays;
 }
 
-std::vector<std::vector<hit_info>> Camera2::get_hit_info_from_camera_per_frame(
+std::vector<std::vector<hit_info>> Camera::get_hit_info_from_camera_per_frame(
     tinybvh::BVH& bvh, std::vector<Material *>& mats) {
     std::vector<std::vector<hit_info>> hit_infos(
         image_height, std::vector<hit_info>(image_width));

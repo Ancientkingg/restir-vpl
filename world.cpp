@@ -1,7 +1,7 @@
 #include "world.hpp"
 
 #include <glm/glm.hpp>
-#include "camera2.hpp"
+#include "camera.hpp"
 
 void load_one_obj(std::vector<tinybvh::bvhvec4> &triangle_soup, std::vector<tinyobj::material_t> &materials, std::vector<int> &mat_ids, std::string &file_path) {
 	// this function is copied from Rafayels original implementation with slight changes

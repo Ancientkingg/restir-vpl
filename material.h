@@ -10,13 +10,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 
-struct material {
-	glm::vec3 c;
-	float k_d = 1.0f; // Diffuse reflection coefficient
-	float k_s = 0.0f; // Specular reflection coefficient
-	float p = 1.0f; // Phong exponent
-};
-
 class Material {
 public:
 	virtual bool scatter(const Ray& r_In, const hit_info& hit, glm::vec3& attenuation, Ray& scattered) const = 0;

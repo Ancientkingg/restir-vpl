@@ -20,8 +20,8 @@ add_executable(RayTracerInOneWeekend
         "color.h"
         "ray.h"
         "rtweekend.h"
-        "camera.h"
-        "camera2.cpp"
+        
+        "camera.cpp"
         "lib/tiny_obj_loader.h"
         "triangular_light.h"
         "material.h"

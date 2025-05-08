@@ -5,7 +5,6 @@
 
 #include "ray.h"
 
-struct material;
 class Material;
 
 struct hit_info {
@@ -13,7 +12,6 @@ struct hit_info {
     float t;
     glm::vec3 triangle[3];
     glm::vec3 normal;
-    material* mat;
     Material* mat_ptr;
     glm::vec2 uv;
 };
