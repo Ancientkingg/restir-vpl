@@ -15,7 +15,10 @@ std::vector<std::vector<glm::vec3>> raytrace(ShadingMode render_mode, RenderInfo
     auto hit_infos = info.cam.get_hit_info_from_camera_per_frame(bvh, mats);
 
     // send hit infos to ReSTIR
-    auto light_samples_per_ray = info.light_sampler.sample_lights(hit_infos);
+    std::vector<std::vector<SamplerResult>> light_samples_per_ray;
+    if (render_mode != RENDER_NORMALS) {
+        light_samples_per_ray = info.light_sampler.sample_lights(hit_infos);
+    }
 
     std::vector<std::vector<glm::vec3> > colors = std::vector<std::vector<glm::vec3> >(
         info.cam.image_height, std::vector<glm::vec3>(info.cam.image_width, glm::vec3(0.0f)));
@@ -26,8 +29,13 @@ std::vector<std::vector<glm::vec3>> raytrace(ShadingMode render_mode, RenderInfo
         HitInfo hit = hit_infos[i];
 		int j = i / info.cam.image_width;
 		int k = i % info.cam.image_width;
-        SamplerResult sample = light_samples_per_ray[j][k];
-        
+
+        SamplerResult sample;
+
+        if (render_mode != RENDER_NORMALS) {
+            sample = light_samples_per_ray[j][k];
+        }
+
         float pdf = sample.light.pdf;
         
         glm::vec3 color;
