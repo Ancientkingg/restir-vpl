@@ -41,9 +41,24 @@ target_link_libraries(RayTracerInOneWeekend PUBLIC OpenMP::OpenMP_CXX ${SDL2_LIB
 target_link_libraries(RayTracerInOneWeekend PRIVATE SDL2::SDL2 SDL2::SDL2main)
 
 message(STATUS "Host processor: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+
+include(CheckCXXCompilerFlag)
+
+check_cxx_compiler_flag("/arch:AVX2" COMPILER_SUPPORTS_AVX2)
+check_cxx_compiler_flag("-mavx2" COMPILER_SUPPORTS_MAVX2)
+
+if (MSVC AND COMPILER_SUPPORTS_AVX2)
+    message(STATUS "Enabling AVX2 for MSVC")
+    target_compile_options(RayTracerInOneWeekend PRIVATE /arch:AVX2)
+elseif ((CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND COMPILER_SUPPORTS_MAVX2)
+    message(STATUS "Enabling AVX2 for GCC/Clang")
+    target_compile_options(RayTracerInOneWeekend PRIVATE -mavx2)
+else()
+    message(WARNING "AVX2 not supported or enabled. Check your compiler/target.")
+endif()
+
 # Determine if we're building for ARM
 if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "aarch64" OR CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "arm64")
-    include(CheckCXXCompilerFlag)
 
     # Check for the ARMv8 SIMD flag
     check_cxx_compiler_flag("-march=armv8-a+simd" COMPILER_SUPPORTS_ARMV8_SIMD)

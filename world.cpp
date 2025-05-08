@@ -186,7 +186,11 @@ tinybvh::BVH& World::bvh(){
 		return this->bvhInstance;
 	}
 	bvh_built = true;
-	bvhInstance.Build(triangle_soup.data(), triangle_soup.size()/3);
+#if defined(__AVX__) || defined(__AVX2__)
+	bvhInstance.BuildAVX(triangle_soup.data(), triangle_soup.size() / 3);
+#else
+	bvhInstance.Build(triangle_soup.data(), triangle_soup.size() / 3);
+#endif
 
 	return bvhInstance;
 }
