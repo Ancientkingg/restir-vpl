@@ -1,7 +1,31 @@
 #include "world.hpp"
 
+#include <filesystem>
+#include <chrono>
 #include <glm/glm.hpp>
+
 #include "camera.hpp"
+#include "tiny_bvh_types.hpp"
+
+
+World load_world() {
+	auto loading_start = std::chrono::high_resolution_clock::now();
+
+	World world;
+	//world.add_obj("objects/whiteMonkey.obj", false);
+	//world.add_obj("objects/blueMonkey_rotated.obj", false);
+	//world.add_obj("objects/bigCubeLight.obj", true);
+	world.add_obj("objects/bistro_normal.obj", false);
+	world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(3, 23, -27));
+	//world.add_obj("objects/bistro_lights.obj", true);
+	auto loading_stop = std::chrono::high_resolution_clock::now();
+
+	std::clog << "Loading took ";
+	std::clog << std::chrono::duration_cast<std::chrono::milliseconds>(loading_stop - loading_start).count();
+	std::clog << " milliseconds" << std::endl;
+
+	return world;
+}
 
 void load_one_obj(std::vector<tinybvh::bvhvec4> &triangle_soup, std::vector<tinyobj::material_t> &materials, std::vector<int> &mat_ids, std::string &file_path) {
 	// this function is copied from Rafayels original implementation with slight changes
@@ -159,17 +183,15 @@ void World::place_obj(std::string file_path, bool is_lights, glm::vec3 position)
 tinybvh::BVH& World::bvh(){
 	// Check if this->bvhInstance is already built
 	if (bvh_built) {
-		std::clog << "BVH built, not building" << std::endl;
 		return this->bvhInstance;
 	}
-	std::clog << "BVH not built, building" << std::endl;
 	bvh_built = true;
 	bvhInstance.Build(triangle_soup.data(), triangle_soup.size()/3);
 
 	return bvhInstance;
 }
 
-bool World::intersect(Ray& ray, hit_info& hit) {
+bool World::intersect(Ray& ray, HitInfo& hit) {
 	tinybvh::Ray r = toBVHRay(ray);
 	if (!bvh_built) {
 		std::cerr << "Error: BVH not built. Call bvh() before intersect()." << std::endl;
@@ -210,8 +232,8 @@ bool World::is_occluded(const Ray &ray, float dist) {
 }
 
 
-std::vector<triangular_light> World::get_triangular_lights(){
-	std::vector<triangular_light> out;
+std::vector<TriangularLight> World::get_triangular_lights(){
+	std::vector<TriangularLight> out;
 	float  max_pdf = -1;
 
 	int face_id = 0;
@@ -221,7 +243,7 @@ std::vector<triangular_light> World::get_triangular_lights(){
 			light_materials[light_material_ids[face_id]].ambient[1],
 			light_materials[light_material_ids[face_id]].ambient[2]
 		);
-		triangular_light tl{
+		TriangularLight tl{
 			glm::vec3(lights[i+0][0],lights[i+0][1],lights[i+0][2]),
 			glm::vec3(lights[i+1][0],lights[i+1][1],lights[i+1][2]),
 			glm::vec3(lights[i+2][0],lights[i+2][1],lights[i+2][2]),
@@ -235,11 +257,13 @@ std::vector<triangular_light> World::get_triangular_lights(){
 		face_id++;
 	}
 
-	for(triangular_light &tl : out) tl.pdf = tl.pdf / max_pdf;	
+	for(TriangularLight &tl : out) tl.pdf = tl.pdf / max_pdf;	
 	return out;
 }
 
 std::vector<Material*> World::get_materials(){
+	if (mats_small.size() > 0) return mats_small;
+
 	std::vector<Material*> out;
 	for(tinyobj::material_t mat : all_materials){
 		bool is_light = std::any_of(light_materials.begin(), light_materials.end(), [&](const tinyobj::material_t& m) {

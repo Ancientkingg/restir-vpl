@@ -1,5 +1,4 @@
-#ifndef WORLD_HPP
-#define WORLD_HPP
+#pragma once
 
 #ifndef TINY_BVH_H_
 #include "lib/tiny_bvh.h"
@@ -7,14 +6,12 @@
 #ifndef TINY_OBJ_LOADER_H_
 #include "lib/tiny_obj_loader.h"
 #endif
-#include <sys/stat.h>
-#include <string>
-#include <iostream>
-#include <vector>
-#include <algorithm>
 
-#include "triangular_light.h"
-#include "material.h"
+#include <string>
+#include <vector>
+
+#include "triangular_light.hpp"
+#include "material.hpp"
 
 class World
 {
@@ -30,12 +27,12 @@ class World
 	void add_obj(std::string file, bool is_lights); // Add an obj, indicate if it is all lights
 	void place_obj(std::string file, bool is_lights, glm::vec3 position);
 
-	bool intersect(Ray& ray, hit_info& hit);
+	bool intersect(Ray& ray, HitInfo& hit);
 	bool is_occluded(const Ray &ray, float dist);
 
 	tinybvh::BVH& bvh(); // Build the bvh
 
-	std::vector<triangular_light> get_triangular_lights();
+	std::vector<TriangularLight> get_triangular_lights();
 	std::vector<Material*> get_materials();
 
 
@@ -47,4 +44,4 @@ class World
 	bool bvh_built = false;
 };
 
-#endif
+World load_world();

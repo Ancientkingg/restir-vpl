@@ -4,17 +4,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 
-#include "ray.h"
-#include "material.h"
-#include "hit_info.h"
-#include "light_sampler.h"
+#include "ray.hpp"
+#include "material.hpp"
+#include "hit_info.hpp"
+#include "light_sampler.hpp"
 #include "world.hpp"
-
-#define RED glm::vec3(1.0f,0.0f,0.0f)
-#define GREEN glm::vec3(0.0f,1.0f,0.0f)
-#define BLUE glm::vec3(0.0f,0.0f,1.0f)
-#define EPS 0.001f
-#define rougheq(x,y) (fabs(x-y) < EPS)
+#include "tiny_bvh_types.hpp" 
 
 tinybvh::Ray toBVHRay(const Ray& r) {
     return tinybvh::Ray(toBVHVec(r.origin()), toBVHVec(r.direction()));
@@ -22,61 +17,6 @@ tinybvh::Ray toBVHRay(const Ray& r) {
 
 tinybvh::Ray toBVHRay(const Ray& r, const float max_t) {
     return tinybvh::Ray(toBVHVec(r.origin()), toBVHVec(r.direction()), max_t);
-}
-
-glm::vec3 sky_color(const glm::vec3& direction) {
-    float t = 0.5f * (direction.y + 1.0f);
-    glm::vec3 top = glm::vec3(0.5f, 0.7f, 1.0f);    // Sky blue
-    glm::vec3 bottom = glm::vec3(1.0f);            // Horizon white
-    return (1.0f - t) * bottom + t * top;
-}
-
-glm::vec3 shade_normal(const hit_info& hit, const sampler_result& sample, float pdf, World& scene) {
-    return hit.normal;
-}
-
-glm::vec3 shade_debug(const hit_info& hit, const sampler_result& sample, float pdf, World& scene) {
-    float x = sample.light_dir.y;
-
-	if (x < 0.0f) {
-		return glm::vec3(-x, 0.0f, 0.0f); // Red
-	}
-	else {
-		return glm::vec3(0.0f, x, 0.0f); // Green
-	}
-}
-
-glm::vec3 shade(const hit_info& hit, const sampler_result& sample, float pdf, World& scene) {
-    glm::vec3 L = sample.light_dir;
-    glm::vec3 N = hit.normal;
-
-    // Ray has no intersection
-    if (hit.t == 1E30f) {
-        return sky_color(hit.r.direction());
-    }
-
-    // If the material emits light, return the emitted radiance directly
-    if (hit.mat_ptr->emits_light()) {
-        return hit.mat_ptr->albedo(hit);
-    }
-
-    glm::vec3 I = hit.r.at(hit.t);
-    float dist = glm::length(sample.light_point - I);
-
-    // Evaluate BRDF at the hit point
-    glm::vec3 brdf = hit.mat_ptr->evaluate(hit, sample.light_dir);
-
-    glm::vec3 direct = glm::vec3(0.0f);
-    if (Ray shadow_ray = Ray(I + EPS * L, L); !scene.is_occluded(shadow_ray, dist - EPS * 5000.0f)) {
-        direct = brdf;
-    }
-
-    glm::vec3 ambient_lighting = sample.light.c; // Ambient light color
-    float ambient_cos_theta = fabs(glm::dot(L, glm::vec3(0.0f, 1.0f, 0.0f)));
-    glm::vec3 ambient = ambient_lighting * ambient_cos_theta * 1000.0f * sample.light.intensity * (1.0f / (dist * dist));
-
-    // Final contribution
-    return direct * ambient;
 }
 
 // TODO: Cache ray hits (so we dont compute the same thing) when camera does not move
@@ -144,10 +84,10 @@ std::vector<std::vector<Ray>> Camera::generate_rays_for_frame() {
     return rays;
 }
 
-std::vector<std::vector<hit_info>> Camera::get_hit_info_from_camera_per_frame(
+std::vector<std::vector<HitInfo>> Camera::get_hit_info_from_camera_per_frame(
     tinybvh::BVH& bvh, std::vector<Material *>& mats) {
-    std::vector<std::vector<hit_info>> hit_infos(
-        image_height, std::vector<hit_info>(image_width));
+    std::vector<std::vector<HitInfo>> hit_infos(
+        image_height, std::vector<HitInfo>(image_width));
 
     auto rays = generate_rays_for_frame();
 

@@ -15,22 +15,21 @@ include_directories(${GLM})
 link_directories(${GLM})
 
 add_executable(RayTracerInOneWeekend 
-        
-        "main.cpp"
-        "color.h"
-        "ray.h"
-        "rtweekend.h"
-        
-        "camera.cpp"
-        "lib/tiny_obj_loader.h"
-        "triangular_light.h"
-        "material.h"
-        "light_sampler.h"
-        "world.cpp"
-        "texture.h" 
-        "hit_info.h" "tiny_bvh_types.h" "util.cpp" "util.h"
-        image_writer.h
-        viewer.h
+"camera.cpp"
+"hit_info.hpp"
+"image_writer.cpp"
+"light_sampler.cpp"
+"main.cpp"
+"material.cpp"
+"ray.cpp"
+"render.cpp"
+"shading.cpp"
+"texture.cpp"
+"tiny_bvh_types.cpp"
+"triangular_light.cpp"
+"util.cpp"
+"viewer.cpp"
+"world.cpp"
 )
 
 file(COPY ${CMAKE_SOURCE_DIR}/objects DESTINATION ${CMAKE_BINARY_DIR})

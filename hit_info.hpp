@@ -1,13 +1,12 @@
-#ifndef HIT_INFO_H
-#define HIT_INFO_H
+#pragma once
 
 #include <glm/glm.hpp>
 
-#include "ray.h"
+#include "ray.hpp"
 
-class Material;
+struct Material;
 
-struct hit_info {
+struct HitInfo {
     Ray r;
     float t;
     glm::vec3 triangle[3];
@@ -15,5 +14,3 @@ struct hit_info {
     Material* mat_ptr;
     glm::vec2 uv;
 };
-
-#endif

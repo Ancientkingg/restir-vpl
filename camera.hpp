@@ -1,30 +1,25 @@
-#ifndef CAMERA_H_
-#define CAMERA_H_
+#pragma once
 
-#include "lib/glm/glm/glm.hpp"
+#include <glm/glm.hpp>
 #include <iostream>
 #include <vector>
 
-#include "ray.h"
-#include "material.h"
-#include "hit_info.h"
-#include "light_sampler.h"
+#include "ray.hpp"
+#include "material.hpp"
+#include "hit_info.hpp"
+#include "light_sampler.hpp"
 #include "world.hpp"
 
 
 tinybvh::Ray toBVHRay(const Ray& r);
 tinybvh::Ray toBVHRay(const Ray& r, const float max_t);
 
-enum View {
-    VIEW_NORMALS,
-	VIEW_DEBUG,
-	VIEW_SHADING
-};
+
 
 // Example shade function
-glm::vec3 shade(const hit_info& hit, const sampler_result& sample, float pdf, World& scene);
-glm::vec3 shade_normal(const hit_info& hit, const sampler_result& sample, float pdf, World& scene);
-glm::vec3 shade_debug(const hit_info& hit, const sampler_result& sample, float pdf, World& scene);
+glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, float pdf, World& scene);
+glm::vec3 shade_normal(const HitInfo& hit, const SamplerResult& sample, float pdf, World& scene);
+glm::vec3 shade_debug(const HitInfo& hit, const SamplerResult& sample, float pdf, World& scene);
 
 // TODO: Cache ray hits (so we dont compute the same thing) when camera does not move
 
@@ -59,8 +54,6 @@ public:
 
     std::vector<std::vector<Ray>> generate_rays_for_frame();
 
-    std::vector<std::vector<hit_info>> get_hit_info_from_camera_per_frame(
+    std::vector<std::vector<HitInfo>> get_hit_info_from_camera_per_frame(
         tinybvh::BVH& bvh, std::vector<Material *>& mats);
 };
-
-#endif // CAMERA_H_

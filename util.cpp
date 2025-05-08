@@ -1,3 +1,5 @@
+#include "util.hpp"
+
 #include <glm/glm.hpp>
 
 #define RANDVEC3 glm::vec3(float(rand()) / RAND_MAX, float(rand()) / RAND_MAX, float(rand()) / RAND_MAX)

@@ -1,20 +1,13 @@
-//
-// Created by Rafayel Gardishyan on 02/05/2025.
-//
+#include "image_writer.hpp"
 
 #include <vector>
 #include <glm/glm.hpp>
+#include <filesystem>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "lib/stb_image_write.h"
 
-#include "lib/glm/glm/common.hpp"
-#include "lib/glm/glm/vec3.hpp"
-
-#ifndef IMAGE_WRITER_H
-#define IMAGE_WRITER_H
-
-inline void save_image(const std::vector<std::vector<glm::vec3>>& pixels, const std::string& filename) {
+void save_image(const std::vector<std::vector<glm::vec3>>& pixels, const std::string& filename) {
     int height = pixels.size();
     int width = pixels[0].size();
     std::vector<unsigned char> data(width * height * 3);
@@ -38,5 +31,3 @@ inline void save_image(const std::vector<std::vector<glm::vec3>>& pixels, const 
     // Write the image to a file
     stbi_write_png(filename.c_str(), width, height, 3, data.data(), width * 3);
 }
-
-#endif //IMAGE_WRITER_H

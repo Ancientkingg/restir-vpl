@@ -1,3 +1,5 @@
+#pragma once
+
 #include <glm/vec3.hpp>
 
 glm::vec3 random_in_unit_sphere();

@@ -1,10 +1,10 @@
-#ifndef TINY_BVH_TYPES_H
-#define TINY_BVH_TYPES_H
+#pragma once
 
+#ifndef TINY_BVH_H_
 #include "lib/tiny_bvh.h"
+#endif
 #include <glm/vec3.hpp>
 
-// write to and from functions for vec3 from glm
 inline tinybvh::bvhvec3 toBVHVec(const glm::vec3& v) {
 	return tinybvh::bvhvec3(v.x, v.y, v.z);
 }
@@ -12,5 +12,3 @@ inline tinybvh::bvhvec3 toBVHVec(const glm::vec3& v) {
 inline glm::vec3 toGLMVec(const tinybvh::bvhvec3& v) {
 	return glm::vec3(v.x, v.y, v.z);
 }
-
-#endif
