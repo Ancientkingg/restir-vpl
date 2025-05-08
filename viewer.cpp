@@ -116,28 +116,8 @@ void render(Camera& cam, World& world, int framecount) {
     for (int i = 0; i < framecount; i++) {
         auto render_start = std::chrono::high_resolution_clock::now();
 
-        // potentially update camera position
-        auto hit_infos = cam.get_hit_info_from_camera_per_frame(bvh, mats);
-
-        // send hit infos to ReSTIR
-        auto light_samples_per_ray = light_sampler.sample_lights(hit_infos);
-
-        std::vector<std::vector<glm::vec3> > colors = std::vector<std::vector<glm::vec3> >(
-            cam.image_height, std::vector<glm::vec3>(cam.image_width, glm::vec3(0.0f)));
-
-        // loop over hit_infos and light_samples_per_ray at the same time and feed them into the shade 
-#pragma omp parallel for
-        for (int j = 0; j < hit_infos.size(); j++) {
-            if (hit_infos[j].empty()) continue; // No hits for this
-            for (int i = 0; i < hit_infos[0].size(); i++) {
-                HitInfo hit = hit_infos[j][i];
-                SamplerResult sample = light_samples_per_ray[j][i];
-
-                float pdf = 1.0 / sample.light.area();
-                glm::vec3 color = shade(hit, sample, pdf, world);
-                colors[j][i] += color;
-            }
-        }
+        RenderInfo info = RenderInfo{ cam, world, light_sampler };
+        std::vector<std::vector<glm::vec3>> colors = raytrace(RENDER_SHADING, info);
 
         auto render_stop = std::chrono::high_resolution_clock::now();
 
