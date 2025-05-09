@@ -88,7 +88,7 @@ std::vector<HitInfo> Camera::get_hit_info_from_camera_per_frame(World& world) {
 	std::vector<HitInfo> hit_infos(image_height * image_width);
 	auto rays = generate_rays_for_frame();
 
-//#pragma omp parallel for
+#pragma omp parallel for
 	for (int i = 0; i < image_height; i++) {
 		for (int j = 0; j < image_width; j++) {
 			Ray ray = rays[i][j];
