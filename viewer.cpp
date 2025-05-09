@@ -109,10 +109,12 @@ std::string get_frame_filename(int i) {
 }
 
 void render(Camera& cam, World& world, int framecount) {
-    auto bvh = world.bvh();
+    // Build the world
+    world.bvh();
+
     auto lights = world.get_triangular_lights();
-    auto mats = world.get_materials();
     auto light_sampler = RestirLightSampler(cam.image_width, cam.image_height, lights);
+
     for (int i = 0; i < framecount; i++) {
         auto render_start = std::chrono::high_resolution_clock::now();
 
@@ -149,9 +151,10 @@ void render_live(Camera& cam, World& world, bool progressive) {
     int mouseDeltaX = 0;
     int mouseDeltaY = 0;
 
-    auto bvh = world.bvh();
+    // Build the world
+    world.bvh();
+
     auto lights = world.get_triangular_lights();
-    auto mats = world.get_materials();
     auto light_sampler = RestirLightSampler(cam.image_width, cam.image_height, lights);
 
     // 1) Init SDL

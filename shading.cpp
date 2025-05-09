@@ -25,14 +25,12 @@ glm::vec3 shade_normal(const HitInfo& hit, const SamplerResult& sample, float pd
 }
 
 glm::vec3 shade_debug(const HitInfo& hit, const SamplerResult& sample, float pdf, World& scene) {
-    float x = sample.light_dir.y;
+    // visualize uv coordinates;
+    if (hit.t == 1E30f) {
+		return sky_color(hit.r.direction());
+    }
 
-    if (x < 0.0f) {
-        return glm::vec3(-x, 0.0f, 0.0f); // Red
-    }
-    else {
-        return glm::vec3(0.0f, x, 0.0f); // Green
-    }
+	return glm::vec3(hit.uv.x, hit.uv.y, 0.0f);
 }
 
 glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, float pdf, World& scene) {

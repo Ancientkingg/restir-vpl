@@ -30,7 +30,9 @@ add_executable(RayTracerInOneWeekend
 "util.cpp"
 "viewer.cpp"
 "world.cpp"
-)
+"lib/stb_image.h" 
+"interval.cpp" 
+"geometry.cpp")
 
 file(COPY ${CMAKE_SOURCE_DIR}/objects DESTINATION ${CMAKE_BINARY_DIR})
 

@@ -16,9 +16,9 @@
 class World
 {
 	public:
-	std::vector<tinybvh::bvhvec4> triangle_soup;
+	std::vector<Triangle> triangle_soup;
 	std::vector<tinyobj::material_t> all_materials;
-	std::vector<tinybvh::bvhvec4> lights;
+	std::vector<Triangle> lights;
 	std::vector<tinyobj::material_t> light_materials;
 	
 	
@@ -33,7 +33,7 @@ class World
 	tinybvh::BVH& bvh(); // Build the bvh
 
 	std::vector<TriangularLight> get_triangular_lights();
-	std::vector<Material*> get_materials();
+	std::vector<Material*> get_materials(bool ignore_textures = true);
 
 
 	private:
@@ -42,6 +42,7 @@ class World
 	std::vector<Material*> mats_small;
 	tinybvh::BVH bvhInstance;
 	bool bvh_built = false;
+	std::vector<tinybvh::bvhvec4> raw_bvh_data;
 };
 
 World load_world();

@@ -21,7 +21,7 @@ tinybvh::Ray toBVHRay(const Ray& r, const float max_t) {
 
 // TODO: Cache ray hits (so we dont compute the same thing) when camera does not move
 
-Camera::Camera() : Camera(glm::vec3(0, 40, 1), glm::vec3(0, 40, 0)) {}
+Camera::Camera() : Camera(glm::vec3(0, 0, 0), glm::vec3(0, 0, 1)) {}
 
 Camera::Camera(glm::vec3 camera_position, glm::vec3 camera_target)
 	: position(camera_position), target(camera_target) {
@@ -84,33 +84,23 @@ std::vector<std::vector<Ray>> Camera::generate_rays_for_frame() {
 	return rays;
 }
 
-std::vector<HitInfo> Camera::get_hit_info_from_camera_per_frame(
-	tinybvh::BVH& bvh, std::vector<Material*>& mats) {
-	std::vector<HitInfo> hit_infos(
-		image_height * image_width);
-
+std::vector<HitInfo> Camera::get_hit_info_from_camera_per_frame(World& world) {
+	std::vector<HitInfo> hit_infos(image_height * image_width);
 	auto rays = generate_rays_for_frame();
 
-#pragma omp parallel for
+//#pragma omp parallel for
 	for (int i = 0; i < image_height; i++) {
 		for (int j = 0; j < image_width; j++) {
-			hit_infos[i * image_width + j].r = rays[i][j];
-			tinybvh::Ray r = toBVHRay(rays[i][j]);
-			bvh.Intersect(r);
-			hit_infos[i * image_width + j].t = r.hit.t;
-
-			hit_infos[i * image_width + j].triangle[0] = toGLMVec(bvh.verts[r.hit.prim * 3 + 0]);
-			hit_infos[i * image_width + j].triangle[1] = toGLMVec(bvh.verts[r.hit.prim * 3 + 1]);
-			hit_infos[i * image_width + j].triangle[2] = toGLMVec(bvh.verts[r.hit.prim * 3 + 2]);
-
-			hit_infos[i * image_width + j].normal = glm::normalize(
-				glm::cross(hit_infos[i * image_width + j].triangle[1] - hit_infos[i * image_width + j].triangle[0],
-					hit_infos[i * image_width + j].triangle[2] - hit_infos[i * image_width + j].triangle[0]));
-			if (glm::dot(hit_infos[i * image_width + j].normal, rays[i][j].direction()) > 0.0f)
-				hit_infos[i * image_width + j].normal = -hit_infos[i * image_width + j].normal;
-
-			int m_id = bvh.verts[r.hit.prim * 3][3];
-			hit_infos[i * image_width + j].mat_ptr = mats[m_id];
+			Ray ray = rays[i][j];
+			HitInfo hit;
+			if (world.intersect(ray, hit)) {
+				hit_infos[i * image_width + j] = hit;
+			}
+			else {
+				hit.r = ray;
+				hit.t = 1E30f;
+				hit_infos[i * image_width + j] = hit;
+			}
 		}
 	}
 

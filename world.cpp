@@ -3,9 +3,14 @@
 #include <filesystem>
 #include <chrono>
 #include <glm/glm.hpp>
+#ifndef TINY_BVH_H_
+#include "lib/tiny_bvh.h"
+#endif
 
 #include "camera.hpp"
+#include "texture.hpp"
 #include "tiny_bvh_types.hpp"
+#include "geometry.hpp"
 
 
 World load_world() {
@@ -15,9 +20,10 @@ World load_world() {
 	//world.add_obj("objects/whiteMonkey.obj", false);
 	//world.add_obj("objects/blueMonkey_rotated.obj", false);
 	//world.add_obj("objects/bigCubeLight.obj", true);
-	world.add_obj("objects/bistro_normal.obj", false);
-	world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(3, 23, -27));
+	//world.add_obj("objects/bistro_normal.obj", false);
 	//world.add_obj("objects/bistro_lights.obj", true);
+	world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
+	world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
 	auto loading_stop = std::chrono::high_resolution_clock::now();
 
 	std::clog << "Loading took ";
@@ -27,7 +33,7 @@ World load_world() {
 	return world;
 }
 
-void load_one_obj_at(std::vector<tinybvh::bvhvec4>& triangle_soup, std::vector<tinyobj::material_t>& materials, std::vector<int>& mat_ids, std::string& file_path, glm::vec3 position) {
+void load_one_obj_at(std::vector<Triangle>& triangle_soup, std::vector<tinyobj::material_t>& materials, std::vector<int>& mat_ids, std::string& file_path, glm::vec3 position) {
 	// this function is copied from Rafayels original implementation with slight changes
 
 	// Load the OBJ file using tinyobjloader
@@ -71,22 +77,38 @@ void load_one_obj_at(std::vector<tinybvh::bvhvec4>& triangle_soup, std::vector<t
 				material_id = shape.mesh.material_ids[face_id] + num_starting_mats;
 			}
 			mat_ids.push_back(material_id);
-			tinybvh::bvhvec4 triangle[3];
+			Vertex triangle_verts[3];
 			for (size_t v = 0; v < fv; v++) {
 				tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
-				triangle[v] = tinybvh::bvhvec4(
-					attrib.vertices[3 * idx.vertex_index + 0],
-					attrib.vertices[3 * idx.vertex_index + 1],
-					attrib.vertices[3 * idx.vertex_index + 2],
-					material_id
+
+				const int x = 0;
+				const int y = 1;
+				const int z = 2;
+
+				auto pos_base = 3 * idx.vertex_index;
+				auto x_pos = attrib.vertices[pos_base + x];
+				auto y_pos = attrib.vertices[pos_base + y];
+				auto z_pos = attrib.vertices[pos_base + z];
+
+				auto normal_base = 3 * idx.normal_index;
+				auto x_normals = attrib.normals[normal_base + x];
+				auto y_normals = attrib.normals[normal_base + y];
+				auto z_normals = attrib.normals[normal_base + z];
+
+				auto texcoord_base = 2 * idx.texcoord_index;
+				auto x_texcoords = attrib.texcoords[texcoord_base + x];
+				auto y_texcoords = attrib.texcoords[texcoord_base + y];
+
+				triangle_verts[v] = Vertex(
+					glm::vec3(x_pos, y_pos, z_pos),
+					glm::vec3(x_normals, y_normals, z_normals),
+					glm::vec2(x_texcoords, y_texcoords)
 				);
 			}
 
-			tinybvh::bvhvec4 pos = tinybvh::bvhvec4(position[0], position[1], position[2], 0.0f);
+			Triangle triangle = Triangle(triangle_verts, material_id);
+			triangle_soup.push_back(triangle + position);
 
-			triangle_soup.push_back(triangle[0] + pos);
-			triangle_soup.push_back(triangle[1] + pos);
-			triangle_soup.push_back(triangle[2] + pos);
 			index_offset += fv;
 			face_id++;
 		}
@@ -121,11 +143,14 @@ tinybvh::BVH& World::bvh(){
 		return this->bvhInstance;
 	}
 	bvh_built = true;
-#if defined(__AVX__) || defined(__AVX2__)
-	bvhInstance.BuildAVX(triangle_soup.data(), triangle_soup.size() / 3);
-#else
-	bvhInstance.Build(triangle_soup.data(), triangle_soup.size() / 3);
-#endif
+
+	raw_bvh_data = toBVHVec(triangle_soup);
+
+//#if defined(__AVX__) || defined(__AVX2__)
+	//bvhInstance.BuildAVX(raw_triangles.data(), triangle_soup.size());
+//#else
+	bvhInstance.Build(raw_bvh_data.data(), triangle_soup.size());
+//#endif
 
 	return bvhInstance;
 }
@@ -160,7 +185,15 @@ bool World::intersect(Ray& ray, HitInfo& hit) {
 		return false;
 	}
 
-	hit.mat_ptr = mats_small[m_id];
+	hit.mat_ptr = get_materials(false)[m_id];
+
+
+	// Calculate UV coordinates using r.hit.u and r.hit.v
+	const Triangle& triangle = triangle_soup[r.hit.prim];
+	float w = 1.0f - r.hit.u - r.hit.v;
+	hit.uv = triangle.v0.texcoord * w +
+		triangle.v1.texcoord * r.hit.u +
+		triangle.v2.texcoord * r.hit.v;
 
 	return true;
 }
@@ -176,19 +209,14 @@ std::vector<TriangularLight> World::get_triangular_lights(){
 	float  max_pdf = -1;
 
 	int face_id = 0;
-	for(int i = 0; i < lights.size(); i += 3){
+	for(int i = 0; i < lights.size(); i++){
 		glm::vec3 c = glm::vec3(
 			light_materials[light_material_ids[face_id]].ambient[0],
 			light_materials[light_material_ids[face_id]].ambient[1],
 			light_materials[light_material_ids[face_id]].ambient[2]
 		);
-		TriangularLight tl{
-			glm::vec3(lights[i+0][0],lights[i+0][1],lights[i+0][2]),
-			glm::vec3(lights[i+1][0],lights[i+1][1],lights[i+1][2]),
-			glm::vec3(lights[i+2][0],lights[i+2][1],lights[i+2][2]),
-			c,
-			(c[0] + c[1] + c[2]) / 3
-		};
+		float intensity = (c[0] + c[1] + c[2]) / 3;
+		TriangularLight tl(lights[i], c, intensity);
 		tl.pdf = 1.0 / tl.area();
 		out.push_back(tl);
 
@@ -200,7 +228,7 @@ std::vector<TriangularLight> World::get_triangular_lights(){
 	return out;
 }
 
-std::vector<Material*> World::get_materials(){
+std::vector<Material*> World::get_materials(bool ignore_textures){
 	if (mats_small.size() > 0) return mats_small;
 
 	std::vector<Material*> out;
@@ -208,15 +236,30 @@ std::vector<Material*> World::get_materials(){
 		bool is_light = std::any_of(light_materials.begin(), light_materials.end(), [&](const tinyobj::material_t& m) {
 			return m.name == mat.name;
 		});
-		if(is_light){
-			Emissive * end_mat = new Emissive({mat.ambient[0], mat.ambient[1], mat.ambient[2]});
-			out.push_back(end_mat);
+
+		if (mat.diffuse_texname != "" && !ignore_textures) {
+			Texture* texture = new ImageTexture(mat.diffuse_texname.c_str());
+			if (is_light) {
+				Emissive* end_mat = new Emissive(texture);
+				out.push_back(end_mat);
+			}
+			else {
+				Lambertian* end_mat = new Lambertian(texture);
+				out.push_back(end_mat);
+			}
 		}
-		else{
-			Lambertian * end_mat = new Lambertian({mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]});
-			out.push_back(end_mat);
+		else {
+			if (is_light) {
+				Emissive* end_mat = new Emissive({ mat.ambient[0], mat.ambient[1], mat.ambient[2] });
+				out.push_back(end_mat);
+			}
+			else {
+				Lambertian* end_mat = new Lambertian({ mat.diffuse[0], mat.diffuse[1], mat.diffuse[2] });
+				out.push_back(end_mat);
+			}
 		}
 	}
+
 	mats_small = out;
 	return out;
 }

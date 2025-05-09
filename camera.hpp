@@ -54,6 +54,5 @@ public:
 
     std::vector<std::vector<Ray>> generate_rays_for_frame();
 
-    std::vector<HitInfo> get_hit_info_from_camera_per_frame(
-        tinybvh::BVH& bvh, std::vector<Material *>& mats);
+    std::vector<HitInfo> get_hit_info_from_camera_per_frame(World& world);
 };

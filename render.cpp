@@ -9,10 +9,7 @@
 
 std::vector<std::vector<glm::vec3>> raytrace(ShadingMode render_mode, RenderInfo& info) {
 
-    // potentially update camera position
-    std::vector<Material*> mats = info.world.get_materials();
-    tinybvh::BVH& bvh = info.world.bvh();
-    auto hit_infos = info.cam.get_hit_info_from_camera_per_frame(bvh, mats);
+    auto hit_infos = info.cam.get_hit_info_from_camera_per_frame(info.world);
 
     // send hit infos to ReSTIR
     std::vector<std::vector<SamplerResult>> light_samples_per_ray;

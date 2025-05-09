@@ -197,6 +197,11 @@ int RestirLightSampler::sampleLightIndex() const {
 
 [[nodiscard]] float RestirLightSampler::get_light_weight(const TriangularLight& light, const glm::vec3 light_point,
 	const HitInfo& hi) const {
+	// if not hit
+	if (hi.t == 1E30f) {
+		return 0.0f;
+	}
+
 	const glm::vec3 hit_point = hi.r.at(hi.t);
 	const glm::vec3 light_dir = light_point - hit_point;
 	const float cos_theta = glm::dot(glm::normalize(light_dir), hi.normal);
