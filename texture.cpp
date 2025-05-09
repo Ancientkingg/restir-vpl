@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <string>
 #include <iostream>
+#include <chrono>
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_FAILURE_USERMSG
@@ -38,6 +39,10 @@ Image::~Image() {
 }
 
 bool Image::load(const std::string& filename) {
+	std::clog << "Loading image file '" << filename << "'..." << std::endl;
+	auto start = std::chrono::high_resolution_clock::now();
+
+
 	auto n = bytes_per_pixel;
 	fdata = stbi_loadf(filename.c_str(), &image_width, &image_height, &n, bytes_per_pixel);
 	if (fdata == nullptr) {
@@ -45,16 +50,14 @@ bool Image::load(const std::string& filename) {
 		return false;
 	}
 
-	// print the first couple of pixel values;
-	 for (int i = 0; i < 10; i++) {
-	 	std::cout << fdata[i * bytes_per_pixel] << " "
-			<< fdata[i * bytes_per_pixel + 1] << " "
-			<< fdata[i * bytes_per_pixel + 2] << std::endl;
-	 }
-
-
 	bytes_per_scanline = bytes_per_pixel * image_width;
 	convert_to_bytes();
+
+	auto stop = std::chrono::high_resolution_clock::now();
+	std::clog << "Loading image file '" << filename << "' took " 
+		<< std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count()
+		<< " milliseconds" << std::endl;
+
 	return true;
 }
 

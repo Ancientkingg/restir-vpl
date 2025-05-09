@@ -109,8 +109,9 @@ std::string get_frame_filename(int i) {
 }
 
 void render(Camera& cam, World& world, int framecount) {
-    // Build the world
+    // Build the world and load materials
     world.bvh();
+    world.get_materials(false);
 
     auto lights = world.get_triangular_lights();
     auto light_sampler = RestirLightSampler(cam.image_width, cam.image_height, lights);
@@ -151,8 +152,9 @@ void render_live(Camera& cam, World& world, bool progressive) {
     int mouseDeltaX = 0;
     int mouseDeltaY = 0;
 
-    // Build the world
+    // Build the world and load materials
     world.bvh();
+    world.get_materials(false);
 
     auto lights = world.get_triangular_lights();
     auto light_sampler = RestirLightSampler(cam.image_width, cam.image_height, lights);
