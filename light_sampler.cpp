@@ -39,18 +39,37 @@ void Reservoir::update(const TriangularLight& new_sample, const glm::vec3 sample
 	}
 }
 
+void Reservoir::merge(const Reservoir &other) {
+	// Merge the other reservoir into this one
+	if (other.W == 0) return;
+	if (W == 0) {
+		sample = other.sample;
+		sample_pos = other.sample_pos;
+		W = other.W;
+		M = other.M;
+		return;
+	}
+	W += other.W;
+	M += other.M;
+	if (const float p = other.W / W;
+		dist(rng) < p) {
+		sample = other.sample;
+		sample_pos = other.sample_pos;
+	}
+	// else do nothing
+}
+
+void Reservoir::replace(const Reservoir &other) {
+	W = other.W;
+	M = other.M;
+	sample = other.sample;
+	sample_pos = other.sample_pos;
+}
+
 void Reservoir::reset() {
 	sample = { glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0 };
 	M = 0;
 	W = 0;
-}
-
-inline Reservoir merge_reservoirs(std::span<const Reservoir> reservoirs) {
-	Reservoir merged;
-	for (const auto& res : reservoirs) {
-		merged.update(res.sample, res.sample_pos, res.W);
-	}
-	return merged;
 }
 
 RestirLightSampler::RestirLightSampler(const int x, const int y,
@@ -91,7 +110,7 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 		}
 	}
 
-	std::vector<std::vector<SamplerResult> > results(y_pixels, std::vector<SamplerResult>(x_pixels));
+	std::vector results(y_pixels, std::vector<SamplerResult>(x_pixels));
 	swap_buffers();
 #pragma omp parallel for
 	for (int y = 0; y < y_pixels; y++) {
@@ -137,32 +156,29 @@ void RestirLightSampler::visibility_check(const int x, const int y, const HitInf
 
 void RestirLightSampler::temporal_update(const int x, const int y) {
 	// Update the current reservoir with the previous one
-	const auto& prev_res = prev_reservoirs[y * x_pixels + x];
-	auto& curr_res = current_reservoirs[y * x_pixels + x];
-	curr_res.update(prev_res.sample, prev_res.sample_pos, prev_res.W);
+	current_reservoirs[y * x_pixels + x].merge(prev_reservoirs[y * x_pixels + x]);
 }
 
-thread_local std::array<Reservoir, 9> all_reservoirs;
 void RestirLightSampler::spatial_update(const int x, const int y) {
 	int c = 0;
 
-	// Update the current reservoir with the neighbors
-	all_reservoirs[c++] = prev_reservoirs[y * x_pixels + x];
-	for (int xx = -1; xx <= 1; xx++) {
-		for (int yy = -1; yy <= 1; yy++) {
+	Reservoir &current = current_reservoirs[y * x_pixels + x];
+	current.replace(prev_reservoirs[y * x_pixels + x]);
+
+	// 2) Gather the 8 neighbors also from prev_reservoirs
+	for (int yy = -1; yy <= 1; ++yy) {
+		for (int xx = -1; xx <= 1; ++xx) {
 			if (xx == 0 && yy == 0) continue;
+
 			const int nx = x + xx;
-			if (const int ny = y + yy; nx >= 0 && nx < x_pixels && ny >= 0 && ny < y_pixels) {
-				all_reservoirs[c++] = prev_reservoirs[ny * x_pixels + nx];
+			const int ny = y + yy;
+			if (nx >= 0 && nx < x_pixels && ny >= 0 && ny < y_pixels) {
+				current.merge(prev_reservoirs[ny * x_pixels + nx]);
 			}
 		}
 	}
-	// Merge the reservoirs
-	const auto merged_res = merge_reservoirs(all_reservoirs);
-	// Update the current reservoir with the merged one
-	current_reservoirs[y * x_pixels + x].reset();
-	current_reservoirs[y * x_pixels + x].update(merged_res.sample, merged_res.sample_pos, merged_res.W);
 }
+
 
 void RestirLightSampler::spatial_update(const int x, const int y, const int radius) {
 	for (int r = 0; r < radius; r++) {
@@ -172,7 +188,7 @@ void RestirLightSampler::spatial_update(const int x, const int y, const int radi
 
 void RestirLightSampler::swap_buffers() {
 	// Swap the current and previous reservoirs
-	std::swap(prev_reservoirs, current_reservoirs);
+	current_reservoirs.swap(prev_reservoirs);
 }
 
 [[nodiscard]] TriangularLight RestirLightSampler::pick_light() const {
@@ -211,5 +227,5 @@ int RestirLightSampler::sampleLightIndex() const {
 	const float target = cos_theta * glm::length(brdf);
 	const float source = 1.0f / static_cast<float>(num_lights);
 
-	return source / target;
+	return std::max(0.f, source / target);
 }

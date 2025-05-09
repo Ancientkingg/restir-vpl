@@ -28,10 +28,10 @@ public:
 
     Reservoir();
     void update(const TriangularLight& new_sample, const glm::vec3 sample_point, const float w_i);
+    void merge(const Reservoir& other);
+    void replace(const Reservoir& other);
     void reset();
 };
-
-inline Reservoir merge_reservoirs(std::span<const Reservoir> reservoirs);
 
 class RestirLightSampler {
 public:
