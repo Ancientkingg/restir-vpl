@@ -52,7 +52,7 @@ public:
 
     void spatial_update(const int x, const int y, const int radius);
 
-    void next_frame();
+    void swap_buffers();
 
 private:
     int m = 2;

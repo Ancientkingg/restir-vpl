@@ -73,7 +73,7 @@ void RestirLightSampler::reset() {
 
 std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::vector<HitInfo> hit_infos) {
 	// Swap the current and previous reservoirs
-	next_frame();
+	swap_buffers();
 	// For every pixel:
 	// 1. Sample M times from the light sources; Choose one sample (reservoir)
 	// 2. Check visibility of the light sample
@@ -92,6 +92,7 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 	}
 
 	std::vector<std::vector<SamplerResult> > results(y_pixels, std::vector<SamplerResult>(x_pixels));
+	swap_buffers();
 #pragma omp parallel for
 	for (int y = 0; y < y_pixels; y++) {
 		for (int x = 0; x < x_pixels; x++) {
@@ -146,21 +147,21 @@ void RestirLightSampler::spatial_update(const int x, const int y) {
 	int c = 0;
 
 	// Update the current reservoir with the neighbors
-	auto& curr_res = current_reservoirs[y * x_pixels + x];
-	all_reservoirs[c++] = curr_res;
+	all_reservoirs[c++] = prev_reservoirs[y * x_pixels + x];
 	for (int xx = -1; xx <= 1; xx++) {
 		for (int yy = -1; yy <= 1; yy++) {
 			if (xx == 0 && yy == 0) continue;
 			const int nx = x + xx;
 			if (const int ny = y + yy; nx >= 0 && nx < x_pixels && ny >= 0 && ny < y_pixels) {
-				all_reservoirs[c++] = current_reservoirs[ny * x_pixels + nx];
+				all_reservoirs[c++] = prev_reservoirs[ny * x_pixels + nx];
 			}
 		}
 	}
 	// Merge the reservoirs
 	const auto merged_res = merge_reservoirs(all_reservoirs);
 	// Update the current reservoir with the merged one
-	curr_res.update(merged_res.sample, merged_res.sample_pos, merged_res.W);
+	current_reservoirs[y * x_pixels + x].reset();
+	current_reservoirs[y * x_pixels + x].update(merged_res.sample, merged_res.sample_pos, merged_res.W);
 }
 
 void RestirLightSampler::spatial_update(const int x, const int y, const int radius) {
@@ -169,7 +170,7 @@ void RestirLightSampler::spatial_update(const int x, const int y, const int radi
 	}
 }
 
-void RestirLightSampler::next_frame() {
+void RestirLightSampler::swap_buffers() {
 	// Swap the current and previous reservoirs
 	std::swap(prev_reservoirs, current_reservoirs);
 }
