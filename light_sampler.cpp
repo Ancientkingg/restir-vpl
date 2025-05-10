@@ -16,7 +16,7 @@ thread_local std::mt19937 rng(std::random_device{}());
 std::uniform_real_distribution<float> dist(0.0f, 1.0f);
 
 Reservoir::Reservoir() : sample(glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0), sample_pos(0, 0, 0), M(0),
-W(0) {
+W(0), w_out(0) {
 }
 
 SamplerResult::SamplerResult() : light_point(0.0), light_dir(0.0),
@@ -36,7 +36,9 @@ void Reservoir::update(const TriangularLight& new_sample, const glm::vec3 sample
 		dist(rng) < p) {
 		sample = new_sample;
 		sample_pos = sample_point;
+		w_out = w_i;
 	}
+	W = (W + w_i) / M / w_out;
 }
 
 void Reservoir::merge(const Reservoir &other) {
@@ -49,14 +51,17 @@ void Reservoir::merge(const Reservoir &other) {
 		M = other.M;
 		return;
 	}
-	W += other.W;
 	M += other.M;
+	W += other.W;
+
 	if (const float p = other.W / W;
 		dist(rng) < p) {
 		sample = other.sample;
 		sample_pos = other.sample_pos;
+		w_out = other.w_out;
 	}
 	// else do nothing
+	W = (W + other.W) / M / w_out;
 }
 
 void Reservoir::replace(const Reservoir &other) {
@@ -64,12 +69,15 @@ void Reservoir::replace(const Reservoir &other) {
 	M = other.M;
 	sample = other.sample;
 	sample_pos = other.sample_pos;
+	w_out = other.w_out;
 }
 
 void Reservoir::reset() {
 	sample = { glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0 };
 	M = 0;
 	W = 0;
+	w_out = 0;
+	sample_pos = { 0.0, 0.0, 0.0 };
 }
 
 RestirLightSampler::RestirLightSampler(const int x, const int y,

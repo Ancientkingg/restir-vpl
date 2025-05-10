@@ -25,6 +25,7 @@ public:
     glm::vec3 sample_pos;
     int M;
     float W;
+    float w_out;
 
     Reservoir();
     void update(const TriangularLight& new_sample, const glm::vec3 sample_point, const float w_i);
