@@ -139,7 +139,7 @@ void RestirLightSampler::set_initial_sample(const int x, const int y, const HitI
 }
 
 void RestirLightSampler::visibility_check(const int x, const int y, const HitInfo& hi, World& world) {
-	// Check visibility of the light sample
+	// Check the visibility of the light sample
 	auto& res = current_reservoirs[y * x_pixels + x];
 	// Shadow dir = light sample - hit point
 	const glm::vec3 shadow_dir = res.sample_pos - hi.r.at(hi.t);
@@ -171,8 +171,7 @@ void RestirLightSampler::spatial_update(const int x, const int y) {
 			if (xx == 0 && yy == 0) continue;
 
 			const int nx = x + xx;
-			const int ny = y + yy;
-			if (nx >= 0 && nx < x_pixels && ny >= 0 && ny < y_pixels) {
+			if (const int ny = y + yy; nx >= 0 && nx < x_pixels && ny >= 0 && ny < y_pixels) {
 				current.merge(prev_reservoirs[ny * x_pixels + nx]);
 			}
 		}
