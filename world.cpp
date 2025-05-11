@@ -26,6 +26,8 @@ World load_world() {
 	// world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
 	// world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
 	world.add_obj("objects/monkeyLightInOne.obj", false);
+	world.place_obj("objects/ceiling_light.obj", true, glm::vec3(0, 10, 0));
+	world.place_obj("objects/Gauntlet.obj", false, glm::vec3(0, 0, 0));
 	auto loading_stop = std::chrono::high_resolution_clock::now();
 
 	std::clog << "Loading took ";
@@ -65,6 +67,17 @@ void load_one_obj_at(std::vector<Triangle>& triangle_soup, std::vector<Triangle>
 	for (tinyobj::material_t new_mat : new_mats) {
 		materials.push_back(new_mat);
 	}
+
+	bool normals_excluded = attrib.normals.empty();
+	if (normals_excluded) {
+		std::cerr << "Normals are not included in " << file_path << std::endl;
+	}
+
+	bool texcoords_excluded = attrib.texcoords.empty();
+	if (texcoords_excluded) {
+		std::cerr << "Texcoords are not included in " << file_path << std::endl;
+	}
+
 	// Iterate through the shapes and extract the triangles
 	for (tinyobj::shape_t shape : shapes) {
 		int face_id = 0;
@@ -78,6 +91,7 @@ void load_one_obj_at(std::vector<Triangle>& triangle_soup, std::vector<Triangle>
 			if (face_id < shape.mesh.material_ids.size()) {
 				material_id = shape.mesh.material_ids[face_id] + num_starting_mats;
 			}
+			mat_ids.push_back(material_id);
 			Vertex triangle_verts[3];
 			for (size_t v = 0; v < fv; v++) {
 				tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
@@ -91,19 +105,27 @@ void load_one_obj_at(std::vector<Triangle>& triangle_soup, std::vector<Triangle>
 				auto y_pos = attrib.vertices[pos_base + y];
 				auto z_pos = attrib.vertices[pos_base + z];
 
-				auto normal_base = 3 * idx.normal_index;
-				auto x_normals = attrib.normals[normal_base + x];
-				auto y_normals = attrib.normals[normal_base + y];
-				auto z_normals = attrib.normals[normal_base + z];
+				glm::vec3 normals = glm::vec3(0.0f);
+				if (!normals_excluded) {
+					auto normal_base = 3 * idx.normal_index;
+					auto x_normals = attrib.normals[normal_base + x];
+					auto y_normals = attrib.normals[normal_base + y];
+					auto z_normals = attrib.normals[normal_base + z];
+					normals = glm::vec3(x_normals, y_normals, z_normals);
+				}
 
-				auto texcoord_base = 2 * idx.texcoord_index;
-				auto x_texcoords = attrib.texcoords[texcoord_base + x];
-				auto y_texcoords = attrib.texcoords[texcoord_base + y];
+				glm::vec2 texcoords = glm::vec2(0.0f);
+				if (!texcoords_excluded) {
+					auto texcoord_base = 2 * idx.texcoord_index;
+					auto x_texcoords = attrib.texcoords[texcoord_base + x];
+					auto y_texcoords = attrib.texcoords[texcoord_base + y];
+					texcoords = glm::vec2(x_texcoords, y_texcoords);
+				}
 
 				triangle_verts[v] = Vertex(
 					glm::vec3(x_pos, y_pos, z_pos),
-					glm::vec3(x_normals, y_normals, z_normals),
-					glm::vec2(x_texcoords, y_texcoords)
+					normals,
+					texcoords
 				);
 			}
 
@@ -206,10 +228,14 @@ bool World::intersect(Ray& ray, HitInfo& hit) {
 
 	// Calculate UV coordinates using r.hit.u and r.hit.v
 	const Triangle& triangle = triangle_soup[r.hit.prim];
-	float w = 1.0f - r.hit.u - r.hit.v;
-	hit.uv = triangle.v0.texcoord * w +
-		triangle.v1.texcoord * r.hit.u +
-		triangle.v2.texcoord * r.hit.v;
+
+	const float u = r.hit.u;
+	const float v = r.hit.v;
+	const float w = 1.0f - r.hit.u - r.hit.v;
+
+	hit.uv = triangle.v0.texcoord * u +
+		triangle.v1.texcoord * v +
+		triangle.v2.texcoord * w;
 
 	return true;
 }
