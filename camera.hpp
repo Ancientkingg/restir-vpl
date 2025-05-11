@@ -14,13 +14,6 @@
 tinybvh::Ray toBVHRay(const Ray& r);
 tinybvh::Ray toBVHRay(const Ray& r, const float max_t);
 
-
-
-// Example shade function
-glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, float pdf, World& scene);
-glm::vec3 shade_normal(const HitInfo& hit, const SamplerResult& sample, float pdf, World& scene);
-glm::vec3 shade_debug(const HitInfo& hit, const SamplerResult& sample, float pdf, World& scene);
-
 // TODO: Cache ray hits (so we dont compute the same thing) when camera does not move
 
 class Camera {

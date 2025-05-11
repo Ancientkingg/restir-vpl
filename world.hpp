@@ -43,6 +43,8 @@ class World
 	tinybvh::BVH bvhInstance;
 	bool bvh_built = false;
 	std::vector<tinybvh::bvhvec4> raw_bvh_data;
+
+	void load_obj_at(std::string& file_path, glm::vec3 position, bool force_light = false);
 };
 
 World load_world();

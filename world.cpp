@@ -37,7 +37,8 @@ World load_world() {
 	return world;
 }
 
-void load_one_obj_at(std::vector<Triangle>& triangle_soup, std::vector<Triangle>& light_triangles, std::vector<tinyobj::material_t>& materials, std::vector<int>& mat_ids, std::vector<int>& light_mat_ids, std::string& file_path, glm::vec3 position) {
+
+void World::load_obj_at(std::string& file_path, glm::vec3 position, bool force_light) {
 	// this function is copied from Rafayels original implementation with slight changes
 
 	// Load the OBJ file using tinyobjloader
@@ -56,7 +57,7 @@ void load_one_obj_at(std::vector<Triangle>& triangle_soup, std::vector<Triangle>
 		std::cerr << "TinyObjReader: " << reader.Warning() << std::endl;
 	}
 
-	int num_starting_mats = materials.size();
+	int num_starting_mats = all_materials.size();
 
 	// Access the loaded shapes and materials
 	const auto& shapes = reader.GetShapes();
@@ -65,7 +66,7 @@ void load_one_obj_at(std::vector<Triangle>& triangle_soup, std::vector<Triangle>
 	const auto& new_mats = reader.GetMaterials();
 
 	for (tinyobj::material_t new_mat : new_mats) {
-		materials.push_back(new_mat);
+		all_materials.push_back(new_mat);
 	}
 
 	bool normals_excluded = attrib.normals.empty();
@@ -91,7 +92,7 @@ void load_one_obj_at(std::vector<Triangle>& triangle_soup, std::vector<Triangle>
 			if (face_id < shape.mesh.material_ids.size()) {
 				material_id = shape.mesh.material_ids[face_id] + num_starting_mats;
 			}
-			mat_ids.push_back(material_id);
+			all_material_ids.push_back(material_id);
 			Vertex triangle_verts[3];
 			for (size_t v = 0; v < fv; v++) {
 				tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
@@ -132,26 +133,30 @@ void load_one_obj_at(std::vector<Triangle>& triangle_soup, std::vector<Triangle>
 			Triangle triangle = Triangle(triangle_verts, material_id);
 
 			// Check if the material is emmissive and add to light triangles
-			if (material_id >= 0 && material_id < materials.size()) {
-				const tinyobj::material_t& mat = materials[material_id];
-				bool check_emmission = mat.emission[0] > 0 || mat.emission[1] > 0 || mat.emission[2] > 0;
-				bool check_emmissive_texmap = mat.emissive_texname != "";
-				if (check_emmission || check_emmissive_texmap) {
-					light_triangles.push_back(triangle + position);
-					light_mat_ids.push_back(material_id);
-				} else {
-					triangle_soup.push_back(triangle + position);
-					mat_ids.push_back(material_id);
+			if (material_id >= 0 && material_id < all_materials.size()) {
+				const tinyobj::material_t& mat = all_materials[material_id];
+
+				bool check_emission = mat.emission[0] > 0 || mat.emission[1] > 0 || mat.emission[2] > 0;
+				bool check_emissive_texmap = mat.emissive_texname != "";
+
+				if (check_emission || check_emissive_texmap || force_light) {
+					lights.push_back(triangle + position);
+					light_material_ids.push_back(material_id);
+					light_materials.push_back(mat);
 				}
 			}
+
+			triangle_soup.push_back(triangle + position);
+			all_material_ids.push_back(material_id);
+			
 
 			index_offset += fv;
 			face_id++;
 		}
 	}
 	std::clog << "Loaded " << triangle_soup.size() << " triangles from " << file_path << std::endl;
-	std::clog << "Loaded " << materials.size() << " materials from " << file_path << std::endl;
-	std::clog << "Loaded " << light_triangles.size() << " lights from " << file_path << std::endl;
+	std::clog << "Loaded " << all_materials.size() << " materials from " << file_path << std::endl;
+	std::clog << "Loaded " << lights.size() << " lights from " << file_path << std::endl;
 }
 
 World::World() {
@@ -166,13 +171,11 @@ World::World() {
 }
 
 void World::add_obj(std::string file_path, bool is_lights){
-	load_one_obj_at(triangle_soup, lights, all_materials, all_material_ids, light_material_ids, file_path, glm::vec3(0.0f));
-	// if(is_lights) load_one_obj_at(lights, light_materials, light_material_ids , file_path, glm::vec3(0.0f));
+	load_obj_at(file_path, glm::vec3(0.0f), is_lights);
 }
 
 void World::place_obj(std::string file_path, bool is_lights, glm::vec3 position) {
-	load_one_obj_at(triangle_soup, lights, all_materials, all_material_ids, light_material_ids, file_path, position);
-	// if (is_lights) load_one_obj_at(lights, light_materials, light_material_ids, file_path, position);
+	load_obj_at(file_path, position, is_lights);
 }
 
 tinybvh::BVH& World::bvh(){
@@ -184,11 +187,11 @@ tinybvh::BVH& World::bvh(){
 
 	raw_bvh_data = toBVHVec(triangle_soup);
 
-//#if defined(__AVX__) || defined(__AVX2__)
-	//bvhInstance.BuildAVX(raw_triangles.data(), triangle_soup.size());
-//#else
+#if defined(__AVX__) || defined(__AVX2__)
+	bvhInstance.BuildAVX(raw_bvh_data.data(), triangle_soup.size());
+#else
 	bvhInstance.Build(raw_bvh_data.data(), triangle_soup.size());
-//#endif
+#endif
 
 	return bvhInstance;
 }
