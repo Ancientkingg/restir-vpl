@@ -1,4 +1,4 @@
-Cgh#include "viewer.hpp"
+#include "viewer.hpp"
 
 #include <SDL2/SDL.h>
 #include <glm/glm.hpp>
