@@ -55,7 +55,7 @@ public:
 
     void swap_buffers();
 
-    int m = 20;
+    int m = 3;
 
 private:
     int x_pixels;

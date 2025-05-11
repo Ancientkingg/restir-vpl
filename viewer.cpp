@@ -338,12 +338,13 @@ void render_live(Camera &cam, World &world, bool progressive) {
 
         std::clog << "Frame " << frame
                 << " | Time: " << duration_ms << " ms"
-                << " | Camera: (" << cam.position.x << ", " << cam.position.y << ", " << cam.position.z << ")"
                 << " | View: " << ((render_mode == RENDER_SHADING)
                                        ? "Shading"
                                        : (render_mode == RENDER_DEBUG)
                                              ? "Debug"
                                              : "Normals")
+			    << " | M: " << light_sampler.m
+                << " | Camera: (" << cam.position.x << ", " << cam.position.y << ", " << cam.position.z << ")"
                 << "         \r" << std::flush;
 
         // update the accumulated colors
