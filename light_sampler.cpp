@@ -229,7 +229,7 @@ int RestirLightSampler::sampleLightIndex() const {
 
 	const glm::vec3 hit_point = hi.r.at(hi.t);
 	const glm::vec3 light_dir = light_point - hit_point;
-	const float cos_theta = glm::dot(glm::normalize(light_dir), hi.normal);
+	const float cos_theta = glm::dot(glm::normalize(light_dir), hi.triangle.normal(hi.uv));
 	const glm::vec3 brdf = hi.mat_ptr->evaluate(hi, light_dir);
 
 	const float target = cos_theta * glm::length(brdf);

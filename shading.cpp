@@ -21,7 +21,7 @@ glm::vec3 sky_color(const glm::vec3& direction) {
 }
 
 glm::vec3 shade_normal(const HitInfo& hit, const SamplerResult& sample, float pdf, World& scene) {
-    return hit.normal;
+    return hit.triangle.normal(hit.uv);
 }
 
 glm::vec3 shade_debug(const HitInfo& hit, const SamplerResult& sample, float pdf, World& scene) {
@@ -54,7 +54,7 @@ glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, float pdf, Worl
     glm::vec3 L = sample.light_dir;
 
 	// Normal of the intersection point
-    glm::vec3 N = hit.normal;
+    glm::vec3 N = hit.triangle.normal(hit.uv);
 
     // Incoming light direction
     glm::vec3 wi = sample.light_dir;

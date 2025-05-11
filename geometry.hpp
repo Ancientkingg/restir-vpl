@@ -36,7 +36,7 @@ struct Triangle {
 
 	Triangle(const Vertex vertices[3], int material_id);
 
-	glm::vec3 normal() const;
+	glm::vec3 normal(glm::vec2 uv = glm::vec2(0.0f)) const;
 
 	std::array<tinybvh::bvhvec4, 3> toBvhVec4() const;
 

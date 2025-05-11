@@ -6,6 +6,7 @@
 #include "lib/tiny_bvh.h"
 #endif
 
+#include "constants.hpp"
 glm::vec3 Triangle::calculateNormal() {
 	_normal = glm::normalize(glm::cross(v1.position - v0.position, v2.position - v0.position));
 	if (glm::dot(_normal, v0.normal) < 0.0f) {
@@ -33,8 +34,20 @@ Triangle::Triangle(const Vertex vertices[3], int material_id)
 	calculateNormal();
 }
 
-glm::vec3 Triangle::normal() const {
+glm::vec3 Triangle::normal(glm::vec2 uv) const {
+#ifdef INTERPOLATE_NORMALS
+	const float u = uv.x;
+	const float v = uv.y;
+	const float w = 1.0f - u - v;
+
+	glm::vec3 n = v0.normal * u +
+		v1.normal * v +
+		v2.normal * w;
+
+	return glm::normalize(n);
+#else
 	return _normal;
+#endif
 }
 
 std::array<tinybvh::bvhvec4, 3> Triangle::toBvhVec4() const {

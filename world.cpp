@@ -210,16 +210,9 @@ bool World::intersect(Ray& ray, HitInfo& hit) {
 
 	hit.t = r.hit.t;
 	hit.r = ray;
-	hit.triangle[0] = toGLMVec(bvhInstance.verts[r.hit.prim * 3 + 0]);
-	hit.triangle[1] = toGLMVec(bvhInstance.verts[r.hit.prim * 3 + 1]);
-	hit.triangle[2] = toGLMVec(bvhInstance.verts[r.hit.prim * 3 + 2]);
-	hit.normal = glm::normalize(
-		glm::cross(hit.triangle[1] - hit.triangle[0],
-			hit.triangle[2] - hit.triangle[0]));
+	const Triangle& triangle = triangle_soup[r.hit.prim];
 
-	if (glm::dot(hit.normal, ray.direction()) > 0.0f) {
-		hit.normal = -hit.normal;
-	}
+	hit.triangle = triangle;
 
 	int m_id = bvhInstance.verts[r.hit.prim * 3][3];
 	if (m_id < 0 || m_id >= all_materials.size()) {
@@ -229,17 +222,7 @@ bool World::intersect(Ray& ray, HitInfo& hit) {
 
 	hit.mat_ptr = get_materials()[m_id];
 
-
-	// Calculate UV coordinates using r.hit.u and r.hit.v
-	const Triangle& triangle = triangle_soup[r.hit.prim];
-
-	const float u = r.hit.u;
-	const float v = r.hit.v;
-	const float w = 1.0f - r.hit.u - r.hit.v;
-
-	hit.uv = triangle.v0.texcoord * u +
-		triangle.v1.texcoord * v +
-		triangle.v2.texcoord * w;
+	hit.uv = glm::vec2(r.hit.u, r.hit.v);
 
 	return true;
 }
