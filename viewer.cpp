@@ -1,4 +1,4 @@
-#include "viewer.hpp"
+Cgh#include "viewer.hpp"
 
 #include <SDL2/SDL.h>
 #include <glm/glm.hpp>
@@ -13,6 +13,7 @@
 #include "camera.hpp"
 #include "world.hpp"
 
+#define ENABLE_TEXTURES true
 
 // Call this once at program start:
 bool init_sdl()
@@ -111,7 +112,7 @@ std::string get_frame_filename(int i) {
 void render(Camera& cam, World& world, int framecount) {
     // Build the world and load materials
     world.bvh();
-    world.get_materials(false);
+    world.get_materials(!ENABLE_TEXTURES);
 
     auto lights = world.get_triangular_lights();
     auto light_sampler = RestirLightSampler(cam.image_width, cam.image_height, lights);
@@ -154,7 +155,7 @@ void render_live(Camera& cam, World& world, bool progressive) {
 
     // Build the world and load materials
     world.bvh();
-    world.get_materials(false);
+    world.get_materials(!ENABLE_TEXTURES);
 
     auto lights = world.get_triangular_lights();
     auto light_sampler = RestirLightSampler(cam.image_width, cam.image_height, lights);
