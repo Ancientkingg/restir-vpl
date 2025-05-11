@@ -26,8 +26,8 @@ World load_world() {
 	// world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
 	// world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
 	world.add_obj("objects/monkeyLightInOne.obj", false);
-	world.place_obj("objects/ceiling_light.obj", true, glm::vec3(0, 10, 0));
-	world.place_obj("objects/Gauntlet.obj", false, glm::vec3(0, 0, 0));
+	// world.place_obj("objects/ceiling_light.obj", true, glm::vec3(0, 10, 0));
+	// world.place_obj("objects/Gauntlet.obj", false, glm::vec3(0, 0, 0));
 	auto loading_stop = std::chrono::high_resolution_clock::now();
 
 	std::clog << "Loading took ";
