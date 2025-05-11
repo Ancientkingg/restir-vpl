@@ -30,8 +30,10 @@ glm::vec3 shade_debug(const HitInfo& hit, const SamplerResult& sample, float pdf
 		return sky_color(hit.r.direction());
     }
 
-	// return glm::vec3(hit.uv.x, hit.uv.y, 0.0f);
-    return sample.light_dir;
+    // Albedo
+	glm::vec3 fr = hit.mat_ptr->albedo(hit);
+
+    return fr;
 }
 
 

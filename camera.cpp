@@ -19,7 +19,9 @@ tinybvh::Ray toBVHRay(const Ray& r, const float max_t) {
 	return tinybvh::Ray(toBVHVec(r.origin()), toBVHVec(r.direction()), max_t);
 }
 
-Camera::Camera() : Camera(glm::vec3(0, 0, 0), glm::vec3(0, 0, 1)) {}
+Camera::Camera() : Camera(glm::vec3(0, 0, 0), glm::vec3(0, 0, 1)) {
+	updateDirection();
+}
 
 Camera::Camera(glm::vec3 camera_position, glm::vec3 camera_target)
 	: position(camera_position), target(camera_target) {
@@ -28,6 +30,8 @@ Camera::Camera(glm::vec3 camera_position, glm::vec3 camera_target)
 	right = glm::normalize(glm::cross(direction, world_up));
 	up = glm::normalize(glm::cross(right, direction));
 	forward = glm::normalize(glm::cross(up, right));
+
+	updateDirection();
 }
 
 void Camera::rotate(float angle, glm::vec3 axis) {
@@ -39,6 +43,8 @@ void Camera::rotate(float angle, glm::vec3 axis) {
 	right = glm::normalize(glm::cross(direction, up));
 	up = glm::normalize(glm::cross(right, direction));
 	forward = glm::normalize(glm::cross(up, right));
+
+	updateDirection();
 }
 
 void Camera::updateDirection() {
