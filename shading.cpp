@@ -79,7 +79,7 @@ glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, float pdf, Worl
 	glm::vec3 fr = hit.mat_ptr->evaluate(hit, L);
 
 	// PDF term
-    auto p = (fabs(glm::dot(N, wi)) * fabs(glm::dot(Nl, wi))) / (dist * dist * pdf);
+    float p = (fabs(glm::dot(N, wi)) * fabs(glm::dot(Nl, wi))) / (dist * dist * pdf);
 
     // Final contribution
     return Le * V * fr * p;
