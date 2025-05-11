@@ -16,7 +16,7 @@ thread_local std::mt19937 rng(std::random_device{}());
 std::uniform_real_distribution<float> dist(0.0f, 1.0f);
 
 Reservoir::Reservoir() : sample(glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0), sample_pos(0, 0, 0), M(0),
-W(0), w_out(0) {
+W(0), phat(0) {
 }
 
 SamplerResult::SamplerResult() : light_point(0.0), light_dir(0.0),
@@ -24,7 +24,7 @@ light(glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0) {
 }
 
 
-void Reservoir::update(const TriangularLight& new_sample, const glm::vec3 sample_point, const float w_i) {
+void Reservoir::update(const TriangularLight& new_sample, const glm::vec3 sample_point, const float w_i, const float n_phat) {
 	M++;
 	if (W == 0) {
 		W = w_i;
@@ -37,9 +37,9 @@ void Reservoir::update(const TriangularLight& new_sample, const glm::vec3 sample
 		dist(rng) < p) {
 		sample = new_sample;
 		sample_pos = sample_point;
-		w_out = w_i;
+		phat = n_phat;
 	}
-	W = (W + w_i) / M / w_out;
+	W = (W + w_i) / M / phat;
 }
 
 void Reservoir::merge(const Reservoir &other) {
@@ -59,10 +59,10 @@ void Reservoir::merge(const Reservoir &other) {
 		dist(rng) < p) {
 		sample = other.sample;
 		sample_pos = other.sample_pos;
-		w_out = other.w_out;
+		phat = other.phat;
 	}
 	// else do nothing
-	W = (W + other.W) / M / w_out;
+	W = (W + other.W) / M / phat;
 }
 
 void Reservoir::replace(const Reservoir &other) {
@@ -70,14 +70,14 @@ void Reservoir::replace(const Reservoir &other) {
 	M = other.M;
 	sample = other.sample;
 	sample_pos = other.sample_pos;
-	w_out = other.w_out;
+	phat = other.phat;
 }
 
 void Reservoir::reset() {
 	sample = { glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0 };
 	M = 0;
 	W = 0;
-	w_out = 0;
+	phat = 0;
 	sample_pos = { 0.0, 0.0, 0.0 };
 }
 
@@ -143,7 +143,7 @@ void RestirLightSampler::set_initial_sample(const int x, const int y, const HitI
 	for (int k = 0; k < m; k++) {
 		TriangularLight l = pick_light();
 		const glm::vec3 sample_point = sample_on_light(l);
-		res.update(l, sample_point, get_light_weight(l, sample_point, hi));
+		res.update(l, sample_point, get_light_weight(l, sample_point, hi),  1.0f / static_cast<float>(num_lights) / l.area());
 	}
 }
 
@@ -233,7 +233,7 @@ int RestirLightSampler::sampleLightIndex() const {
 	const glm::vec3 brdf = hi.mat_ptr->evaluate(hi, light_dir);
 
 	const float target = cos_theta * glm::length(brdf);
-	const float source = 1.0f / static_cast<float>(num_lights);
+	const float source = 1.0f / static_cast<float>(num_lights) / light.area();
 
 	return std::max(0.f, source / target);
 }
