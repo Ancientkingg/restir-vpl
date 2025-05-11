@@ -29,6 +29,7 @@ void Reservoir::update(const TriangularLight& new_sample, const glm::vec3 sample
 	if (W == 0) {
 		W = w_i;
 		sample = new_sample;
+		sample_pos = sample_point;
 		return;
 	}
 	W += w_i;

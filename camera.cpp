@@ -21,7 +21,7 @@ tinybvh::Ray toBVHRay(const Ray& r, const float max_t) {
 
 // TODO: Cache ray hits (so we dont compute the same thing) when camera does not move
 
-Camera::Camera() : Camera(glm::vec3(2.92981, 13.5058, 5.15292), glm::vec3(0, 0, 1)) {}
+Camera::Camera() : Camera(glm::vec3(0, 0, 0), glm::vec3(0, 0, 1)) {}
 
 Camera::Camera(glm::vec3 camera_position, glm::vec3 camera_target)
 	: position(camera_position), target(camera_target) {

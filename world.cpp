@@ -17,11 +17,11 @@ World load_world() {
 	auto loading_start = std::chrono::high_resolution_clock::now();
 
 	World world;
-	// world.add_obj("objects/whiteMonkey.obj", false);
-	// world.add_obj("objects/blueMonkey_rotated.obj", false);
-	// world.add_obj("objects/bigCubeLight.obj", true);
-	world.add_obj("objects/bistro_normal.obj", false);
-	world.add_obj("objects/bistro_lights.obj", true);
+	world.add_obj("objects/whiteMonkey.obj", false);
+	world.add_obj("objects/blueMonkey_rotated.obj", false);
+	world.add_obj("objects/bigCubeLight.obj", true);
+	// world.add_obj("objects/bistro_normal.obj", false);
+	// world.add_obj("objects/bistro_lights.obj", true);
 	// world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
 	// world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
 	auto loading_stop = std::chrono::high_resolution_clock::now();
