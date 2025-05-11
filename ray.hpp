@@ -2,7 +2,7 @@
 
 #include <glm/vec3.hpp>
 
-class Ray {
+class alignas(16) Ray {
 public:
     Ray();
 
@@ -14,6 +14,6 @@ public:
     glm::vec3 at(float t) const;
 
 private:
-    glm::vec3 orig;
-    glm::vec3 dir;
+    alignas(16) glm::vec3 orig;
+    alignas(16) glm::vec3 dir;
 };
