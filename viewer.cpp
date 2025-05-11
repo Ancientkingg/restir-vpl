@@ -12,11 +12,7 @@
 #include "light_sampler.hpp"
 #include "camera.hpp"
 #include "world.hpp"
-
-#define ENABLE_TEXTURES true
-#define RENDER_FRAME_COUNT 20
-#define RENDER_WIDTH 1280
-#define RENDER_HEIGHT 720
+#include "constants.hpp"
 
 // Call this once at program start:
 bool init_sdl() {
