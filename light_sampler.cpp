@@ -100,6 +100,9 @@ void RestirLightSampler::reset() {
 }
 
 std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::vector<HitInfo> hit_infos) {
+	if (num_lights == 0) {
+		return std::vector(y_pixels, std::vector<SamplerResult>(x_pixels));
+	}
 	// Swap the current and previous reservoirs
 	swap_buffers();
 	// For every pixel:
