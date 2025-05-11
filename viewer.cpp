@@ -14,6 +14,7 @@
 #include "world.hpp"
 
 #define ENABLE_TEXTURES true
+#define RENDER_FRAME_COUNT 20
 
 // Call this once at program start:
 bool init_sdl() {
@@ -105,7 +106,18 @@ std::string get_frame_filename(int i) {
     return oss.str();
 }
 
-void render(Camera &cam, World &world, int framecount) {
+void accumulate(std::vector<std::vector<glm::vec3>>& colors, std::vector<std::vector<glm::vec3>>& new_color, int frame) {
+	for (int j = 0; j < colors.size(); j++) {
+		for (int i = 0; i < colors[j].size(); i++) {
+			colors[j][i] = ((colors[j][i] * static_cast<float>(frame)) + new_color[j][i]) /
+				static_cast<float>(frame + 1);
+		}
+	}
+}
+
+bool currently_outputting_render = false;
+
+void render(Camera &cam, World &world, int framecount, bool accumulate_flag) {
     // Build the world and load materials
     world.bvh();
     world.get_materials(!ENABLE_TEXTURES);
@@ -113,11 +125,22 @@ void render(Camera &cam, World &world, int framecount) {
     auto lights = world.get_triangular_lights();
     auto light_sampler = RestirLightSampler(cam.image_width, cam.image_height, lights);
 
+    std::vector<std::vector<glm::vec3> > accumulated_colors;
+    if (accumulate_flag) {
+        accumulated_colors =
+            std::vector(cam.image_height,
+                std::vector<glm::vec3>(cam.image_width, glm::vec3(0.0f)));
+    }
+
     for (int i = 0; i < framecount; i++) {
         auto render_start = std::chrono::high_resolution_clock::now();
 
         RenderInfo info = RenderInfo{cam, world, light_sampler};
         std::vector<std::vector<glm::vec3> > colors = raytrace(RENDER_SHADING, info);
+
+		if (accumulate_flag) {
+			accumulate(accumulated_colors, colors, i);
+		}
 
         auto render_stop = std::chrono::high_resolution_clock::now();
 
@@ -129,6 +152,13 @@ void render(Camera &cam, World &world, int framecount) {
         auto filename = get_frame_filename(i);
         save_image(colors, "./images/" + filename);
     }
+	if (accumulate_flag) {
+		std::clog << "Output accumulated frame" << std::endl;
+		auto filename = get_frame_filename(framecount);
+		save_image(accumulated_colors, "./images/accumulate_" + filename);
+	}
+
+    currently_outputting_render = false;
 }
 
 struct KeyState {
@@ -139,6 +169,7 @@ struct KeyState {
     bool space = false;
     bool shift = false;
     bool ctrl = false;
+    bool enter = false;
 };
 
 void render_live(Camera &cam, World &world, bool progressive) {
@@ -217,6 +248,10 @@ void render_live(Camera &cam, World &world, bool progressive) {
                         break;
                     case SDLK_LSHIFT: keys.shift = isDown;
                         break;
+                    case SDLK_KP_ENTER: keys.enter = isDown;
+                        break;
+					case SDLK_RETURN: keys.enter = isDown;
+						break;
                     case SDLK_b: render_mode = RENDER_DEBUG;
                         break;
                     case SDLK_n: render_mode = RENDER_NORMALS;
@@ -238,6 +273,14 @@ void render_live(Camera &cam, World &world, bool progressive) {
                 mouseDeltaX += e.motion.xrel;
                 mouseDeltaY += e.motion.yrel;
             }
+        }
+
+        if (keys.enter && !currently_outputting_render) {
+			// Render the current frame
+			std::clog << "\nOutput render with current camera" << std::endl;
+            currently_outputting_render = true;
+            render(cam, world, RENDER_FRAME_COUNT, progressive);
+			keys.enter = false;
         }
 
         // Apply camera movement
@@ -304,12 +347,7 @@ void render_live(Camera &cam, World &world, bool progressive) {
                 << "         \r" << std::flush;
 
         // update the accumulated colors
-        for (int j = 0; j < cam.image_height; j++) {
-            for (int i = 0; i < cam.image_width; i++) {
-                accumulated_colors[j][i] = ((accumulated_colors[j][i] * static_cast<float>(frame)) + colors[j][i]) /
-                                           static_cast<float>(frame + 1);
-            }
-        }
+		accumulate(accumulated_colors, colors, frame);
         frame++;
 
         /// output frame
