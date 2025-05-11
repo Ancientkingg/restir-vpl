@@ -114,6 +114,27 @@ void accumulate(std::vector<std::vector<glm::vec3>>& colors, std::vector<std::ve
 }
 
 bool currently_outputting_render = false;
+float avg_time = 0.0f; // ms
+int total_frames = 1;
+
+static void progress_bar(float progress, float time, int framecount) {
+	avg_time = (avg_time * total_frames + time) / (total_frames + 1);
+	total_frames++;
+
+	int barWidth = 70;
+	std::cout << "[";
+	int pos = barWidth * progress;
+	for (int i = 0; i < barWidth; ++i) {
+		if (i < pos) std::cout << "=";
+		else if (i == pos) std::cout << ">";
+		else std::cout << " ";
+	}
+	float estimated_time = avg_time * (framecount - total_frames); // ms
+	int minutes = static_cast<int>(estimated_time / 60000);
+	int seconds = static_cast<int>((estimated_time - (minutes * 60000)) / 1000);
+	std::cout << "] " << int(progress * 100.0f) << "% Estimated time left: " << minutes << "m" << seconds << "s\r";
+	std::cout.flush();
+}
 
 void render(Camera &cam, World &world, int framecount, bool accumulate_flag) {
     Camera render_cam = Camera(cam.position, cam.target);
@@ -150,9 +171,11 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag) {
 
         auto render_stop = std::chrono::high_resolution_clock::now();
 
-        std::clog << "Rendering frame " << i << " took ";
-        std::clog << std::chrono::duration_cast<std::chrono::milliseconds>(render_stop - render_start).count();
-        std::clog << " milliseconds" << std::endl;
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(render_stop - render_start).count();
+
+		progress_bar(
+			static_cast<float>(i + 1) / static_cast<float>(framecount),
+			duration, framecount);
 
         /// output frame
         auto filename = get_frame_filename(i);
