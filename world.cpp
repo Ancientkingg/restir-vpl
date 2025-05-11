@@ -12,6 +12,8 @@
 #include "tiny_bvh_types.hpp"
 #include "geometry.hpp"
 
+#define BASE_LIGHT_INTENSITY 100.0f
+
 World load_world() {
 	auto loading_start = std::chrono::high_resolution_clock::now();
 
@@ -201,9 +203,6 @@ bool World::is_occluded(const Ray &ray, float dist) {
 	tinybvh::Ray r = toBVHRay(ray, dist);
 	return this->bvhInstance.IsOccluded(r);
 }
-
-#define BASE_LIGHT_INTENSITY 75.0f
-
 
 std::vector<TriangularLight> World::get_triangular_lights(){
 	std::vector<TriangularLight> out;

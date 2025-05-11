@@ -33,7 +33,7 @@ glm::vec3 Lambertian::evaluate(const HitInfo& hit, const glm::vec3& wi) const {
 		return glm::vec3(0.0f);
 	}
 
-	return _albedo->value(hit.uv.x, hit.uv.y, hit.r.at(hit.t)) * glm::dot(hit.normal, wi) / glm::pi<float>();
+	return _albedo->value(hit.uv.x, hit.uv.y, hit.r.at(hit.t)) / glm::pi<float>();
 }
 
 glm::vec3 Lambertian::albedo(const HitInfo& hit) const {
