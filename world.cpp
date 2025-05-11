@@ -29,7 +29,6 @@ World load_world() {
 	//world.add_obj("objects/monkeyLightInOne.obj", false);
 	 //world.place_obj("objects/ceiling_light.obj", true, glm::vec3(0, 10, 0));
 	// world.place_obj("objects/Gauntlet.obj", false, glm::vec3(0, 0, 0));
-	world.place_obj("objects/room.obj", false, glm::vec3(0, 0, 0));
 	auto loading_stop = std::chrono::high_resolution_clock::now();
 
 	std::clog << "Loading took ";
@@ -134,7 +133,7 @@ void World::load_obj_at(std::string& file_path, glm::vec3 position, bool force_l
 
 			Triangle triangle = Triangle(triangle_verts, material_id);
 
-			// Check if the material is emmissive and add to light triangles
+			// Check if the material is emissive and add to light triangles
 			if (material_id >= 0 && material_id < all_materials.size()) {
 				const tinyobj::material_t& mat = all_materials[material_id];
 
