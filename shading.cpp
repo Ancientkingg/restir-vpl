@@ -34,10 +34,10 @@ glm::vec3 shade_debug(const HitInfo& hit, const SamplerResult& sample, float pdf
     return sample.light_dir;
 }
 
-glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, float pdf, World& scene) {
-    glm::vec3 L = sample.light_dir;
-    glm::vec3 N = hit.normal;
 
+// Reference: https://momentsingraphics.de/ToyRenderer4RayTracing.html
+
+glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, float pdf, World& scene) {
     // Ray has no intersection
     if (hit.t == 1E30f) {
         return sky_color(hit.r.direction());
@@ -48,21 +48,37 @@ glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, float pdf, Worl
         return hit.mat_ptr->albedo(hit);
     }
 
+	// Sampled light direction
+    glm::vec3 L = sample.light_dir;
+
+	// Normal of the intersection point
+    glm::vec3 N = hit.normal;
+
+    // Incoming light direction
+    glm::vec3 wi = sample.light_dir;
+
+	// Normal of the light source
+    glm::vec3 Nl = sample.light.triangle.normal();
+
+    // Point of intersection [x]
     glm::vec3 I = hit.r.at(hit.t);
+
+	// Distance between the light and the intersection point
     float dist = glm::length(sample.light_point - I);
 
-    // Evaluate BRDF at the hit point
-    glm::vec3 brdf = hit.mat_ptr->evaluate(hit, sample.light_dir);
+    // Emitted radiance from the light source towards x. For uniform area lights, it's constant: L0.
+	glm::vec3 Le = sample.light.c * sample.light.intensity * 100.0f;
 
-    glm::vec3 direct = glm::vec3(0.0f);
-    if (Ray shadow_ray = Ray(I + EPS * L, L); !scene.is_occluded(shadow_ray, dist - EPS * 5000.0f)) {
-        direct = brdf;
-    }
+    // Visibility term
+    Ray shadow_ray = Ray(I + EPS * L, L);
+    float V = scene.is_occluded(shadow_ray, dist - EPS * 5000.0f) ? 0.0 : 1.0;
 
-    glm::vec3 ambient_lighting = sample.light.c; // Ambient light color
-    float ambient_cos_theta = fabs(glm::dot(L, glm::vec3(0.0f, 1.0f, 0.0f)));
-    glm::vec3 ambient = ambient_lighting * ambient_cos_theta * 1000.0f * sample.light.intensity * (1.0f / (dist * dist));
+	// BRDF term
+	glm::vec3 fr = hit.mat_ptr->evaluate(hit, L);
+
+	// PDF term
+    auto p = (fabs(glm::dot(N, wi)) * fabs(glm::dot(Nl, wi))) / (dist * dist * pdf);
 
     // Final contribution
-    return direct * ambient;
+    return Le * V * fr * p;
 }

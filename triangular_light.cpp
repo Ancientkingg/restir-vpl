@@ -11,12 +11,12 @@
 
 TriangularLight::TriangularLight(const glm::vec3 v0, const glm::vec3 v1, const glm::vec3 v2, const glm::vec3 c, const float intensity)
     : triangle(v0, v1, v2, -1), c(c), intensity(intensity) {
-    pdf = 1;
+    pdf = 1.0 / area();
 }
 
 TriangularLight::TriangularLight(const Triangle triangle, const glm::vec3 c, const float intensity)
 	: triangle(triangle), c(c), intensity(intensity) {
-	pdf = 1;
+	pdf = 1.0 / area();
 }
 
 

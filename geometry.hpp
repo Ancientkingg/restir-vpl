@@ -39,6 +39,10 @@ struct Triangle {
 	glm::vec3 normal() const;
 
 	std::array<tinybvh::bvhvec4, 3> toBvhVec4() const;
+
+private:
+	glm::vec3 _normal;
+	glm::vec3 calculateNormal();
 };
 
 

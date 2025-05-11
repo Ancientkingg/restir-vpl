@@ -216,14 +216,10 @@ std::vector<TriangularLight> World::get_triangular_lights(){
 		);
 		float intensity = (c[0] + c[1] + c[2]) / 3;
 		TriangularLight tl(lights[i], c, intensity);
-		tl.pdf = 1.0 / tl.area();
 		out.push_back(tl);
-
-		max_pdf = tl.pdf > max_pdf ? tl.pdf : max_pdf;
 		face_id++;
 	}
 
-	for(TriangularLight &tl : out) tl.pdf = tl.pdf / max_pdf;	
 	return out;
 }
 
