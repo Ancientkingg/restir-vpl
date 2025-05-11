@@ -16,8 +16,7 @@
 #define ENABLE_TEXTURES true
 
 // Call this once at program start:
-bool init_sdl()
-{
+bool init_sdl() {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         std::cerr << "SDL_Init Error: " << SDL_GetError() << "\n";
         return false;
@@ -26,18 +25,16 @@ bool init_sdl()
 }
 
 // Call this at program end:
-void shutdown_sdl()
-{
+void shutdown_sdl() {
     SDL_Quit();
 }
 
 // Creates an SDL window + renderer + texture for live‐viewing.
 // Returns true on success, and fills out the handles.
 bool create_view_window(int width, int height,
-                        SDL_Window*&  outWindow,
-                        SDL_Renderer*& outRenderer,
-                        SDL_Texture*& outTexture)
-{
+                        SDL_Window *&outWindow,
+                        SDL_Renderer *&outRenderer,
+                        SDL_Texture *&outTexture) {
     outWindow = SDL_CreateWindow("Live View",
                                  SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                  width, height,
@@ -67,25 +64,24 @@ bool create_view_window(int width, int height,
 }
 
 // Call once per frame after you've filled `pixels`:
-void update_and_present(SDL_Renderer* renderer,
-                        SDL_Texture*  texture,
-                        const std::vector<std::vector<glm::vec3>>& pixels)
-{
+void update_and_present(SDL_Renderer *renderer,
+                        SDL_Texture *texture,
+                        const std::vector<std::vector<glm::vec3> > &pixels) {
     int height = int(pixels.size());
-    int width  = int(pixels[0].size());
+    int width = int(pixels[0].size());
 
     // Lock texture to get raw pointer
-    void*     texPixels;
-    int       pitch; // bytes per row
+    void *texPixels;
+    int pitch; // bytes per row
     SDL_LockTexture(texture, nullptr, &texPixels, &pitch);
 
     // pitch should equal width * 3 for RGB24, but we use it in case
-    unsigned char* dst = static_cast<unsigned char*>(texPixels);
+    unsigned char *dst = static_cast<unsigned char *>(texPixels);
 
     // Copy rows bottom-up if you want to flip vertically,
     // otherwise just iterate y from 0→height.
     for (int y = 0; y < height; ++y) {
-        unsigned char* row = dst + y * pitch;
+        unsigned char *row = dst + y * pitch;
         for (int x = 0; x < width; ++x) {
             glm::vec3 c = glm::clamp(pixels[height - 1 - y][x], 0.0f, 1.0f);
             int idx = x * 3;
@@ -109,7 +105,7 @@ std::string get_frame_filename(int i) {
     return oss.str();
 }
 
-void render(Camera& cam, World& world, int framecount) {
+void render(Camera &cam, World &world, int framecount) {
     // Build the world and load materials
     world.bvh();
     world.get_materials(!ENABLE_TEXTURES);
@@ -120,8 +116,8 @@ void render(Camera& cam, World& world, int framecount) {
     for (int i = 0; i < framecount; i++) {
         auto render_start = std::chrono::high_resolution_clock::now();
 
-        RenderInfo info = RenderInfo{ cam, world, light_sampler };
-        std::vector<std::vector<glm::vec3>> colors = raytrace(RENDER_SHADING, info);
+        RenderInfo info = RenderInfo{cam, world, light_sampler};
+        std::vector<std::vector<glm::vec3> > colors = raytrace(RENDER_SHADING, info);
 
         auto render_stop = std::chrono::high_resolution_clock::now();
 
@@ -145,7 +141,7 @@ struct KeyState {
     bool ctrl = false;
 };
 
-void render_live(Camera& cam, World& world, bool progressive) {
+void render_live(Camera &cam, World &world, bool progressive) {
     ShadingMode render_mode = RENDER_SHADING;
     const float moveSpeed = 0.5f;
     const float mouseSensitivity = 0.02f;
@@ -168,9 +164,9 @@ void render_live(Camera& cam, World& world, bool progressive) {
     int height = cam.image_height;
 
     // 2) Create window/renderer/texture
-    SDL_Window* window = nullptr;
-    SDL_Renderer* renderer = nullptr;
-    SDL_Texture* texture = nullptr;
+    SDL_Window *window = nullptr;
+    SDL_Renderer *renderer = nullptr;
+    SDL_Texture *texture = nullptr;
     if (!create_view_window(width, height, window, renderer, texture))
         return;
 
@@ -180,8 +176,8 @@ void render_live(Camera& cam, World& world, bool progressive) {
     SDL_Event e;
 
     std::vector<std::vector<glm::vec3> > accumulated_colors =
-        std::vector(cam.image_height,
-            std::vector<glm::vec3>(cam.image_width, glm::vec3(0.0f)));
+            std::vector(cam.image_height,
+                        std::vector<glm::vec3>(cam.image_width, glm::vec3(0.0f)));
     int frame = 0;
 
     // Handle key input such as combos
@@ -191,7 +187,7 @@ void render_live(Camera& cam, World& world, bool progressive) {
     std::clog << "=======================================================" << "\r\n";
 
     while (running) {
-        const Uint8* state = SDL_GetKeyboardState(NULL);
+        const Uint8 *state = SDL_GetKeyboardState(NULL);
 
         // 3) Handle events
         while (SDL_PollEvent(&e)) {
@@ -204,23 +200,37 @@ void render_live(Camera& cam, World& world, bool progressive) {
                 SDL_Keycode key = e.key.keysym.sym;
 
                 switch (key) {
-                case SDLK_ESCAPE:
-                    running = false;
-                    break;
-                case SDLK_w: keys.w = isDown; break;
-                case SDLK_a: keys.a = isDown; break;
-                case SDLK_s: keys.s = isDown; break;
-                case SDLK_d: keys.d = isDown; break;
-                case SDLK_SPACE: keys.space = isDown; break;
-                case SDLK_LCTRL: keys.ctrl = isDown; break;
-				case SDLK_LSHIFT: keys.shift = isDown; break;
-                case SDLK_b: render_mode = RENDER_DEBUG; break;
-                case SDLK_n: render_mode = RENDER_NORMALS; break;
-                case SDLK_v: render_mode = RENDER_SHADING; break;
-                case SDLK_p:
-                    if (isDown) progressive = !progressive;
-                    break;
-                default: break;
+                    case SDLK_ESCAPE:
+                        running = false;
+                        break;
+                    case SDLK_w: keys.w = isDown;
+                        break;
+                    case SDLK_a: keys.a = isDown;
+                        break;
+                    case SDLK_s: keys.s = isDown;
+                        break;
+                    case SDLK_d: keys.d = isDown;
+                        break;
+                    case SDLK_SPACE: keys.space = isDown;
+                        break;
+                    case SDLK_LCTRL: keys.ctrl = isDown;
+                        break;
+                    case SDLK_LSHIFT: keys.shift = isDown;
+                        break;
+                    case SDLK_b: render_mode = RENDER_DEBUG;
+                        break;
+                    case SDLK_n: render_mode = RENDER_NORMALS;
+                        break;
+                    case SDLK_v: render_mode = RENDER_SHADING;
+                        break;
+                    case SDLK_UP: light_sampler.m++; light_sampler.reset();
+                        break;
+                    case SDLK_DOWN: light_sampler.m--; light_sampler.reset();
+                        break;
+                    case SDLK_p:
+                        if (isDown) progressive = !progressive;
+                        break;
+                    default: break;
                 }
             }
 
@@ -240,9 +250,9 @@ void render_live(Camera& cam, World& world, bool progressive) {
         if (keys.ctrl) movement -= glm::vec3(0.0f, 1.0f, 0.0f);
 
         float sprintSpeed = 1.0f;
-		if (keys.shift) {
-			sprintSpeed *= 6.0f;
-		}
+        if (keys.shift) {
+            sprintSpeed *= 6.0f;
+        }
 
         if (glm::length(movement) > 0.0f) {
             cam.position += glm::normalize(movement) * moveSpeed * sprintSpeed;
@@ -268,32 +278,36 @@ void render_live(Camera& cam, World& world, bool progressive) {
             //std::clog << "Camera moved, resetting light sampler" << std::endl;
             light_sampler.reset();
             accumulated_colors =
-                std::vector(cam.image_height,
-                    std::vector<glm::vec3>(cam.image_width, glm::vec3(0.0f)));
+                    std::vector(cam.image_height,
+                                std::vector<glm::vec3>(cam.image_width, glm::vec3(0.0f)));
             frame = 0;
             camera_moved = false;
         }
 
         auto render_start = std::chrono::high_resolution_clock::now();
 
-		RenderInfo info = RenderInfo { cam, world, light_sampler };
-        std::vector<std::vector<glm::vec3>> colors = raytrace(render_mode, info);
+        RenderInfo info = RenderInfo{cam, world, light_sampler};
+        std::vector<std::vector<glm::vec3> > colors = raytrace(render_mode, info);
 
         auto render_stop = std::chrono::high_resolution_clock::now();
 
         float duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(render_stop - render_start).count();
 
         std::clog << "Frame " << frame
-            << " | Time: " << duration_ms << " ms"
-            << " | Camera: (" << cam.position.x << ", " << cam.position.y << ", " << cam.position.z << ")"
-            << " | View: " << ((render_mode == RENDER_SHADING) ? "Shading" : (render_mode == RENDER_DEBUG) ? "Debug" : "Normals")
-            << "         \r" << std::flush;
+                << " | Time: " << duration_ms << " ms"
+                << " | Camera: (" << cam.position.x << ", " << cam.position.y << ", " << cam.position.z << ")"
+                << " | View: " << ((render_mode == RENDER_SHADING)
+                                       ? "Shading"
+                                       : (render_mode == RENDER_DEBUG)
+                                             ? "Debug"
+                                             : "Normals")
+                << "         \r" << std::flush;
 
         // update the accumulated colors
         for (int j = 0; j < cam.image_height; j++) {
             for (int i = 0; i < cam.image_width; i++) {
                 accumulated_colors[j][i] = ((accumulated_colors[j][i] * static_cast<float>(frame)) + colors[j][i]) /
-                    static_cast<float>(frame + 1);
+                                           static_cast<float>(frame + 1);
             }
         }
         frame++;
@@ -301,8 +315,7 @@ void render_live(Camera& cam, World& world, bool progressive) {
         /// output frame
         if (progressive) {
             update_and_present(renderer, texture, accumulated_colors);
-        }
-        else {
+        } else {
             update_and_present(renderer, texture, colors);
         }
     }

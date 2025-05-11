@@ -55,8 +55,9 @@ public:
 
     void swap_buffers();
 
+    int m = 20;
+
 private:
-    int m = 3;
     int x_pixels;
     int y_pixels;
     std::vector<Reservoir> prev_reservoirs;
