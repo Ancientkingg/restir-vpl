@@ -25,13 +25,14 @@ public:
     glm::vec3 sample_pos;
     int M;
     float W;
+    float w_out;
 
     Reservoir();
     void update(const TriangularLight& new_sample, const glm::vec3 sample_point, const float w_i);
+    void merge(const Reservoir& other);
+    void replace(const Reservoir& other);
     void reset();
 };
-
-inline Reservoir merge_reservoirs(std::span<const Reservoir> reservoirs);
 
 class RestirLightSampler {
 public:
@@ -52,10 +53,10 @@ public:
 
     void spatial_update(const int x, const int y, const int radius);
 
-    void next_frame();
+    void swap_buffers();
 
 private:
-    int m = 2;
+    int m = 3;
     int x_pixels;
     int y_pixels;
     std::vector<Reservoir> prev_reservoirs;
