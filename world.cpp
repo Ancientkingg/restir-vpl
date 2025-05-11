@@ -21,10 +21,10 @@ World load_world() {
 	//world.add_obj("objects/whiteMonkey.obj", false);
 	//world.add_obj("objects/blueMonkey_rotated.obj", false);
 	//world.add_obj("objects/bigCubeLight.obj", true);
-	// world.add_obj("objects/bistro_normal.obj", false);
+	world.add_obj("objects/bistro_normal.obj", false);
 	// world.add_obj("objects/bistro_lights.obj", true);
-	world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
-	world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
+	// world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
+	// world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
 	auto loading_stop = std::chrono::high_resolution_clock::now();
 
 	std::clog << "Loading took ";
@@ -34,7 +34,7 @@ World load_world() {
 	return world;
 }
 
-void load_one_obj_at(std::vector<Triangle>& triangle_soup, std::vector<tinyobj::material_t>& materials, std::vector<int>& mat_ids, std::string& file_path, glm::vec3 position) {
+void load_one_obj_at(std::vector<Triangle>& triangle_soup, std::vector<Triangle>& light_triangles, std::vector<tinyobj::material_t>& materials, std::vector<int>& mat_ids, std::vector<int>& light_mat_ids, std::string& file_path, glm::vec3 position) {
 	// this function is copied from Rafayels original implementation with slight changes
 
 	// Load the OBJ file using tinyobjloader
@@ -110,6 +110,15 @@ void load_one_obj_at(std::vector<Triangle>& triangle_soup, std::vector<tinyobj::
 			Triangle triangle = Triangle(triangle_verts, material_id);
 			triangle_soup.push_back(triangle + position);
 
+			// Check if the material is emmissive and add to light triangles
+			if (material_id >= 0 && material_id < materials.size()) {
+				const tinyobj::material_t& mat = materials[material_id];
+				if (mat.emission[0] > 0 || mat.emission[1] > 0 || mat.emission[2] > 0) {
+					light_triangles.push_back(triangle + position);
+					light_mat_ids.push_back(material_id);
+				}
+			}
+
 			index_offset += fv;
 			face_id++;
 		}
@@ -129,13 +138,13 @@ World::World() {
 }
 
 void World::add_obj(std::string file_path, bool is_lights){
-	load_one_obj_at(triangle_soup, all_materials, all_material_ids, file_path, glm::vec3(0.0f));
-	if(is_lights) load_one_obj_at(lights, light_materials, light_material_ids , file_path, glm::vec3(0.0f));
+	load_one_obj_at(triangle_soup, lights, all_materials, all_material_ids, light_material_ids, file_path, glm::vec3(0.0f));
+	// if(is_lights) load_one_obj_at(lights, light_materials, light_material_ids , file_path, glm::vec3(0.0f));
 }
 
 void World::place_obj(std::string file_path, bool is_lights, glm::vec3 position) {
-	load_one_obj_at(triangle_soup, all_materials, all_material_ids, file_path, position);
-	if (is_lights) load_one_obj_at(lights, light_materials, light_material_ids, file_path, position);
+	load_one_obj_at(triangle_soup, lights, all_materials, all_material_ids, light_material_ids, file_path, position);
+	// if (is_lights) load_one_obj_at(lights, light_materials, light_material_ids, file_path, position);
 }
 
 tinybvh::BVH& World::bvh(){
