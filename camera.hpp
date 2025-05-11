@@ -55,4 +55,12 @@ public:
     std::vector<std::vector<Ray>> generate_rays_for_frame();
 
     std::vector<HitInfo> get_hit_info_from_camera_per_frame(World& world);
+
+private:
+    std::vector<HitInfo> hit_infos;
+
+    glm::vec3 last_pos;
+	glm::vec3 last_right, last_up, last_forward;
+
+    std::vector<HitInfo> calculate_hit_info(World& world);
 };

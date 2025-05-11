@@ -19,8 +19,6 @@ tinybvh::Ray toBVHRay(const Ray& r, const float max_t) {
 	return tinybvh::Ray(toBVHVec(r.origin()), toBVHVec(r.direction()), max_t);
 }
 
-// TODO: Cache ray hits (so we dont compute the same thing) when camera does not move
-
 Camera::Camera() : Camera(glm::vec3(0, 0, 0), glm::vec3(0, 0, 1)) {}
 
 Camera::Camera(glm::vec3 camera_position, glm::vec3 camera_target)
@@ -84,7 +82,7 @@ std::vector<std::vector<Ray>> Camera::generate_rays_for_frame() {
 	return rays;
 }
 
-std::vector<HitInfo> Camera::get_hit_info_from_camera_per_frame(World& world) {
+std::vector<HitInfo> Camera::calculate_hit_info(World& world) {
 	std::vector<HitInfo> hit_infos(image_height * image_width);
 	auto rays = generate_rays_for_frame();
 
@@ -102,6 +100,24 @@ std::vector<HitInfo> Camera::get_hit_info_from_camera_per_frame(World& world) {
 				hit_infos[i * image_width + j] = hit;
 			}
 		}
+	}
+
+	return hit_infos;
+}
+
+std::vector<HitInfo> Camera::get_hit_info_from_camera_per_frame(World& world) {
+
+	if (last_pos != position ||
+		last_right != right ||
+		last_up != up ||
+		last_forward != forward)  {
+
+		last_pos = position;
+		last_right = right;
+		last_up = up;
+		last_forward = forward;
+		
+		hit_infos = calculate_hit_info(world);
 	}
 
 	return hit_infos;
