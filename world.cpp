@@ -277,10 +277,6 @@ std::vector<Material*> World::get_materials(bool ignore_textures){
 			return m.name == mat.name;
 		});
 
-		// print mat.ambient
-		std::clog << "Light material: " << mat.name << ", ignore_textures: " << ignore_textures << ", is_light: " << is_light << std::endl;
-		std::clog << "Ambient: " << mat.ambient[0] << ", " << mat.ambient[1] << ", " << mat.ambient[2] << std::endl;
-
 		if (mat.diffuse_texname != "" && !ignore_textures) {
 			Texture* texture = new ImageTexture(mat.diffuse_texname.c_str());
 			if (is_light) {
