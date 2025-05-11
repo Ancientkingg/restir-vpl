@@ -5,8 +5,8 @@
 #ifndef TINY_BVH_H_
 #include "lib/tiny_bvh.h"
 #endif
-
 #include "constants.hpp"
+
 glm::vec3 Triangle::calculateNormal() {
 	_normal = glm::normalize(glm::cross(v1.position - v0.position, v2.position - v0.position));
 	if (glm::dot(_normal, v0.normal) < 0.0f) {
