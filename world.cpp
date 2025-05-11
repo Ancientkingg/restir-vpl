@@ -202,6 +202,8 @@ bool World::is_occluded(const Ray &ray, float dist) {
 	return this->bvhInstance.IsOccluded(r);
 }
 
+#define BASE_LIGHT_INTENSITY 75.0f
+
 
 std::vector<TriangularLight> World::get_triangular_lights(){
 	std::vector<TriangularLight> out;
@@ -215,7 +217,7 @@ std::vector<TriangularLight> World::get_triangular_lights(){
 			light_materials[light_material_ids[face_id]].ambient[2]
 		);
 		float intensity = (c[0] + c[1] + c[2]) / 3;
-		TriangularLight tl(lights[i], c, intensity);
+		TriangularLight tl(lights[i], c, intensity * BASE_LIGHT_INTENSITY);
 		out.push_back(tl);
 		face_id++;
 	}

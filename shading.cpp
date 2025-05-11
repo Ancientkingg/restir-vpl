@@ -67,7 +67,7 @@ glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, float pdf, Worl
     float dist = glm::length(sample.light_point - I);
 
     // Emitted radiance from the light source towards x. For uniform area lights, it's constant: L0.
-	glm::vec3 Le = sample.light.c * sample.light.intensity * 100.0f;
+	glm::vec3 Le = sample.light.c * sample.light.intensity;
 
     // Visibility term
     Ray shadow_ray = Ray(I + EPS * L, L);
