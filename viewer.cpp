@@ -275,6 +275,8 @@ void render_live(Camera &cam, World &world, bool progressive) {
             }
         }
 
+		light_sampler.m = std::max(1, light_sampler.m);
+
         if (keys.enter && !currently_outputting_render) {
 			// Render the current frame
 			std::clog << "\nOutput render with current camera" << std::endl;
