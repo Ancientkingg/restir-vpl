@@ -23,15 +23,11 @@ World load_world() {
 	//world.add_obj("objects/bigCubeLight.obj", true);
 	// world.add_obj("objects/bistro_normal.obj", false);
 	// world.add_obj("objects/bistro_lights.obj", true);
-
-	//world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
-	//world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
-
-	//world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(0, 10, 0));
-	//world.place_obj("objects/pineapple2.obj", false, glm::vec3(0, 0, 0));
-
-	world.place_obj("objects/ceiling_light.obj", true, glm::vec3(0, 10, 0));
-	world.place_obj("objects/Gauntlet.obj", false, glm::vec3(0, 0, 0));
+	// world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
+	// world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
+	world.add_obj("objects/monkeyLightInOne.obj", false);
+	// world.place_obj("objects/ceiling_light.obj", true, glm::vec3(0, 10, 0));
+	// world.place_obj("objects/Gauntlet.obj", false, glm::vec3(0, 0, 0));
 	auto loading_stop = std::chrono::high_resolution_clock::now();
 
 	std::clog << "Loading took ";
@@ -41,7 +37,7 @@ World load_world() {
 	return world;
 }
 
-void load_one_obj_at(std::vector<Triangle>& triangle_soup, std::vector<tinyobj::material_t>& materials, std::vector<int>& mat_ids, std::string& file_path, glm::vec3 position) {
+void load_one_obj_at(std::vector<Triangle>& triangle_soup, std::vector<Triangle>& light_triangles, std::vector<tinyobj::material_t>& materials, std::vector<int>& mat_ids, std::vector<int>& light_mat_ids, std::string& file_path, glm::vec3 position) {
 	// this function is copied from Rafayels original implementation with slight changes
 
 	// Load the OBJ file using tinyobjloader
@@ -134,13 +130,28 @@ void load_one_obj_at(std::vector<Triangle>& triangle_soup, std::vector<tinyobj::
 			}
 
 			Triangle triangle = Triangle(triangle_verts, material_id);
-			triangle_soup.push_back(triangle + position);
+
+			// Check if the material is emmissive and add to light triangles
+			if (material_id >= 0 && material_id < materials.size()) {
+				const tinyobj::material_t& mat = materials[material_id];
+				bool check_emmission = mat.emission[0] > 0 || mat.emission[1] > 0 || mat.emission[2] > 0;
+				bool check_emmissive_texmap = mat.emissive_texname != "";
+				if (check_emmission || check_emmissive_texmap) {
+					light_triangles.push_back(triangle + position);
+					light_mat_ids.push_back(material_id);
+				} else {
+					triangle_soup.push_back(triangle + position);
+					mat_ids.push_back(material_id);
+				}
+			}
 
 			index_offset += fv;
 			face_id++;
 		}
 	}
-
+	std::clog << "Loaded " << triangle_soup.size() << " triangles from " << file_path << std::endl;
+	std::clog << "Loaded " << materials.size() << " materials from " << file_path << std::endl;
+	std::clog << "Loaded " << light_triangles.size() << " lights from " << file_path << std::endl;
 }
 
 World::World() {
@@ -155,13 +166,13 @@ World::World() {
 }
 
 void World::add_obj(std::string file_path, bool is_lights){
-	load_one_obj_at(triangle_soup, all_materials, all_material_ids, file_path, glm::vec3(0.0f));
-	if(is_lights) load_one_obj_at(lights, light_materials, light_material_ids , file_path, glm::vec3(0.0f));
+	load_one_obj_at(triangle_soup, lights, all_materials, all_material_ids, light_material_ids, file_path, glm::vec3(0.0f));
+	// if(is_lights) load_one_obj_at(lights, light_materials, light_material_ids , file_path, glm::vec3(0.0f));
 }
 
 void World::place_obj(std::string file_path, bool is_lights, glm::vec3 position) {
-	load_one_obj_at(triangle_soup, all_materials, all_material_ids, file_path, position);
-	if (is_lights) load_one_obj_at(lights, light_materials, light_material_ids, file_path, position);
+	load_one_obj_at(triangle_soup, lights, all_materials, all_material_ids, light_material_ids, file_path, position);
+	// if (is_lights) load_one_obj_at(lights, light_materials, light_material_ids, file_path, position);
 }
 
 tinybvh::BVH& World::bvh(){
@@ -241,9 +252,9 @@ std::vector<TriangularLight> World::get_triangular_lights(){
 	int face_id = 0;
 	for(int i = 0; i < lights.size(); i++){
 		glm::vec3 c = glm::vec3(
-			light_materials[light_material_ids[face_id]].ambient[0],
-			light_materials[light_material_ids[face_id]].ambient[1],
-			light_materials[light_material_ids[face_id]].ambient[2]
+			all_materials[light_material_ids[face_id]].ambient[0],
+			all_materials[light_material_ids[face_id]].ambient[1],
+			all_materials[light_material_ids[face_id]].ambient[2]
 		);
 		float intensity = (c[0] + c[1] + c[2]) / 3;
 		TriangularLight tl(lights[i], c, intensity * BASE_LIGHT_INTENSITY);
