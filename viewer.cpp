@@ -15,6 +15,8 @@
 
 #define ENABLE_TEXTURES true
 #define RENDER_FRAME_COUNT 20
+#define RENDER_WIDTH 1280
+#define RENDER_HEIGHT 720
 
 // Call this once at program start:
 bool init_sdl() {
@@ -118,24 +120,32 @@ void accumulate(std::vector<std::vector<glm::vec3>>& colors, std::vector<std::ve
 bool currently_outputting_render = false;
 
 void render(Camera &cam, World &world, int framecount, bool accumulate_flag) {
+    Camera render_cam = Camera(cam.position, cam.target);
+    render_cam.image_width = RENDER_WIDTH;
+    render_cam.image_height = RENDER_HEIGHT;
+
+    render_cam.yaw = cam.yaw;
+    render_cam.pitch = cam.pitch;
+    render_cam.updateDirection();
+
     // Build the world and load materials
     world.bvh();
     world.get_materials(!ENABLE_TEXTURES);
 
     auto lights = world.get_triangular_lights();
-    auto light_sampler = RestirLightSampler(cam.image_width, cam.image_height, lights);
+    auto light_sampler = RestirLightSampler(render_cam.image_width, render_cam.image_height, lights);
 
     std::vector<std::vector<glm::vec3> > accumulated_colors;
     if (accumulate_flag) {
         accumulated_colors =
-            std::vector(cam.image_height,
-                std::vector<glm::vec3>(cam.image_width, glm::vec3(0.0f)));
+            std::vector(render_cam.image_height,
+                std::vector<glm::vec3>(render_cam.image_width, glm::vec3(0.0f)));
     }
 
     for (int i = 0; i < framecount; i++) {
         auto render_start = std::chrono::high_resolution_clock::now();
 
-        RenderInfo info = RenderInfo{cam, world, light_sampler};
+        RenderInfo info = RenderInfo{render_cam, world, light_sampler};
         std::vector<std::vector<glm::vec3> > colors = raytrace(RENDER_SHADING, info);
 
 		if (accumulate_flag) {
