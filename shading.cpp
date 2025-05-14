@@ -51,36 +51,39 @@ glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, float pdf, Worl
     }
 
 	// Sampled light direction
-    glm::vec3 L = sample.light_dir;
+    const glm::vec3 L = sample.light_dir;
 
 	// Normal of the intersection point
-    glm::vec3 N = hit.triangle.normal(hit.uv);
+    const glm::vec3 N = hit.triangle.normal(hit.uv);
 
     // Incoming light direction
-    glm::vec3 wi = sample.light_dir;
+    const glm::vec3 wi = sample.light_dir;
 
 	// Normal of the light source
-    glm::vec3 Nl = sample.light.triangle.normal();
+    const glm::vec3 Nl = sample.light.triangle.normal();
 
     // Point of intersection [x]
-    glm::vec3 I = hit.r.at(hit.t);
+    const glm::vec3 I = hit.r.at(hit.t);
 
 	// Distance between the light and the intersection point
-    float dist = glm::length(sample.light_point - I);
+    const float dist = glm::length(sample.light_point - I);
 
     // Emitted radiance from the light source towards x. For uniform area lights, it's constant: L0.
-	glm::vec3 Le = sample.light.c * sample.light.intensity;
+	const glm::vec3 Le = sample.light.c * sample.light.intensity;
 
     // Visibility term
     Ray shadow_ray = Ray(I + EPS * L, L);
-    float V = scene.is_occluded(shadow_ray, dist - EPS * 3.0f) ? 0.0 : 1.0;
+    const float V = scene.is_occluded(shadow_ray, dist - EPS * 2.0f) ? 0.0 : 1.0;
 
 	// BRDF term
 	glm::vec3 fr = hit.mat_ptr->evaluate(hit, L);
 
 	// PDF term
-    float p = (fabs(glm::dot(N, wi)) * fabs(glm::dot(Nl, wi))) / (dist * dist * pdf);
+    const float p = (fabs(glm::dot(Nl, wi))) / (dist * dist * pdf);
+
+    const float cos_theta = fabs(glm::dot(N, wi));
+    const float W = float(sample.W);
 
     // Final contribution
-    return Le * V * fr * p;
+    return Le * V * fr * cos_theta * W * p;
 }
