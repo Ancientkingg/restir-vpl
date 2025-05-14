@@ -23,12 +23,12 @@ class Reservoir {
 public:
     TriangularLight sample;
     glm::vec3 sample_pos;
-    int M;
-    float W;
-    float phat;
+    long M;
+    double W;
+    double phat;
 
     Reservoir();
-    void update(const TriangularLight& new_sample, const glm::vec3 sample_point, const float w_i, const float n_phat);
+    void update(const TriangularLight& new_sample, const glm::vec3 sample_point, const double w_i, const double n_phat);
     void merge(const Reservoir& other);
     void replace(const Reservoir& other);
     void reset();
@@ -69,6 +69,6 @@ private:
 
     [[nodiscard]] int sampleLightIndex() const;
 
-    [[nodiscard]] float get_light_weight(const TriangularLight& light, const glm::vec3 light_point,
-        const HitInfo& hi) const;
+    void get_light_weight(const TriangularLight& light, const glm::vec3 light_point,
+        const HitInfo& hi, double *w, double *phat) const;
 };
