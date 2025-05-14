@@ -33,7 +33,7 @@ void Reservoir::update(const TriangularLight& new_sample, const glm::vec3 sample
 		return;
 	}
 	W += w_i;
-	if (const float p = w_i / W;
+	if (const double p = w_i / W;
 		dist(rng) < p) {
 		sample = new_sample;
 		sample_pos = sample_point;
@@ -133,6 +133,7 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 			results[y][x].light_point = res.sample_pos;
 			results[y][x].light_dir = normalize(res.sample_pos - hi.r.at(hi.t));
 			results[y][x].light = res.sample;
+			results[y][x].W = res.W / static_cast<double>(res.M) / res.phat;
 		}
 	}
 	return results;

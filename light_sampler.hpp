@@ -15,6 +15,7 @@ struct SamplerResult {
     glm::vec3 light_point;
     glm::vec3 light_dir;
     TriangularLight light;
+    double W;
 
     SamplerResult();
 };
