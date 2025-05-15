@@ -39,19 +39,22 @@ void Reservoir::update(const SampleInfo x_i, const double w_i, const double n_ph
 	}
 }
 
-void Reservoir::merge(const Reservoir &other) {
+Reservoir Reservoir::merge(const Reservoir& r1, const Reservoir& r2) {
 	// Merge the other reservoir into this one
-	Reservoir& s = *this;
+	Reservoir s;
 
-	s.update(s.y, s.phat * s.W * s.M, s.phat);
-	s.update(other.y, other.phat * other.W * other.M, other.phat);
-	s.M = s.M + other.M;
+	s.update(r1.y, r1.phat * r1.W * r1.M, r1.phat);
+	s.update(r2.y, r2.phat * r2.W * r2.M, r2.phat);
+
+	s.M = r1.M + r2.M;
 	s.W = 1.0 / s.phat * ((1.0 / s.M) * s.w_sum);
 
 	// check if W is NaN or infinity
-	if (std::isnan(s.W) || std::isinf(s.W)) {
-		s.W = 0;
-	}
+	//if (std::isnan(s.W) || std::isinf(s.W)) {
+	//	s.W = 0;
+	//}
+
+	return s;
 }
 
 void Reservoir::replace(const Reservoir &other) {
@@ -105,12 +108,16 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 	for (int y = 0; y < y_pixels; y++) {
 		for (int x = 0; x < x_pixels; x++) {
 			HitInfo& hi = hit_infos[y * x_pixels + x];
+
+			Reservoir& current = current_reservoirs[y * x_pixels + x];
+			Reservoir& prev = prev_reservoirs[y * x_pixels + x];
+
 			set_initial_sample(x, y, hi);
 
 
-			if (sampling_mode != SamplingMode::Uniform && sampling_mode != SamplingMode::RIS)
-				temporal_update(x, y);
-
+			if (sampling_mode != SamplingMode::Uniform && sampling_mode != SamplingMode::RIS) {
+				current_reservoirs[y * x_pixels + x] = temporal_update(current, prev);
+			}
 		}
 	}
 
@@ -146,9 +153,9 @@ void RestirLightSampler::set_initial_sample(const int x, const int y, const HitI
 
 		SampleInfo sample = SampleInfo(l, sample_point);
 
-		double w, phat;
-		get_light_weight(sample, hi, w, phat);
-		r.update(sample, w, phat);
+		double W, phat;
+		get_light_weight(sample, hi, W, phat);
+		r.update(sample, W, phat);
 
 		r.W = 1.0 / phat * ((1.0 / r.M) * r.w_sum);
 
@@ -173,16 +180,17 @@ void RestirLightSampler::visibility_check(const int x, const int y, const HitInf
 	}
 }
 
-void RestirLightSampler::temporal_update(const int x, const int y) {
-	// Update the current reservoir with the previous one
-	current_reservoirs[y * x_pixels + x].merge(prev_reservoirs[y * x_pixels + x]);
+Reservoir RestirLightSampler::temporal_update(const Reservoir& current, const Reservoir& prev) {
+	// Update the current reservoir with the previous one	
+	return Reservoir::merge(current, prev);
 }
 
 void RestirLightSampler::spatial_update(const int x, const int y) {
 	int c = 0;
 
-	Reservoir &current = current_reservoirs[y * x_pixels + x];
-	current.replace(prev_reservoirs[y * x_pixels + x]);
+	Reservoir& current = current_reservoirs[y * x_pixels + x];
+	Reservoir& prev = prev_reservoirs[y * x_pixels + x];
+	current.replace(prev);
 
 	// 2) Gather the 8 neighbors also from prev_reservoirs
 	for (int yy = -1; yy <= 1; ++yy) {
@@ -191,7 +199,7 @@ void RestirLightSampler::spatial_update(const int x, const int y) {
 
 			const int nx = x + xx;
 			if (const int ny = y + yy; nx >= 0 && nx < x_pixels && ny >= 0 && ny < y_pixels) {
-				current.merge(prev_reservoirs[ny * x_pixels + nx]);
+				current = Reservoir::merge(current, prev);
 			}
 		}
 	}
@@ -231,10 +239,10 @@ int RestirLightSampler::sampleLightIndex() const {
 }
 
 void RestirLightSampler::get_light_weight(const SampleInfo& sample,
-														 const HitInfo &hi, double& w, double& phat) const {
+														 const HitInfo &hi, double& W, double& phat) const {
 	// if not hit
 	if (hi.t == 1E30f) {
-		w = 0.0;
+		W = 0.0;
 		phat = 0.0;
 		return;
 	}
@@ -256,6 +264,6 @@ void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 
 	const float source = light_choose_pdf * light_point_pdf * geometry_term;
 
-	w = std::max(0.f, source / target);
+	W = std::max(0.f, source / target);
 	phat = source;
 }

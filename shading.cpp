@@ -78,7 +78,7 @@ glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, float pdf, Worl
 
     // Visibility term
     Ray shadow_ray = Ray(I + EPS * L, L);
-    const float V = scene.is_occluded(shadow_ray, dist - EPS * 5000.0f) ? 0.0 : 1.0;
+    const float V = scene.is_occluded(shadow_ray, dist - 0.1f) ? 0.0 : 1.0;
 
 	// BRDF term
 	glm::vec3 fr = hit.mat_ptr->evaluate(hit, L);
@@ -94,5 +94,5 @@ glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, float pdf, Worl
     const float W = float(sample.W);
 
     // Final contribution
-    return Le * fr * cos_theta * G * W * p;
+    return Le * V * fr * cos_theta;
 }

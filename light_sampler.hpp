@@ -61,7 +61,7 @@ public:
 
     Reservoir();
     void update(const SampleInfo x_i, const double w_i, const double n_phat);
-    void merge(const Reservoir& other);
+    static Reservoir merge(const Reservoir& r1, const Reservoir& r2);
     void replace(const Reservoir& other);
     void reset();
 };
@@ -79,7 +79,7 @@ public:
 
     void visibility_check(const int x, const int y, const HitInfo& hi, World& world);
 
-    void temporal_update(const int x, const int y);
+    Reservoir temporal_update(const Reservoir& current, const Reservoir& prev);
 
     void spatial_update(const int x, const int y);
 
