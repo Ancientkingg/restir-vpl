@@ -26,12 +26,6 @@ light(glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0) {
 
 void Reservoir::update(const TriangularLight& new_sample, const glm::vec3 sample_point, const double w_i, const double n_phat) {
 	M++;
-	if (W == 0) {
-		W = w_i;
-		sample = new_sample;
-		sample_pos = sample_point;
-		return;
-	}
 	W += w_i;
 	if (const double p = w_i / W;
 		dist(rng) < p) {
@@ -44,14 +38,7 @@ void Reservoir::update(const TriangularLight& new_sample, const glm::vec3 sample
 
 void Reservoir::merge(const Reservoir &other) {
 	// Merge the other reservoir into this one
-	if (other.W == 0) return;
-	if (W == 0) {
-		sample = other.sample;
-		sample_pos = other.sample_pos;
-		W = other.W;
-		M = other.M;
-		return;
-	}
+
 	M += other.M;
 	W += other.W;
 
