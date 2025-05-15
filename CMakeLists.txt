@@ -35,6 +35,11 @@ add_executable(RayTracerInOneWeekend
 "geometry.cpp")
 
 file(COPY ${CMAKE_SOURCE_DIR}/objects DESTINATION ${CMAKE_BINARY_DIR})
+add_custom_command(TARGET RayTracerInOneWeekend POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_SOURCE_DIR}/objects"
+    "$<TARGET_FILE_DIR:RayTracerInOneWeekend>/objects"
+)
 
 # Add the include directory for GLM
 target_include_directories(RayTracerInOneWeekend PUBLIC ${GLM})
