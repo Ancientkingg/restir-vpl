@@ -60,7 +60,7 @@ std::vector<std::vector<glm::vec3>> render_ground_truth(World world, Camera cam,
         for (int j = 0; j < cam.image_width; j++) {
             HitInfo hit = hit_infos[i * cam.image_width + j];
             if (hit.t == 1E30f) {
-                colors[i][j] = glm::vec3(0.0f, 1.0f, 0.0f);
+                colors[i][j] = glm::vec3(0.0f, 0.0f, 0.0f);
                 continue;
             }
 

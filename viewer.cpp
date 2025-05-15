@@ -13,6 +13,7 @@
 #include "camera.hpp"
 #include "world.hpp"
 #include "constants.hpp"
+#include "ground_truth_renderer.hpp"
 
 // Call this once at program start:
 bool init_sdl() {
@@ -194,6 +195,36 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
 
 		save_image(accumulated_colors, "./images/" + sampling_mode_str + "_accumulate_" + filename);
 	}
+
+    currently_outputting_render = false;
+}
+
+void render_ground_truth_frame(Camera &cam, World &world) {
+    Camera render_cam = Camera(cam.position, cam.target);
+    render_cam.image_width = RENDER_WIDTH;
+    render_cam.image_height = RENDER_HEIGHT;
+
+    render_cam.yaw = cam.yaw;
+    render_cam.pitch = cam.pitch;
+    render_cam.updateDirection();
+
+    // Build the world and load materials
+    world.bvh();
+    world.get_materials(!ENABLE_TEXTURES);
+
+    auto render_start = std::chrono::high_resolution_clock::now();
+
+    std::vector<std::vector<glm::vec3>> colors =
+        render_ground_truth(world, cam, 1024);
+
+    auto render_stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        render_stop - render_start)
+                        .count();
+
+    /// output frame
+    auto filename = get_frame_filename(1);
+    save_image(colors, "./images/" + filename);
 
     currently_outputting_render = false;
 }
@@ -420,34 +451,4 @@ void render_live(Camera &cam, World &world, bool progressive) {
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     shutdown_sdl();
-}
-
-void render_ground_truth_frame(Camera &cam, World &world) {
-    Camera render_cam = Camera(cam.position, cam.target);
-    render_cam.image_width = RENDER_WIDTH;
-    render_cam.image_height = RENDER_HEIGHT;
-
-    render_cam.yaw = cam.yaw;
-    render_cam.pitch = cam.pitch;
-    render_cam.updateDirection();
-
-    // Build the world and load materials
-    world.bvh();
-    world.get_materials(!ENABLE_TEXTURES);
-
-    auto render_start = std::chrono::high_resolution_clock::now();
-
-    std::vector<std::vector<glm::vec3>> colors =
-        render_ground_truth(world, cam, 1024);
-
-    auto render_stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
-                        render_stop - render_start)
-                        .count();
-
-    /// output frame
-    auto filename = get_frame_filename(1);
-    save_image(colors, "./images/" + filename);
-
-    currently_outputting_render = false;
 }
