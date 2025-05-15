@@ -94,5 +94,5 @@ glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, float pdf, Worl
     const float W = float(sample.W);
 
     // Final contribution
-    return Le * V * fr * cos_theta;
+    return Le * V * fr * cos_theta * G * p * W;
 }

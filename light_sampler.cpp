@@ -136,7 +136,7 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 			results[y][x].light_point = res.y.light_point;
 			results[y][x].light_dir = normalize(res.y.light_point - hi.r.at(hi.t));
 			results[y][x].light = res.y.light;
-			results[y][x].W = res.W;
+			results[y][x].W = sampling_mode == SamplingMode::Uniform ? 1.0 : res.W;
 		}
 	}
 	return results;
