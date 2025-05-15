@@ -19,7 +19,7 @@ tinybvh::Ray toBVHRay(const Ray& r, const float max_t) {
 	return tinybvh::Ray(toBVHVec(r.origin()), toBVHVec(r.direction()), max_t);
 }
 
-Camera::Camera() : Camera(glm::vec3(0, 0, 0), glm::vec3(0, 0, 1)) {
+Camera::Camera() : Camera(glm::vec3(0, 0, 3), glm::vec3(0, 0, 1)) {
 	updateDirection();
 }
 

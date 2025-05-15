@@ -5,10 +5,33 @@
 #include <array>
 #include <span>
 #include <random>
+#include <iostream>
 
 #include "triangular_light.hpp"
 #include "ray.hpp"
 #include "world.hpp"
+
+
+enum class SamplingMode {
+    ReSTIR,
+    Uniform,
+    RIS,
+};
+
+inline std::ostream& operator<<(std::ostream& out, const SamplingMode& mode) {
+    switch (mode) {
+    case SamplingMode::ReSTIR:
+        out << std::string("ReSTIR");
+        break;
+    case SamplingMode::Uniform:
+        out << std::string("Uniform");
+        break;
+    case SamplingMode::RIS:
+        out << std::string("RIS");
+        break;
+    }
+    return out;
+}
 
 
 struct SamplerResult {
@@ -65,6 +88,8 @@ public:
     void swap_buffers();
 
     int m = 3;
+
+    SamplingMode sampling_mode = SamplingMode::ReSTIR;
 
 private:
     int x_pixels;

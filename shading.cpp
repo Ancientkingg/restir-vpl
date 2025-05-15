@@ -21,6 +21,11 @@ glm::vec3 sky_color(const glm::vec3& direction) {
 }
 
 glm::vec3 shade_normal(const HitInfo& hit, const SamplerResult& sample, float pdf, World& scene) {
+    // visualize uv coordinates;
+    if (hit.t == 1E30f) {
+        return sky_color(hit.r.direction());
+    }
+
     return hit.triangle.normal(hit.uv);
 }
 

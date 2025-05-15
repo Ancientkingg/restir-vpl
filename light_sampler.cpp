@@ -45,7 +45,12 @@ void Reservoir::merge(const Reservoir &other) {
 
 	s.update(other.y, other.phat * other.W * other.M, other.phat);
 	s.M = other.M;
-	s.W = 1.0 / other.phat * ((1.0 / s.M) * s.w_sum);
+	s.W = 1.0 / s.phat * ((1.0 / s.M) * s.w_sum);
+
+	// check if W is NaN or infinity
+	if (std::isnan(s.W) || std::isinf(s.W)) {
+		s.W = 0;
+	}
 }
 
 void Reservoir::replace(const Reservoir &other) {
@@ -85,8 +90,9 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 	if (num_lights == 0) {
 		return std::vector(y_pixels, std::vector<SamplerResult>(x_pixels));
 	}
-	// Swap the current and previous reservoirs
+	// Swap the current and previous reservoirs: The previous current frame is now the previous frame
 	swap_buffers();
+
 	// For every pixel:
 	// 1. Sample M times from the light sources; Choose one sample (reservoir)
 	// 2. Check visibility of the light sample
@@ -94,23 +100,30 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 	// 4. Spatial update - update the current reservoir with the neighbors
 	// 5. Return the sample in the current reservoir
 
-//#pragma omp parallel for
+#pragma omp parallel for
 	for (int y = 0; y < y_pixels; y++) {
 		for (int x = 0; x < x_pixels; x++) {
 			HitInfo& hi = hit_infos[y * x_pixels + x];
 			set_initial_sample(x, y, hi);
-			// visibility_check(x, y, hi, world);
-			temporal_update(x, y);
+
+
+			if (sampling_mode != SamplingMode::Uniform && sampling_mode != SamplingMode::RIS)
+				temporal_update(x, y);
+
 		}
 	}
 
 	std::vector results(y_pixels, std::vector<SamplerResult>(x_pixels));
-	//swap_buffers();
-//#pragma omp parallel for
+	if (sampling_mode != SamplingMode::Uniform && sampling_mode != SamplingMode::RIS) {
+		swap_buffers();
+	}
+#pragma omp parallel for
 	for (int y = 0; y < y_pixels; y++) {
 		for (int x = 0; x < x_pixels; x++) {
 			HitInfo& hi = hit_infos[y * x_pixels + x];
-			//spatial_update(x, y);
+			if (sampling_mode != SamplingMode::Uniform && sampling_mode != SamplingMode::RIS) {
+				spatial_update(x, y);
+			}
 			auto res = current_reservoirs[y * x_pixels + x];
 			results[y][x].light_point = res.y.light_point;
 			results[y][x].light_dir = normalize(res.y.light_point - hi.r.at(hi.t));
@@ -137,6 +150,9 @@ void RestirLightSampler::set_initial_sample(const int x, const int y, const HitI
 		r.update(sample, w, phat);
 
 		r.W = 1.0 / phat * ((1.0 / r.M) * r.w_sum);
+
+		if (sampling_mode == SamplingMode::Uniform)
+			break;
 	}
 }
 

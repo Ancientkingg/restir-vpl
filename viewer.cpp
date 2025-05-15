@@ -136,7 +136,7 @@ static void progress_bar(float progress, float time, int framecount) {
 	std::cout.flush();
 }
 
-void render(Camera &cam, World &world, int framecount, bool accumulate_flag) {
+void render(Camera &cam, World &world, int framecount, bool accumulate_flag, SamplingMode sampling_mode) {
     Camera render_cam = Camera(cam.position, cam.target);
     render_cam.image_width = RENDER_WIDTH;
     render_cam.image_height = RENDER_HEIGHT;
@@ -151,6 +151,8 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag) {
 
     auto lights = world.get_triangular_lights();
     auto light_sampler = RestirLightSampler(render_cam.image_width, render_cam.image_height, lights);
+    light_sampler.sampling_mode = sampling_mode;
+    light_sampler.m = 32;
 
     std::vector<std::vector<glm::vec3> > accumulated_colors;
     if (accumulate_flag) {
@@ -184,7 +186,13 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag) {
 	if (accumulate_flag) {
 		std::clog << "Output accumulated frame" << std::endl;
 		auto filename = get_frame_filename(framecount);
-		save_image(accumulated_colors, "./images/accumulate_" + filename);
+        // convert light_sampler.sampling_mode to a string using the ostream operator into a variable
+		std::string sampling_mode_str;
+		std::ostringstream oss;
+		oss << light_sampler.sampling_mode;
+		sampling_mode_str = oss.str();
+
+		save_image(accumulated_colors, "./images/" + sampling_mode_str + "_accumulate_" + filename);
 	}
 
     currently_outputting_render = false;
@@ -263,6 +271,12 @@ void render_live(Camera &cam, World &world, bool progressive) {
                     case SDLK_ESCAPE:
                         running = false;
                         break;
+                    case SDLK_1:
+                        light_sampler.sampling_mode = SamplingMode::Uniform; camera_moved = true; break;
+                    case SDLK_2:
+						light_sampler.sampling_mode = SamplingMode::RIS; camera_moved = true; break;
+                    case SDLK_3:
+						light_sampler.sampling_mode = SamplingMode::ReSTIR; camera_moved = true; break;
                     case SDLK_w: keys.w = isDown;
                         break;
                     case SDLK_a: keys.a = isDown;
@@ -310,7 +324,7 @@ void render_live(Camera &cam, World &world, bool progressive) {
 			// Render the current frame
 			std::clog << "\nOutput render with current camera" << std::endl;
             currently_outputting_render = true;
-            render(cam, world, RENDER_FRAME_COUNT, progressive);
+            render(cam, world, RENDER_FRAME_COUNT, progressive, light_sampler.sampling_mode);
 			keys.enter = false;
         }
 
@@ -375,8 +389,9 @@ void render_live(Camera &cam, World &world, bool progressive) {
                                              ? "Debug"
                                              : "Normals")
 			    << " | M: " << light_sampler.m
+			    << " | Sampling Mode: " << light_sampler.sampling_mode
                 << " | Camera: (" << cam.position.x << ", " << cam.position.y << ", " << cam.position.z << ")"
-                << "         \r" << std::flush;
+                << "\r" << std::flush;
 
         // update the accumulated colors
 		accumulate(accumulated_colors, colors, frame);
