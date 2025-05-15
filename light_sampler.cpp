@@ -228,7 +228,7 @@ void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 
 	const float source = light_choose_pdf * light_point_pdf * (
 		glm::dot(light_dir, light_dir) / abs(glm::dot(
-			sample.light.triangle.normal({ 0, 0 }), L)));
+			sample.light.triangle.normal(hi.uv), L)));
 
 	w = std::max(0.f, source / target);
 	phat = source;
