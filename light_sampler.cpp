@@ -216,13 +216,17 @@ void RestirLightSampler::get_light_weight(const TriangularLight &light, const gl
 
 	const glm::vec3 hit_point = hi.r.at(hi.t);
 	const glm::vec3 light_dir = light_point - hit_point;
-	const float cos_theta = glm::dot(glm::normalize(light_dir), hi.triangle.normal(hi.uv));
+	const glm::vec3 L = glm::normalize(light_dir);
+	const float cos_theta = glm::dot(L, hi.triangle.normal(hi.uv));
 	const glm::vec3 brdf = hi.mat_ptr->evaluate(hi, light_dir);
 
 	const float target = cos_theta * light.intensity * glm::length(brdf);
-	const float source = 1.0f / static_cast<float>(num_lights) / light.area() * (
-							 glm::dot(light_dir, light_dir) / abs(glm::dot(
-								 light.triangle.normal({0, 0}), glm::normalize(light_dir))));
+	const float light_choose_pdf = 1.0f / static_cast<float>(num_lights);
+	const float light_point_pdf = 1.0f / light.area();
+
+	const float source = light_choose_pdf * light_point_pdf * (
+		glm::dot(light_dir, light_dir) / abs(glm::dot(
+			light.triangle.normal({ 0, 0 }), L)));
 
 	w = std::max(0.f, source / target);
 	phat = source;
