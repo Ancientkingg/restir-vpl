@@ -48,7 +48,8 @@ bool Lambertian::scatter(const Ray& r_in, const HitInfo& hit, glm::vec3& attenua
 }
 
 glm::vec3 Lambertian::evaluate(const HitInfo& hit, const glm::vec3& wi) const {
-	if (glm::dot(hit.triangle.normal(hit.uv), wi) <= 0.0f) {
+	const glm::vec3 N = hit.triangle.normal(hit.uv);
+	if (glm::dot(N, wi) <= 0.0f) {
 		return glm::vec3(0.0f);
 	}
 

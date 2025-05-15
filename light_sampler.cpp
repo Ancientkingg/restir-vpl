@@ -22,18 +22,18 @@ SampleInfo::SampleInfo(const TriangularLight& light, const glm::vec3& light_poin
 }
 
 Reservoir::Reservoir() : M(0),
-w_sum(0), phat(0), y() {
+w_sum(0), phat(0), y(), W(0) {
 }
 
 SamplerResult::SamplerResult() : light_point(0.0), light_dir(0.0),
-light(glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0) {
+light(glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0), W(0) {
 }
 
 
 void Reservoir::update(const SampleInfo x_i, const double w_i, const double n_phat) {
-	w_sum += w_i;
+	w_sum = w_sum + w_i;
 	M = M + 1;
-	if (rand() < w_i / w_sum) {
+	if (dist(rng) < w_i / w_sum) {
 		y = x_i;
 		phat = n_phat;
 	}
@@ -94,19 +94,19 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 	// 4. Spatial update - update the current reservoir with the neighbors
 	// 5. Return the sample in the current reservoir
 
-#pragma omp parallel for
+//#pragma omp parallel for
 	for (int y = 0; y < y_pixels; y++) {
 		for (int x = 0; x < x_pixels; x++) {
 			HitInfo& hi = hit_infos[y * x_pixels + x];
 			set_initial_sample(x, y, hi);
 			// visibility_check(x, y, hi, world);
-			//temporal_update(x, y);
+			temporal_update(x, y);
 		}
 	}
 
 	std::vector results(y_pixels, std::vector<SamplerResult>(x_pixels));
 	//swap_buffers();
-#pragma omp parallel for
+//#pragma omp parallel for
 	for (int y = 0; y < y_pixels; y++) {
 		for (int x = 0; x < x_pixels; x++) {
 			HitInfo& hi = hit_infos[y * x_pixels + x];
@@ -213,6 +213,8 @@ void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 														 const HitInfo &hi, double& w, double& phat) const {
 	// if not hit
 	if (hi.t == 1E30f) {
+		w = 0.0;
+		phat = 0.0;
 		return;
 	}
 
@@ -222,13 +224,15 @@ void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 	const float cos_theta = glm::dot(L, hi.triangle.normal(hi.uv));
 	const glm::vec3 brdf = hi.mat_ptr->evaluate(hi, L);
 
-	const float target = cos_theta * sample.light.intensity * glm::length(brdf);
+	const float geometry_term = glm::dot(light_dir, light_dir) / abs(glm::dot(
+		sample.light.triangle.normal({ 0, 0 }), L));
+
+	const float target = geometry_term * glm::length(brdf);
+
 	const float light_choose_pdf = 1.0f / static_cast<float>(num_lights);
 	const float light_point_pdf = 1.0f / sample.light.area();
 
-	const float source = light_choose_pdf * light_point_pdf * (
-		glm::dot(light_dir, light_dir) / abs(glm::dot(
-			sample.light.triangle.normal({ 0, 0 }), L)));
+	const float source = light_choose_pdf * light_point_pdf * geometry_term;
 
 	w = std::max(0.f, source / target);
 	phat = source;
