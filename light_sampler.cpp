@@ -25,15 +25,13 @@ light(glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0) {
 
 
 void Reservoir::update(const TriangularLight& new_sample, const glm::vec3 sample_point, const double w_i, const double n_phat) {
-	M++;
 	W += w_i;
-	if (const double p = w_i / W;
-		dist(rng) < p) {
+	M = M + 1;
+	if (rand() < w_i / W) {
 		sample = new_sample;
 		sample_pos = sample_point;
 		phat = n_phat;
 	}
-	// W = (W + w_i) / M / phat;
 }
 
 void Reservoir::merge(const Reservoir &other) {
@@ -42,8 +40,8 @@ void Reservoir::merge(const Reservoir &other) {
 	M += other.M;
 	W += other.W;
 
-	if (const float p = other.W / W;
-		dist(rng) < p) {
+	const float p = other.W / W;
+	if (rand() < p) {
 		sample = other.sample;
 		sample_pos = other.sample_pos;
 		phat = other.phat;
@@ -134,8 +132,8 @@ void RestirLightSampler::set_initial_sample(const int x, const int y, const HitI
 	for (int k = 0; k < m; k++) {
 		TriangularLight l = pick_light();
 		const glm::vec3 sample_point = sample_on_light(l);
-		double w; double phat;
-		get_light_weight(l, sample_point, hi, &w, &phat);
+		double w, phat;
+		get_light_weight(l, sample_point, hi, w, phat);
 		res.update(l, sample_point, w, phat);
 	}
 }
@@ -210,7 +208,7 @@ int RestirLightSampler::sampleLightIndex() const {
 }
 
 void RestirLightSampler::get_light_weight(const TriangularLight &light, const glm::vec3 light_point,
-														 const HitInfo &hi, double *w, double *phat) const {
+														 const HitInfo &hi, double& w, double& phat) const {
 	// if not hit
 	if (hi.t == 1E30f) {
 		return;
@@ -226,6 +224,6 @@ void RestirLightSampler::get_light_weight(const TriangularLight &light, const gl
 							 glm::dot(light_dir, light_dir) / abs(glm::dot(
 								 light.triangle.normal({0, 0}), glm::normalize(light_dir))));
 
-	*w = std::max(0.f, source / target);
-	*phat = source;
+	w = std::max(0.f, source / target);
+	phat = source;
 }

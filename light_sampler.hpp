@@ -71,5 +71,5 @@ private:
     [[nodiscard]] int sampleLightIndex() const;
 
     void get_light_weight(const TriangularLight& light, const glm::vec3 light_point,
-        const HitInfo& hi, double *w, double *phat) const;
+        const HitInfo& hi, double& w, double& phat) const;
 };
