@@ -84,15 +84,19 @@ glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, float pdf, Worl
 	glm::vec3 fr = hit.mat_ptr->evaluate(hit, L);
 
 	// Geometry term
-    const float G = (fabs(glm::dot(Nl, wi))) / (dist * dist);
+    const float cos_theta = fmax(0.0f, glm::dot(N, wi));
+	const float cos_theta_light = fmax(0.0f, glm::dot(Nl, -wi));
+    const float G = (cos_theta * cos_theta_light) / (dist * dist);
 
     // PDF term
     const float p = sample.light.area();
 
-    const float cos_theta = fabs(glm::dot(N, wi));
-
     const float W = float(sample.W);
 
+    if (sample.light.c.r == 0.0f) {
+        return BLUE;
+    }
+
     // Final contribution
-    return Le * V * fr * cos_theta * G * p * W;
+    return Le * V * fr * G * p;
 }

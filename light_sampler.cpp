@@ -30,13 +30,15 @@ light(glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0), W(0) {
 }
 
 
-void Reservoir::update(const SampleInfo x_i, const double w_i, const double n_phat) {
+bool Reservoir::update(const SampleInfo x_i, const double w_i, const double n_phat) {
 	w_sum = w_sum + w_i;
 	M = M + 1;
 	if (dist(rng) < w_i / w_sum) {
 		y = x_i;
 		phat = n_phat;
+		return true;
 	}
+	return false;
 }
 
 Reservoir Reservoir::merge(const Reservoir& r1, const Reservoir& r2) {
@@ -47,7 +49,7 @@ Reservoir Reservoir::merge(const Reservoir& r1, const Reservoir& r2) {
 	s.update(r2.y, r2.phat * r2.W * r2.M, r2.phat);
 
 	s.M = r1.M + r2.M;
-	s.W = 1.0 / s.phat * ((1.0 / s.M) * s.w_sum);
+	s.W = (1.0 / s.phat) * ((1.0 / s.M) * s.w_sum);
 
 	// check if W is NaN or infinity
 	//if (std::isnan(s.W) || std::isinf(s.W)) {
@@ -104,7 +106,7 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 	// 4. Spatial update - update the current reservoir with the neighbors
 	// 5. Return the sample in the current reservoir
 
-#pragma omp parallel for
+//#pragma omp parallel for
 	for (int y = 0; y < y_pixels; y++) {
 		for (int x = 0; x < x_pixels; x++) {
 			HitInfo& hi = hit_infos[y * x_pixels + x];
@@ -125,7 +127,7 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 	if (sampling_mode != SamplingMode::Uniform && sampling_mode != SamplingMode::RIS) {
 		//swap_buffers();
 	}
-#pragma omp parallel for
+//#pragma omp parallel for
 	for (int y = 0; y < y_pixels; y++) {
 		for (int x = 0; x < x_pixels; x++) {
 			HitInfo& hi = hit_infos[y * x_pixels + x];
@@ -153,11 +155,13 @@ void RestirLightSampler::set_initial_sample(const int x, const int y, const HitI
 
 		SampleInfo sample = SampleInfo(l, sample_point);
 
-		double W, phat;
+		double W = 1.0;
+		double phat = 1.0;
 		get_light_weight(sample, hi, W, phat);
+
 		r.update(sample, W, phat);
 
-		r.W = 1.0 / phat * ((1.0 / r.M) * r.w_sum);
+		r.W = (1.0 / phat) * ((1.0 / r.M) * r.w_sum);
 
 		if (sampling_mode == SamplingMode::Uniform)
 			break;
@@ -238,32 +242,52 @@ int RestirLightSampler::sampleLightIndex() const {
 	return out;
 }
 
+static float luminance(const glm::vec3& color) {
+	return 0.2126f * color.r + 0.7152f * color.g + 0.0722f * color.b;
+}
+
 void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 														 const HitInfo &hi, double& W, double& phat) const {
 	// if not hit
 	if (hi.t == 1E30f) {
-		W = 0.0;
-		phat = 0.0;
+		W = 1.0;
+		phat = 1.0;
 		return;
 	}
 
+	// Geometry setup
 	const glm::vec3 hit_point = hi.r.at(hi.t);
-	const glm::vec3 light_dir = sample.light_point - hit_point;
-	const glm::vec3 L = glm::normalize(light_dir);
-	const float cos_theta = glm::dot(L, hi.triangle.normal(hi.uv));
-	const glm::vec3 brdf = hi.mat_ptr->evaluate(hi, L);
+	const glm::vec3 light_vec = sample.light_point - hit_point;
+	const float dist2 = glm::dot(light_vec, light_vec);
+	const glm::vec3 L = glm::normalize(light_vec); // Direction to light
 
-	const float geometry_term = glm::dot(light_dir, light_dir) / abs(glm::dot(
-		sample.light.triangle.normal({ 0, 0 }), L));
+	const glm::vec3 N = hi.triangle.normal(hi.uv);                         // Surface normal
+	const glm::vec3 Nl = sample.light.triangle.normal({ 0, 0 });           // Light normal
 
-	const float radiance = sample.light.intensity;
-	const float target = radiance * glm::length(brdf);
+	const float cos_theta = glm::max(0.f, glm::dot(N, L));                 // Surface angle
+	const float cos_theta_light = glm::max(0.f, glm::dot(Nl, -L));         // Light angle
 
+	if (cos_theta <= 0.0f || cos_theta_light <= 0.0f) {
+		W = 1.0;
+		phat = 1.0;
+		return;
+	}
+
+	// BRDF
+	const glm::vec3 brdf = hi.mat_ptr->evaluate(hi, L);                    // f_r
+	const glm::vec3 Li = sample.light.intensity * sample.light.c;          // L_i
+
+	// Target importance (importance of this sample for the current pixel)
+	const float geometry = (cos_theta * cos_theta_light) / dist2;
+	const float target = luminance(Li * brdf * geometry); // scalar version of target
+
+	// Source PDF: converting from area to solid angle
 	const float light_choose_pdf = 1.0f / static_cast<float>(num_lights);
-	const float light_point_pdf = 1.0f / sample.light.area();
+	const float light_area_pdf = 1.0f / sample.light.area();
+	const float source = light_choose_pdf * light_area_pdf * (dist2 / cos_theta_light); // dA → dOmega
 
-	const float source = light_choose_pdf * light_point_pdf * geometry_term;
+	// Final weight and importance
+	W = fmax(0.0, target / source);
 
-	W = std::max(0.f, source / target);
-	phat = source;
+	phat = target; // This is the "target pdf" value used by ReSTIR
 }

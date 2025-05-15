@@ -60,7 +60,7 @@ public:
     double W;
 
     Reservoir();
-    void update(const SampleInfo x_i, const double w_i, const double n_phat);
+    bool update(const SampleInfo x_i, const double w_i, const double n_phat);
     static Reservoir merge(const Reservoir& r1, const Reservoir& r2);
     void replace(const Reservoir& other);
     void reset();
@@ -89,7 +89,7 @@ public:
 
     int m = 3;
 
-    SamplingMode sampling_mode = SamplingMode::ReSTIR;
+    SamplingMode sampling_mode = SamplingMode::Uniform;
 
 private:
     int x_pixels;
@@ -104,5 +104,5 @@ private:
     [[nodiscard]] int sampleLightIndex() const;
 
     void get_light_weight(const SampleInfo& sample,
-        const HitInfo& hi, double& w, double& phat) const;
+        const HitInfo& hi, double& W, double& phat) const;
 };
