@@ -278,7 +278,7 @@ void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 	const glm::vec3 Li = sample.light.intensity * sample.light.c;          // L_i
 
 	// Target importance (importance of this sample for the current pixel)
-	const float geometry = (cos_theta * cos_theta_light) / dist2;
+	const float geometry = cos_theta;
 	const float target = luminance(Li * brdf * geometry);
 
 	// Source PDF: converting from area to solid angle

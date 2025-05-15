@@ -45,16 +45,6 @@ glm::vec3 shade_debug(const HitInfo& hit, const SamplerResult& sample, World& sc
 // Reference: https://momentsingraphics.de/ToyRenderer4RayTracing.html
 
 static glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, World& scene) {
-    // Ray has no intersection
-    if (hit.t == 1E30f) {
-        return sky_color(hit.r.direction());
-    }
-
-    // If the material emits light, return the emitted radiance directly
-    if (hit.mat_ptr->emits_light()) {
-        return hit.mat_ptr->albedo(hit);
-    }
-
 	// Sampled light direction
     const glm::vec3 L = sample.light_dir;
 
@@ -95,6 +85,16 @@ static glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, World& s
 }
 
 glm::vec3 shadeRIS(const HitInfo& hit, const SamplerResult& sample, World& scene) {
+    // Ray has no intersection
+    if (hit.t == 1E30f) {
+        return sky_color(hit.r.direction());
+    }
+
+    // If the material emits light, return the emitted radiance directly
+    if (hit.mat_ptr->emits_light()) {
+        return hit.mat_ptr->albedo(hit);
+    }
+
     glm::vec3 f = shade(hit, sample, scene);
 
     const float W = float(sample.W);
@@ -103,6 +103,16 @@ glm::vec3 shadeRIS(const HitInfo& hit, const SamplerResult& sample, World& scene
 }
 
 glm::vec3 shadeUniform(const HitInfo& hit, const SamplerResult& sample, World& scene) {
+    // Ray has no intersection
+    if (hit.t == 1E30f) {
+        return sky_color(hit.r.direction());
+    }
+
+    // If the material emits light, return the emitted radiance directly
+    if (hit.mat_ptr->emits_light()) {
+        return hit.mat_ptr->albedo(hit);
+    }
+
 	glm::vec3 f = shade(hit, sample, scene);
     const float p = sample.light.area();
 	return f * p;

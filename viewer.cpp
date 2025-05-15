@@ -162,6 +162,11 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
                 std::vector<glm::vec3>(render_cam.image_width, glm::vec3(0.0f)));
     }
 
+    std::string sampling_mode_str;
+    std::ostringstream oss;
+    oss << light_sampler.sampling_mode;
+    sampling_mode_str = oss.str();
+
     for (int i = 0; i < framecount; i++) {
         auto render_start = std::chrono::high_resolution_clock::now();
 
@@ -182,16 +187,11 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
 
         /// output frame
         auto filename = get_frame_filename(i);
-        save_image(colors, "./images/" + filename);
+        save_image(colors, "./images/" + sampling_mode_str + "_" + filename);
     }
 	if (accumulate_flag) {
 		std::clog << "Output accumulated frame" << std::endl;
 		auto filename = get_frame_filename(framecount);
-        // convert light_sampler.sampling_mode to a string using the ostream operator into a variable
-		std::string sampling_mode_str;
-		std::ostringstream oss;
-		oss << light_sampler.sampling_mode;
-		sampling_mode_str = oss.str();
 
 		save_image(accumulated_colors, "./images/" + sampling_mode_str + "_accumulate_" + filename);
 	}
