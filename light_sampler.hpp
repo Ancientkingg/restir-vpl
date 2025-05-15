@@ -20,16 +20,24 @@ struct SamplerResult {
     SamplerResult();
 };
 
+struct SampleInfo {
+    TriangularLight light;
+	glm::vec3 light_point;
+
+    SampleInfo();
+	SampleInfo(const TriangularLight& light, const glm::vec3& light_point);
+};
+
 class Reservoir {
 public:
-    TriangularLight sample;
-    glm::vec3 sample_pos;
+    SampleInfo y;
+    double w_sum;
     long M;
-    double W;
     double phat;
+    double W;
 
     Reservoir();
-    void update(const TriangularLight& new_sample, const glm::vec3 sample_point, const double w_i, const double n_phat);
+    void update(const SampleInfo x_i, const double w_i, const double n_phat);
     void merge(const Reservoir& other);
     void replace(const Reservoir& other);
     void reset();
@@ -70,6 +78,6 @@ private:
 
     [[nodiscard]] int sampleLightIndex() const;
 
-    void get_light_weight(const TriangularLight& light, const glm::vec3 light_point,
+    void get_light_weight(const SampleInfo& sample,
         const HitInfo& hi, double& w, double& phat) const;
 };

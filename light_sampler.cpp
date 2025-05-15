@@ -15,8 +15,14 @@
 thread_local std::mt19937 rng(std::random_device{}());
 std::uniform_real_distribution<float> dist(0.0f, 1.0f);
 
-Reservoir::Reservoir() : sample(glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0), sample_pos(0, 0, 0), M(0),
-W(0), phat(0) {
+SampleInfo::SampleInfo() : light(glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0), light_point(0.0f) {
+}
+
+SampleInfo::SampleInfo(const TriangularLight& light, const glm::vec3& light_point) : light(light), light_point(light_point) {
+}
+
+Reservoir::Reservoir() : M(0),
+w_sum(0), phat(0), y() {
 }
 
 SamplerResult::SamplerResult() : light_point(0.0), light_dir(0.0),
@@ -24,46 +30,37 @@ light(glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0) {
 }
 
 
-void Reservoir::update(const TriangularLight& new_sample, const glm::vec3 sample_point, const double w_i, const double n_phat) {
-	W += w_i;
+void Reservoir::update(const SampleInfo x_i, const double w_i, const double n_phat) {
+	w_sum += w_i;
 	M = M + 1;
-	if (rand() < w_i / W) {
-		sample = new_sample;
-		sample_pos = sample_point;
+	if (rand() < w_i / w_sum) {
+		y = x_i;
 		phat = n_phat;
 	}
 }
 
 void Reservoir::merge(const Reservoir &other) {
 	// Merge the other reservoir into this one
+	Reservoir& s = *this;
 
-	M += other.M;
-	W += other.W;
-
-	const float p = other.W / W;
-	if (rand() < p) {
-		sample = other.sample;
-		sample_pos = other.sample_pos;
-		phat = other.phat;
-	}
-	// else do nothing
-	// W = (W + other.W) / M / phat;
+	s.update(other.y, other.phat * other.W * other.M, other.phat);
+	s.M = other.M;
+	s.W = 1.0 / other.phat * ((1.0 / s.M) * s.w_sum);
 }
 
 void Reservoir::replace(const Reservoir &other) {
 	W = other.W;
 	M = other.M;
-	sample = other.sample;
-	sample_pos = other.sample_pos;
+	y = other.y;
 	phat = other.phat;
 }
 
 void Reservoir::reset() {
-	sample = { glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0 };
+	y = SampleInfo();
 	M = 0;
 	W = 0;
+	w_sum = 0;
 	phat = 0;
-	sample_pos = { 0.0, 0.0, 0.0 };
 }
 
 RestirLightSampler::RestirLightSampler(const int x, const int y,
@@ -103,22 +100,22 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 			HitInfo& hi = hit_infos[y * x_pixels + x];
 			set_initial_sample(x, y, hi);
 			// visibility_check(x, y, hi, world);
-			temporal_update(x, y);
+			//temporal_update(x, y);
 		}
 	}
 
 	std::vector results(y_pixels, std::vector<SamplerResult>(x_pixels));
-	swap_buffers();
+	//swap_buffers();
 #pragma omp parallel for
 	for (int y = 0; y < y_pixels; y++) {
 		for (int x = 0; x < x_pixels; x++) {
 			HitInfo& hi = hit_infos[y * x_pixels + x];
-			spatial_update(x, y);
+			//spatial_update(x, y);
 			auto res = current_reservoirs[y * x_pixels + x];
-			results[y][x].light_point = res.sample_pos;
-			results[y][x].light_dir = normalize(res.sample_pos - hi.r.at(hi.t));
-			results[y][x].light = res.sample;
-			results[y][x].W = res.W / static_cast<double>(res.M) / res.phat;
+			results[y][x].light_point = res.y.light_point;
+			results[y][x].light_dir = normalize(res.y.light_point - hi.r.at(hi.t));
+			results[y][x].light = res.y.light;
+			results[y][x].W = res.W;
 		}
 	}
 	return results;
@@ -126,15 +123,20 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 
 void RestirLightSampler::set_initial_sample(const int x, const int y, const HitInfo& hi) {
 	// Create a reservoir for the pixel
-	Reservoir& res = current_reservoirs[y * x_pixels + x];
-	res.reset();
+	Reservoir& r = current_reservoirs[y * x_pixels + x];
+	r.reset();
 	// Sample M times from the light sources
 	for (int k = 0; k < m; k++) {
 		TriangularLight l = pick_light();
 		const glm::vec3 sample_point = sample_on_light(l);
+
+		SampleInfo sample = SampleInfo(l, sample_point);
+
 		double w, phat;
-		get_light_weight(l, sample_point, hi, w, phat);
-		res.update(l, sample_point, w, phat);
+		get_light_weight(sample, hi, w, phat);
+		r.update(sample, w, phat);
+
+		r.W = 1.0 / phat * ((1.0 / r.M) * r.w_sum);
 	}
 }
 
@@ -142,7 +144,7 @@ void RestirLightSampler::visibility_check(const int x, const int y, const HitInf
 	// Check the visibility of the light sample
 	auto& res = current_reservoirs[y * x_pixels + x];
 	// Shadow dir = light sample - hit point
-	const glm::vec3 shadow_dir = res.sample_pos - hi.r.at(hi.t);
+	const glm::vec3 shadow_dir = res.y.light_point - hi.r.at(hi.t);
 	// Create a ray from the hit point to the light sample
 	Ray shadow(hi.r.at(hi.t), normalize(shadow_dir));
 	// Check if the ray intersects with the scene
@@ -207,7 +209,7 @@ int RestirLightSampler::sampleLightIndex() const {
 	return static_cast<int>(dist(rng) * cached_num_lights);
 }
 
-void RestirLightSampler::get_light_weight(const TriangularLight &light, const glm::vec3 light_point,
+void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 														 const HitInfo &hi, double& w, double& phat) const {
 	// if not hit
 	if (hi.t == 1E30f) {
@@ -215,18 +217,18 @@ void RestirLightSampler::get_light_weight(const TriangularLight &light, const gl
 	}
 
 	const glm::vec3 hit_point = hi.r.at(hi.t);
-	const glm::vec3 light_dir = light_point - hit_point;
+	const glm::vec3 light_dir = sample.light_point - hit_point;
 	const glm::vec3 L = glm::normalize(light_dir);
 	const float cos_theta = glm::dot(L, hi.triangle.normal(hi.uv));
-	const glm::vec3 brdf = hi.mat_ptr->evaluate(hi, light_dir);
+	const glm::vec3 brdf = hi.mat_ptr->evaluate(hi, L);
 
-	const float target = cos_theta * light.intensity * glm::length(brdf);
+	const float target = cos_theta * sample.light.intensity * glm::length(brdf);
 	const float light_choose_pdf = 1.0f / static_cast<float>(num_lights);
-	const float light_point_pdf = 1.0f / light.area();
+	const float light_point_pdf = 1.0f / sample.light.area();
 
 	const float source = light_choose_pdf * light_point_pdf * (
 		glm::dot(light_dir, light_dir) / abs(glm::dot(
-			light.triangle.normal({ 0, 0 }), L)));
+			sample.light.triangle.normal({ 0, 0 }), L)));
 
 	w = std::max(0.f, source / target);
 	phat = source;

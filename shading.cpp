@@ -84,6 +84,8 @@ glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, float pdf, Worl
     const float cos_theta = fabs(glm::dot(N, wi));
     const float W = float(sample.W);
 
+    return glm::vec3(glm::dot(N, wi));
+
     // Final contribution
     return Le * V * fr * cos_theta * W * p;
 }
