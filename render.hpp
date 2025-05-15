@@ -13,4 +13,4 @@ struct RenderInfo {
     RestirLightSampler& light_sampler;
 };
 
-std::vector<std::vector<glm::vec3>> raytrace(ShadingMode render_mode, RenderInfo& info);
+std::vector<std::vector<glm::vec3>> raytrace(SamplingMode sampling_mode, ShadingMode render_mode, RenderInfo& info);

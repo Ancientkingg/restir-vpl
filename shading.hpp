@@ -13,8 +13,9 @@ enum ShadingMode {
 
 glm::vec3 sky_color(const glm::vec3& direction);
 
-glm::vec3 shade_normal(const HitInfo& hit, const SamplerResult& sample, float pdf, World& scene);
+glm::vec3 shade_normal(const HitInfo& hit, const SamplerResult& sample, World& scene);
 
-glm::vec3 shade_debug(const HitInfo& hit, const SamplerResult& sample, float pdf, World& scene);
+glm::vec3 shade_debug(const HitInfo& hit, const SamplerResult& sample, World& scene);
 
-glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, float pdf, World& scene);
+glm::vec3 shadeRIS(const HitInfo& hit, const SamplerResult& sample, World& scene);
+glm::vec3 shadeUniform(const HitInfo& hit, const SamplerResult& sample, World& scene);

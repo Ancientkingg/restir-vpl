@@ -264,8 +264,8 @@ void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 	const glm::vec3 N = hi.triangle.normal(hi.uv);                         // Surface normal
 	const glm::vec3 Nl = sample.light.triangle.normal({ 0, 0 });           // Light normal
 
-	const float cos_theta = glm::max(0.f, glm::dot(N, L));                 // Surface angle
-	const float cos_theta_light = glm::max(0.f, glm::dot(Nl, -L));         // Light angle
+	const float cos_theta = fmax(0.0f, glm::dot(N, L));                    // Surface angle
+	const float cos_theta_light = fmax(0.0f, glm::dot(Nl, -L));            // Light angle
 
 	if (cos_theta <= 0.0f || cos_theta_light <= 0.0f) {
 		W = 1.0;
@@ -279,12 +279,12 @@ void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 
 	// Target importance (importance of this sample for the current pixel)
 	const float geometry = (cos_theta * cos_theta_light) / dist2;
-	const float target = luminance(Li * brdf * geometry); // scalar version of target
+	const float target = luminance(Li * brdf * geometry);
 
 	// Source PDF: converting from area to solid angle
 	const float light_choose_pdf = 1.0f / static_cast<float>(num_lights);
 	const float light_area_pdf = 1.0f / sample.light.area();
-	const float source = light_choose_pdf * light_area_pdf * (dist2 / cos_theta_light); // dA → dOmega
+	const float source = light_choose_pdf * light_area_pdf * (cos_theta_light * dist2); // dA → dOmega
 
 	// Final weight and importance
 	W = fmax(0.0, target / source);

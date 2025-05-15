@@ -7,7 +7,7 @@
 #include "light_sampler.hpp"
 #include "shading.hpp"
 
-std::vector<std::vector<glm::vec3>> raytrace(ShadingMode render_mode, RenderInfo& info) {
+std::vector<std::vector<glm::vec3>> raytrace(SamplingMode sampling_mode, ShadingMode render_mode, RenderInfo& info) {
 
     auto hit_infos = info.cam.get_hit_info_from_camera_per_frame(info.world);
 
@@ -32,18 +32,21 @@ std::vector<std::vector<glm::vec3>> raytrace(ShadingMode render_mode, RenderInfo
         if (render_mode != RENDER_NORMALS) {
             sample = light_samples_per_ray[j][k];
         }
-
-        float pdf = sample.light.pdf;
         
         glm::vec3 color;
         if (render_mode == RENDER_SHADING) {
-            color = shade(hit, sample, pdf, info.world);
+            if (sampling_mode == SamplingMode::Uniform) {
+                color = shadeUniform(hit, sample, info.world);
+            }
+            else {
+				color = shadeRIS(hit, sample, info.world);
+            }
         }
         else if (render_mode == RENDER_DEBUG) {
-            color = shade_debug(hit, sample, pdf, info.world);
+            color = shade_debug(hit, sample, info.world);
         }
         else if (render_mode == RENDER_NORMALS) {
-            color = shade_normal(hit, sample, pdf, info.world);
+            color = shade_normal(hit, sample, info.world);
         }
 
         colors[j][k] += color;
