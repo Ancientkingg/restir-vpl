@@ -279,12 +279,12 @@ void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 
 	// Target importance (importance of this sample for the current pixel)
 	const float geometry = cos_theta;
-	const float target = luminance(Li * brdf * geometry);
+	const float target = luminance(Li * brdf);
 
 	// Source PDF: converting from area to solid angle
 	const float light_choose_pdf = 1.0f / static_cast<float>(num_lights);
 	const float light_area_pdf = 1.0f / sample.light.area();
-	const float source = light_choose_pdf * light_area_pdf * (cos_theta_light * dist2); // dA → dOmega
+	const float source = light_choose_pdf * light_area_pdf * (dist2 / cos_theta_light); // dA → dOmega
 
 	// Final weight and importance
 	W = fmax(0.0, target / source);
