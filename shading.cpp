@@ -78,19 +78,21 @@ glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, float pdf, Worl
 
     // Visibility term
     Ray shadow_ray = Ray(I + EPS * L, L);
-    const float V = scene.is_occluded(shadow_ray, dist - EPS * 2.0f) ? 0.0 : 1.0;
+    const float V = scene.is_occluded(shadow_ray, dist - EPS * 5000.0f) ? 0.0 : 1.0;
 
 	// BRDF term
 	glm::vec3 fr = hit.mat_ptr->evaluate(hit, L);
 
-	// PDF term
-    const float p = (fabs(glm::dot(Nl, wi))) / (dist * dist * pdf);
+	// Geometry term
+    const float G = (fabs(glm::dot(Nl, wi))) / (dist * dist);
+
+    // PDF term
+    const float p = sample.light.area();
 
     const float cos_theta = fabs(glm::dot(N, wi));
+
     const float W = float(sample.W);
 
-    return glm::vec3(glm::dot(N, wi));
-
     // Final contribution
-    return Le * V * fr * cos_theta * W * p;
+    return Le * fr * cos_theta * G * W * p;
 }

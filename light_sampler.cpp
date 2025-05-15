@@ -43,8 +43,9 @@ void Reservoir::merge(const Reservoir &other) {
 	// Merge the other reservoir into this one
 	Reservoir& s = *this;
 
+	s.update(s.y, s.phat * s.W * s.M, s.phat);
 	s.update(other.y, other.phat * other.W * other.M, other.phat);
-	s.M = other.M;
+	s.M = s.M + other.M;
 	s.W = 1.0 / s.phat * ((1.0 / s.M) * s.w_sum);
 
 	// check if W is NaN or infinity
@@ -115,16 +116,16 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 
 	std::vector results(y_pixels, std::vector<SamplerResult>(x_pixels));
 	if (sampling_mode != SamplingMode::Uniform && sampling_mode != SamplingMode::RIS) {
-		swap_buffers();
+		//swap_buffers();
 	}
 #pragma omp parallel for
 	for (int y = 0; y < y_pixels; y++) {
 		for (int x = 0; x < x_pixels; x++) {
 			HitInfo& hi = hit_infos[y * x_pixels + x];
 			if (sampling_mode != SamplingMode::Uniform && sampling_mode != SamplingMode::RIS) {
-				spatial_update(x, y);
+				//spatial_update(x, y);
 			}
-			auto res = current_reservoirs[y * x_pixels + x];
+			Reservoir& res = current_reservoirs[y * x_pixels + x];
 			results[y][x].light_point = res.y.light_point;
 			results[y][x].light_dir = normalize(res.y.light_point - hi.r.at(hi.t));
 			results[y][x].light = res.y.light;
@@ -222,7 +223,11 @@ int RestirLightSampler::sampleLightIndex() const {
 		cached_num_lights = num_lights;
 	}
 
-	return static_cast<int>(dist(rng) * cached_num_lights);
+	const int out = static_cast<int>(dist(rng) * cached_num_lights);
+
+	//std::cout << "Sampled light index: " << out << std::endl;
+
+	return out;
 }
 
 void RestirLightSampler::get_light_weight(const SampleInfo& sample,
@@ -243,7 +248,8 @@ void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 	const float geometry_term = glm::dot(light_dir, light_dir) / abs(glm::dot(
 		sample.light.triangle.normal({ 0, 0 }), L));
 
-	const float target = geometry_term * glm::length(brdf);
+	const float radiance = sample.light.intensity;
+	const float target = radiance * glm::length(brdf);
 
 	const float light_choose_pdf = 1.0f / static_cast<float>(num_lights);
 	const float light_point_pdf = 1.0f / sample.light.area();
