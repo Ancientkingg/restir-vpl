@@ -51,11 +51,11 @@ static glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, World& s
 	// Normal of the intersection point
     const glm::vec3 N = hit.triangle.normal(hit.uv);
 
+    // Normal of the light source
+    const glm::vec3 Nl = sample.light.triangle.normal();
+
     // Point of intersection [x]
     const glm::vec3 I = hit.r.at(hit.t);
-
-	// Normal of the light source
-    const glm::vec3 Nl = sample.light.triangle.normal();
 
 	// Distance between the light and the intersection point
     const float dist = glm::length(sample.light_point - I);
@@ -76,8 +76,8 @@ static glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, World& s
 	glm::vec3 fr = hit.mat_ptr->evaluate(hit, L);
 
 	// Geometry term
-    const float cos_theta = fmax(0.0f, glm::dot(N, L));
-	const float cos_theta_light = fmax(0.0f, glm::dot(Nl, -L));
+    const float cos_theta = fabs(glm::dot(N, L));
+	const float cos_theta_light = fabs(glm::dot(Nl, -L));
     const float G = (cos_theta * cos_theta_light) / (dist * dist);
 
     // Final contribution

@@ -106,7 +106,7 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 	// 4. Spatial update - update the current reservoir with the neighbors
 	// 5. Return the sample in the current reservoir
 
-//#pragma omp parallel for
+#pragma omp parallel for
 	for (int y = 0; y < y_pixels; y++) {
 		for (int x = 0; x < x_pixels; x++) {
 			HitInfo& hi = hit_infos[y * x_pixels + x];
@@ -127,7 +127,7 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 	if (sampling_mode != SamplingMode::Uniform && sampling_mode != SamplingMode::RIS) {
 		//swap_buffers();
 	}
-//#pragma omp parallel for
+#pragma omp parallel for
 	for (int y = 0; y < y_pixels; y++) {
 		for (int x = 0; x < x_pixels; x++) {
 			HitInfo& hi = hit_infos[y * x_pixels + x];
@@ -262,10 +262,10 @@ void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 	const glm::vec3 L = glm::normalize(light_vec); // Direction to light
 
 	const glm::vec3 N = hi.triangle.normal(hi.uv);                         // Surface normal
-	const glm::vec3 Nl = sample.light.triangle.normal({ 0, 0 });           // Light normal
+	const glm::vec3 Nl = sample.light.triangle.normal();           // Light normal
 
-	const float cos_theta = fmax(0.0f, glm::dot(N, L));                    // Surface angle
-	const float cos_theta_light = fmax(0.0f, glm::dot(Nl, -L));            // Light angle
+	const float cos_theta = fabs(glm::dot(N, L));                    // Surface angle
+	const float cos_theta_light = fabs(glm::dot(Nl, -L));            // Light angle
 
 	if (cos_theta <= 0.0f || cos_theta_light <= 0.0f) {
 		W = 1.0;
