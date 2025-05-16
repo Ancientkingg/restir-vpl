@@ -36,7 +36,7 @@ std::vector<std::vector<glm::vec3>> raytrace(SamplingMode sampling_mode, Shading
         glm::vec3 color;
         if (render_mode == RENDER_SHADING) {
             if (sampling_mode == SamplingMode::Uniform) {
-                color = shadeUniform(hit, sample, info.world);
+                color = shadeUniform(hit, sample, info.world, info.light_sampler);
             }
             else {
 				color = shadeRIS(hit, sample, info.world);
