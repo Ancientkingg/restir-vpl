@@ -27,7 +27,9 @@ World load_world() {
 	 //world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
 	 //world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
 	//world.add_obj("objects/monkeyLightInOne.obj", false);
-	world.add_obj("objects/platform.obj", false);
+	// world.add_obj("objects/platform.obj",  false);
+	world.add_obj("objects/scene_without_lights.obj", false);
+	world.add_obj("objects/scene_lights.obj", false);
 	 //world.place_obj("objects/ceiling_light.obj", true, glm::vec3(0, 10, 0));
 	// world.place_obj("objects/Gauntlet.obj", false, glm::vec3(0, 0, 0));
 	auto loading_stop = std::chrono::high_resolution_clock::now();
@@ -240,9 +242,9 @@ std::vector<TriangularLight> World::get_triangular_lights(){
 	int face_id = 0;
 	for(int i = 0; i < lights.size(); i++){
 		glm::vec3 c = glm::vec3(
-			all_materials[light_material_ids[face_id]].ambient[0],
-			all_materials[light_material_ids[face_id]].ambient[1],
-			all_materials[light_material_ids[face_id]].ambient[2]
+			all_materials[light_material_ids[face_id]].emission[0],
+			all_materials[light_material_ids[face_id]].emission[1],
+			all_materials[light_material_ids[face_id]].emission[2]
 		);
 		float intensity = (c[0] + c[1] + c[2]) / 3;
 		TriangularLight tl(lights[i], c, intensity * BASE_LIGHT_INTENSITY);
@@ -275,7 +277,7 @@ std::vector<Material*> World::get_materials(bool ignore_textures){
 		}
 		else {
 			if (is_light) {
-				Emissive* end_mat = new Emissive({ mat.ambient[0], mat.ambient[1], mat.ambient[2] });
+				Emissive* end_mat = new Emissive({ mat.emission[0], mat.emission[1], mat.emission[2] });
 				out.push_back(end_mat);
 			}
 			else {

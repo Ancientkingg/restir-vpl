@@ -132,7 +132,7 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 		for (int x = 0; x < x_pixels; x++) {
 			HitInfo& hi = hit_infos[y * x_pixels + x];
 			if (sampling_mode != SamplingMode::Uniform && sampling_mode != SamplingMode::RIS) {
-				//spatial_update(x, y);
+				// spatial_update(x, y);
 			}
 			Reservoir& res = current_reservoirs[y * x_pixels + x];
 			results[y][x].light_point = res.y.light_point;
