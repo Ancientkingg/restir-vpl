@@ -49,7 +49,7 @@ std::vector<std::vector<glm::vec3>> raytrace(SamplingMode sampling_mode, Shading
             color = shade_normal(hit, sample, info.world);
         }
 
-        colors[j][k] += color;
+        colors[j][k] = color;
     }
 
     return colors;

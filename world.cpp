@@ -26,7 +26,7 @@ World load_world() {
 	//world.add_obj("objects/bistro_lights.obj", true);
 	 //world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
 	 //world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
-	//world.add_obj("objects/monkeyLightInOne.obj", false);
+	// world.add_obj("objects/monkeyLightInOne.obj", false);
 	// world.add_obj("objects/platform.obj",  false);
 	world.add_obj("objects/scene_without_lights.obj", false);
 	world.add_obj("objects/scene_lights.obj", false);
