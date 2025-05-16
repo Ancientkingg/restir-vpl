@@ -304,7 +304,7 @@ void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 	const float source = light_choose_pdf * light_area_pdf * (dist2 / cos_theta_light); // dA → dOmega
 
 	// Final weight and importance
-	W = fmax(0.0, target / source); // fmax is redundant
+	W = target / source;
 
 	phat = target; // This is the "target pdf" value used by ReSTIR
 }

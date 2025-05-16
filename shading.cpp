@@ -94,10 +94,6 @@ glm::vec3 shadeRIS(const HitInfo& hit, const SamplerResult& sample, World& scene
 
     const float W = float(sample.W);
 
-    if (sample.W <= 0) {
-        return GREEN;
-    }
-
     return f * W;
 }
 
@@ -128,12 +124,15 @@ glm::vec3 shadeUniform(const HitInfo& hit, const SamplerResult& sample, World& s
     const float dist = glm::length(sample.light_point - I);
 
 	glm::vec3 f = shade(hit, sample, scene);
-    const float p = sample.light.area() * sampler.num_lights;
 
     // Geometry term
     const float cos_theta = fabs(glm::dot(N, L));
-    const float cos_theta_light = fabs(glm::dot(Nl, -L));
-    const float G = (cos_theta * cos_theta_light) / (dist * dist);
+    const float G = cos_theta;
 
-	return f * G * p;
+    // PDF term
+    const float dist2 = dist * dist;
+    const float cos_theta_light = fabs(glm::dot(Nl, -L));
+    const float one_over_p = sample.light.area() * sampler.num_lights * cos_theta_light / dist2;
+
+	return f * G * one_over_p;
 }
