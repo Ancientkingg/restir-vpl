@@ -11,6 +11,14 @@
 
 #include "lib/stb_image_write.h"
 
+glm::vec3 to_srgb(const glm::vec3& color) {
+    return {
+        color.r <= 0.045045 ? color.r * 12.92f : powf((color.r + 0.055f) / 1.055f, 2.4f),
+        color.g <= 0.045045 ? color.g * 12.92f : powf((color.g + 0.055f) / 1.055f, 2.4f),
+        color.b <= 0.045045 ? color.b * 12.92f : powf((color.b + 0.055f) / 1.055f, 2.4f)
+    };
+}
+
 void save_png(const std::vector<std::vector<glm::vec3>>& pixels, const std::string& filename) {
     int height = pixels.size();
     int width = pixels[0].size();
@@ -19,6 +27,7 @@ void save_png(const std::vector<std::vector<glm::vec3>>& pixels, const std::stri
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             glm::vec3 color = clamp(pixels[y][x], 0.0f, 1.0f);  // Clamp to [0,1]
+            color = to_srgb(color); // Convert to sRGB
             int index = ((height - 1 - y) * width + x) * 3; // Flip vertically
             data[index + 0] = static_cast<unsigned char>(color.r * 255.0f);
             data[index + 1] = static_cast<unsigned char>(color.g * 255.0f);

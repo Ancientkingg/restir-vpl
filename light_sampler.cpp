@@ -46,15 +46,9 @@ Reservoir Reservoir::merge(const Reservoir& r1, const Reservoir& r2) {
 	Reservoir s;
 
 	s.update(r1.y, r1.phat * r1.W * r1.M, r1.phat);
-	if (s.w_sum >= 1E300) {
-		printf("hello");
-	}
 	s.update(r2.y, r2.phat * r2.W * r2.M, r2.phat);
 
 	s.M = r1.M + r2.M;
-	if (s.w_sum >= 1E300) {
-		printf("hello");
-	}
 	s.W = (1.0 / s.phat) * ((1.0 / s.M) * s.w_sum);
 
 	// check if W is NaN or infinity
@@ -272,9 +266,9 @@ static float luminance(const glm::vec3& color) {
 void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 														 const HitInfo &hi, double& W, double& phat) const {
 	// if not hit
-	if (hi.t == 1E30f) {
-		W = 1.0;
-		phat = 1.0;
+	if (hi.t == 1E30f || hi.mat_ptr->emits_light()) {
+		W = 0.0;
+		phat = 0.0;
 		return;
 	}
 
@@ -291,8 +285,8 @@ void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 	const float cos_theta_light = fabs(glm::dot(Nl, -L));            // Light angle
 
 	if (cos_theta <= 0.0f || cos_theta_light <= 0.0f) {
-		W = 1.0;
-		phat = 1.0;
+		W = 0.0;
+		phat = 0.0;
 		return;
 	}
 

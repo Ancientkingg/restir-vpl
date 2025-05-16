@@ -28,8 +28,8 @@ World load_world() {
 	 //world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
 	// world.add_obj("objects/monkeyLightInOne.obj", false);
 	 world.add_obj("objects/platform.obj",  false);
-	//world.add_obj("objects/scene_without_lights.obj", false);
-	//world.add_obj("objects/scene_lights.obj", false);
+	// world.add_obj("objects/scene_without_lights.obj", false);
+	// world.add_obj("objects/scene_lights.obj", false);
 	 //world.place_obj("objects/ceiling_light.obj", true, glm::vec3(0, 10, 0));
 	// world.place_obj("objects/Gauntlet.obj", false, glm::vec3(0, 0, 0));
 	auto loading_stop = std::chrono::high_resolution_clock::now();
