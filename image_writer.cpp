@@ -3,11 +3,15 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <filesystem>
+#include <stdio.h>
+
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <fstream>
+
 #include "lib/stb_image_write.h"
 
-void save_image(const std::vector<std::vector<glm::vec3>>& pixels, const std::string& filename) {
+void save_png(const std::vector<std::vector<glm::vec3>>& pixels, const std::string& filename) {
     int height = pixels.size();
     int width = pixels[0].size();
     std::vector<unsigned char> data(width * height * 3);
@@ -31,3 +35,36 @@ void save_image(const std::vector<std::vector<glm::vec3>>& pixels, const std::st
     // Write the image to a file
     stbi_write_png(filename.c_str(), width, height, 3, data.data(), width * 3);
 }
+
+
+
+void save_pfm(const std::vector<std::vector<glm::vec3>>& pixels, const std::string& file_path) {
+    std::ofstream file(file_path, std::ios::binary);
+    if (!file) {
+        printf("Failed to open %s for writing. Please check path and permissions.\n", file_path.c_str());
+        return;
+    }
+
+    int height = pixels.size();
+    int width = height > 0 ? pixels[0].size() : 0;
+
+
+
+    // Write the PFM header
+    file << "PF\n"
+            << width << " " << height << "\n"
+            <<"-1.0\n";
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            const glm::vec3& pixel = pixels[y][x];
+            file.write(reinterpret_cast<const char*>(&pixel.r), sizeof(float));
+            file.write(reinterpret_cast<const char*>(&pixel.g), sizeof(float));
+            file.write(reinterpret_cast<const char*>(&pixel.b), sizeof(float));
+        }
+    }
+
+    file.close();
+}
+
+ 

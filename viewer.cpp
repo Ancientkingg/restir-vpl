@@ -101,7 +101,7 @@ void update_and_present(SDL_Renderer *renderer,
 
 std::string get_frame_filename(int i) {
     std::ostringstream oss;
-    oss << "frame" << std::setfill('0') << std::setw(4) << i << ".png";
+    oss << "frame" << std::setfill('0') << std::setw(4) << i << (SAVE_FORMAT ? ".png" : ".pfm");
     return oss.str();
 }
 
@@ -187,13 +187,21 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
 
         /// output frame
         auto filename = get_frame_filename(i);
-        save_image(colors, "./images/" + sampling_mode_str + "_" + filename);
+        if constexpr (SAVE_FORMAT == 1) {
+            save_png(colors, "./images/" + sampling_mode_str + "_" + filename);
+        } else {
+            save_pfm(colors, "./images/" + sampling_mode_str + "_" + filename);
+        }
     }
 	if (accumulate_flag) {
 		std::clog << "Output accumulated frame" << std::endl;
 		auto filename = get_frame_filename(framecount);
 
-		save_image(accumulated_colors, "./images/" + sampling_mode_str + "_accumulate_" + filename);
+	    if constexpr (SAVE_FORMAT == 1) {
+	        save_png(accumulated_colors, "./images/" + sampling_mode_str + "_accumulate_" + filename);
+	    } else {
+	        save_pfm(accumulated_colors, "./images/" + sampling_mode_str + "_accumulate_" + filename);
+	    }
 	}
 
     currently_outputting_render = false;
@@ -224,7 +232,7 @@ void render_ground_truth_frame(Camera &cam, World &world) {
 
     /// output frame
     auto filename = get_frame_filename(1);
-    save_image(colors, "./images/" + filename);
+    save_png(colors, "./images/" + filename);
 
     currently_outputting_render = false;
 }
