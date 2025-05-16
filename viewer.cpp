@@ -108,8 +108,8 @@ std::string get_frame_filename(int i) {
 void accumulate(std::vector<std::vector<glm::vec3>>& colors, std::vector<std::vector<glm::vec3>>& new_color, int frame) {
 	for (int j = 0; j < colors.size(); j++) {
 		for (int i = 0; i < colors[j].size(); i++) {
-			colors[j][i] = ((colors[j][i] * static_cast<float>(std::min(frame, 30)) + new_color[j][i]) /
-				static_cast<float>(std::min(frame + 1, 31)));
+			colors[j][i] = (colors[j][i] * static_cast<float>(frame) + new_color[j][i]) /
+				static_cast<float>(frame + 1);
 		}
 	}
 }

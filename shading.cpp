@@ -75,13 +75,8 @@ static glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, World& s
 	// BRDF term
 	glm::vec3 fr = hit.mat_ptr->evaluate(hit, L);
 
-	// Geometry term
-    const float cos_theta = fabs(glm::dot(N, L));
-	const float cos_theta_light = fabs(glm::dot(Nl, -L));
-    const float G = (cos_theta * cos_theta_light) / (dist * dist);
-
     // Final contribution
-    return Le * V * fr * G;
+    return Le * V * fr;
 }
 
 glm::vec3 shadeRIS(const HitInfo& hit, const SamplerResult& sample, World& scene) {
@@ -102,7 +97,7 @@ glm::vec3 shadeRIS(const HitInfo& hit, const SamplerResult& sample, World& scene
     return f * W;
 }
 
-glm::vec3 shadeUniform(const HitInfo& hit, const SamplerResult& sample, World& scene) {
+glm::vec3 shadeUniform(const HitInfo& hit, const SamplerResult& sample, World& scene, RestirLightSampler& sampler) {
     // Ray has no intersection
     if (hit.t == 1E30f) {
         return sky_color(hit.r.direction());
@@ -113,7 +108,28 @@ glm::vec3 shadeUniform(const HitInfo& hit, const SamplerResult& sample, World& s
         return hit.mat_ptr->albedo(hit);
     }
 
+    // Sampled light direction
+    const glm::vec3 L = sample.light_dir;
+
+    // Normal of the intersection point
+    const glm::vec3 N = hit.triangle.normal(hit.uv);
+
+    // Normal of the light source
+    const glm::vec3 Nl = sample.light.triangle.normal();
+
+    // Point of intersection [x]
+    const glm::vec3 I = hit.r.at(hit.t);
+
+    // Distance between the light and the intersection point
+    const float dist = glm::length(sample.light_point - I);
+
 	glm::vec3 f = shade(hit, sample, scene);
-    const float p = sample.light.area();
-	return f * p;
+    const float p = sample.light.area() * sampler.num_lights;
+
+    // Geometry term
+    const float cos_theta = fabs(glm::dot(N, L));
+    const float cos_theta_light = fabs(glm::dot(Nl, -L));
+    const float G = (cos_theta * cos_theta_light) / (dist * dist);
+
+	return f * G * p;
 }

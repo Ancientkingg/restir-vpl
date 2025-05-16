@@ -91,13 +91,13 @@ public:
 
     SamplingMode sampling_mode = SamplingMode::Uniform;
 
+    int num_lights;
 private:
     int x_pixels;
     int y_pixels;
     std::vector<Reservoir> prev_reservoirs;
     std::vector<Reservoir> current_reservoirs;
     TriangularLight* lights;
-    int num_lights;
 
     [[nodiscard]] TriangularLight pick_light() const;
 
