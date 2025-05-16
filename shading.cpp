@@ -94,6 +94,10 @@ glm::vec3 shadeRIS(const HitInfo& hit, const SamplerResult& sample, World& scene
 
     const float W = float(sample.W);
 
+    if (sample.W <= 0) {
+        return GREEN;
+    }
+
     return f * W;
 }
 

@@ -46,9 +46,15 @@ Reservoir Reservoir::merge(const Reservoir& r1, const Reservoir& r2) {
 	Reservoir s;
 
 	s.update(r1.y, r1.phat * r1.W * r1.M, r1.phat);
+	if (s.w_sum >= 1E300) {
+		printf("hello");
+	}
 	s.update(r2.y, r2.phat * r2.W * r2.M, r2.phat);
 
 	s.M = r1.M + r2.M;
+	if (s.w_sum >= 1E300) {
+		printf("hello");
+	}
 	s.W = (1.0 / s.phat) * ((1.0 / s.M) * s.w_sum);
 
 	// check if W is NaN or infinity
@@ -63,7 +69,22 @@ void Reservoir::replace(const Reservoir &other) {
 	W = other.W;
 	M = other.M;
 	y = other.y;
+	w_sum = other.w_sum;
 	phat = other.phat;
+}
+
+static Reservoir combineReservoirs(std::vector<Reservoir> &reservoirs) {
+	Reservoir s;
+	for (auto& r : reservoirs) {
+		s.update(r.y, r.phat * r.W * r.M, r.phat);
+	}
+	// s.M = std::accumulate(reservoirs.begin(), reservoirs.end(), 0, [](int a, Reservoir& b) { return a + b.M; });
+	s.M = 0;
+	for (auto& r : reservoirs) {
+		s.M += r.M;
+	}
+	s.W = (1.0 / s.phat) * ((1.0 / s.M) * s.w_sum);
+	return s;
 }
 
 void Reservoir::reset() {
@@ -125,7 +146,8 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 
 	std::vector results(y_pixels, std::vector<SamplerResult>(x_pixels));
 	if (sampling_mode != SamplingMode::Uniform && sampling_mode != SamplingMode::RIS) {
-		//swap_buffers();
+		// swap_buffers();
+		std::copy(current_reservoirs.begin(), current_reservoirs.end(), prev_reservoirs.begin());
 	}
 #pragma omp parallel for
 	for (int y = 0; y < y_pixels; y++) {
@@ -192,21 +214,22 @@ Reservoir RestirLightSampler::temporal_update(const Reservoir& current, const Re
 void RestirLightSampler::spatial_update(const int x, const int y) {
 	int c = 0;
 
-	Reservoir& current = current_reservoirs[y * x_pixels + x];
-	Reservoir& prev = prev_reservoirs[y * x_pixels + x];
-	current.replace(prev);
+	std::vector<Reservoir> candidates;
 
 	// 2) Gather the 8 neighbors also from prev_reservoirs
 	for (int yy = -1; yy <= 1; ++yy) {
 		for (int xx = -1; xx <= 1; ++xx) {
-			if (xx == 0 && yy == 0) continue;
-
 			const int nx = x + xx;
-			if (const int ny = y + yy; nx >= 0 && nx < x_pixels && ny >= 0 && ny < y_pixels) {
-				current = Reservoir::merge(current, prev);
+			const int ny = y + yy;
+			const bool x_within_bounds = nx >= 0 && nx < x_pixels;
+			const bool y_within_bounds = ny >= 0 && ny < y_pixels;
+			if (x_within_bounds && y_within_bounds) {
+				candidates.push_back(prev_reservoirs[ny * x_pixels + nx]);
 			}
 		}
 	}
+
+	current_reservoirs[y * x_pixels + x] = combineReservoirs(candidates);
 }
 
 
