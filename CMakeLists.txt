@@ -18,7 +18,7 @@ add_executable(RayTracerInOneWeekend
 "camera.cpp"
 "hit_info.hpp"
 "image_writer.cpp"
-"light_sampler.cpp"
+"restir.cpp"
 "main.cpp"
 "material.cpp"
 "ray.cpp"

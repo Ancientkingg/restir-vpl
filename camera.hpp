@@ -7,7 +7,7 @@
 #include "ray.hpp"
 #include "material.hpp"
 #include "hit_info.hpp"
-#include "light_sampler.hpp"
+#include "restir.hpp"
 #include "world.hpp"
 
 

@@ -4,7 +4,7 @@
 
 #include "camera.hpp"
 #include "world.hpp"
-#include "light_sampler.hpp"
+#include "restir.hpp"
 #include "shading.hpp" 
 
 struct RenderInfo {

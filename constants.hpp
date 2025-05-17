@@ -5,6 +5,7 @@ constexpr auto BASE_LIGHT_INTENSITY = 10.0f;
 constexpr auto ENABLE_TEXTURES = false;
 
 constexpr auto M_CAP = 10.0f;
+constexpr auto NORMAL_DEVIATION = 0.4f;
 
 constexpr auto SAVE_INTERMEDIATE = false;
 constexpr auto RENDER_FRAME_COUNT = 500;

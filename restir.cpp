@@ -1,4 +1,4 @@
-#include "light_sampler.hpp"
+#include "restir.hpp"
 
 #include <glm/vec3.hpp>
 #include <vector>
@@ -228,7 +228,11 @@ void RestirLightSampler::spatial_update(const int x, const int y, const std::vec
 
 	std::vector<const Reservoir*> candidates;
 
-	// 2) Gather the 8 neighbors also from prev_reservoirs
+	const HitInfo& current_hit = hit_infos[y * x_pixels + x];
+
+	const glm::vec3 N = current_hit.triangle.normal(current_hit.uv);
+
+	// Pick the 8 neighbors of the current pixel and check if they are valid
 	for (int yy = -1; yy <= 1; ++yy) {
 		for (int xx = -1; xx <= 1; ++xx) {
 			const int nx = x + xx;
@@ -239,9 +243,15 @@ void RestirLightSampler::spatial_update(const int x, const int y, const std::vec
 
 			if (x_within_bounds && y_within_bounds) {
 				const HitInfo& hi = hit_infos[ny * x_pixels + nx];
+
+				// If the neighbour has no hit or is a light source, skip it, since it's reservoir is not valid
 				const bool invalid_sample = hi.t == 1E30f || hi.mat_ptr->emits_light();
 
-				if (!invalid_sample) {
+				// Check if the normals are similar
+				const glm::vec3 N2 = hi.triangle.normal(hi.uv);
+				const bool different_normals = glm::distance(N, N2) > NORMAL_DEVIATION;
+
+				if (!invalid_sample && !different_normals) {
 					candidates.push_back(&prev_reservoirs[ny * x_pixels + nx]);
 				}
 			}

@@ -9,7 +9,7 @@
 #include "shading.hpp"
 #include "image_writer.hpp"
 #include "render.hpp"
-#include "light_sampler.hpp"
+#include "restir.hpp"
 #include "camera.hpp"
 #include "world.hpp"
 #include "constants.hpp"

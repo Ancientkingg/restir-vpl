@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 
 #include "hit_info.hpp"
-#include "light_sampler.hpp"
+#include "restir.hpp"
 #include "world.hpp"
 #include "ray.hpp"
 

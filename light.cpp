@@ -9,7 +9,7 @@
 #include <glm/gtc/constants.hpp>
 
 #include "tiny_bvh_types.hpp"
-#include "light_sampler.hpp"
+#include "restir.hpp"
 
 
 Light::Light(const glm::vec3 c, const float intensity) : c(c), intensity(intensity) {}

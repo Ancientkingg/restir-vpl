@@ -4,7 +4,7 @@
 
 #include "camera.hpp"
 #include "world.hpp"
-#include "light_sampler.hpp"
+#include "restir.hpp"
 #include "shading.hpp"
 
 std::vector<std::vector<glm::vec3>> raytrace(SamplingMode sampling_mode, ShadingMode render_mode, RenderInfo& info) {

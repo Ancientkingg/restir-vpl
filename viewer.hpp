@@ -2,7 +2,7 @@
 
 #include "camera.hpp"  
 #include "world.hpp"
-#include "light_sampler.hpp"
+#include "restir.hpp"
 
 void render(Camera& cam, World& world, int framecount, bool accumulate = false, SamplingMode sampling_mode = SamplingMode::Uniform);
 
