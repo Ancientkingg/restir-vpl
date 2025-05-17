@@ -6,6 +6,7 @@ constexpr auto ENABLE_TEXTURES = false;
 
 constexpr auto M_CAP = 10.0f;
 constexpr auto NORMAL_DEVIATION = 0.4f;
+constexpr auto T_DEVIATION = 0.05f;
 
 constexpr auto SAVE_INTERMEDIATE = false;
 constexpr auto RENDER_FRAME_COUNT = 500;

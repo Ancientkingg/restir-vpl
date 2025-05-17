@@ -251,7 +251,11 @@ void RestirLightSampler::spatial_update(const int x, const int y, const std::vec
 				const glm::vec3 N2 = hi.triangle.normal(hi.uv);
 				const bool different_normals = glm::distance(N, N2) > NORMAL_DEVIATION;
 
-				if (!invalid_sample && !different_normals) {
+				// Check if the hits are not far away from each other
+				const float dist = glm::distance(current_hit.r.at(current_hit.t), hi.r.at(hi.t));
+				const bool different_t = dist > T_DEVIATION;
+
+				if (!invalid_sample && !different_normals && !different_t) {
 					candidates.push_back(&prev_reservoirs[ny * x_pixels + nx]);
 				}
 			}
