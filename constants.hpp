@@ -1,6 +1,6 @@
 
 
-constexpr auto BASE_LIGHT_INTENSITY = 50.0f;
+constexpr auto BASE_LIGHT_INTENSITY = 10.0f;
 
 constexpr auto ENABLE_TEXTURES = false;
 

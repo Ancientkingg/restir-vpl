@@ -13,7 +13,6 @@
 #include "camera.hpp"
 #include "world.hpp"
 #include "constants.hpp"
-#include "ground_truth_renderer.hpp"
 
 // Call this once at program start:
 bool init_sdl() {
@@ -150,7 +149,7 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
     world.bvh();
     world.get_materials(!ENABLE_TEXTURES);
 
-    auto lights = world.get_triangular_lights();
+    auto lights = world.get_lights();
     auto light_sampler = RestirLightSampler(render_cam.image_width, render_cam.image_height, lights);
     light_sampler.sampling_mode = sampling_mode;
     light_sampler.m = 32;
@@ -225,46 +224,18 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
     currently_outputting_render = false;
 }
 
-void render_ground_truth_frame(Camera &cam, World &world) {
-    Camera render_cam = Camera(cam.position, cam.target);
-    render_cam.image_width = RENDER_WIDTH;
-    render_cam.image_height = RENDER_HEIGHT;
-
-    render_cam.yaw = cam.yaw;
-    render_cam.pitch = cam.pitch;
-    render_cam.updateDirection();
-
-    // Build the world and load materials
-    world.bvh();
-    world.get_materials(!ENABLE_TEXTURES);
-
-    auto render_start = std::chrono::high_resolution_clock::now();
-
-    std::vector<std::vector<glm::vec3>> colors =
-        render_ground_truth(world, cam, 1024);
-
-    auto render_stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
-                        render_stop - render_start)
-                        .count();
-
-    /// output frame
-    auto filename = get_frame_filename(1);
-    save_png(colors, "./images/" + filename);
-
-    currently_outputting_render = false;
-}
-
 struct KeyState {
     bool w = false;
     bool a = false;
     bool s = false;
     bool d = false;
+    bool l = false;
     bool space = false;
     bool shift = false;
     bool ctrl = false;
     bool enter = false;
     bool equals = false;
+    bool backspace = false;
 };
 
 void render_live(Camera &cam, World &world, bool progressive) {
@@ -279,7 +250,7 @@ void render_live(Camera &cam, World &world, bool progressive) {
     world.bvh();
     world.get_materials(!ENABLE_TEXTURES);
 
-    auto lights = world.get_triangular_lights();
+    auto lights = world.get_lights();
     auto light_sampler = RestirLightSampler(cam.image_width, cam.image_height, lights);
 
     // 1) Init SDL
@@ -355,6 +326,10 @@ void render_live(Camera &cam, World &world, bool progressive) {
 						break;
                     case SDLK_EQUALS: keys.equals = isDown;
                         break;
+                    case SDLK_l: keys.l = isDown;
+                        break;
+                    case SDLK_BACKSPACE: keys.backspace = isDown;
+                        break;
                     case SDLK_b: render_mode = RENDER_DEBUG;
                         break;
                     case SDLK_n: render_mode = RENDER_NORMALS;
@@ -388,11 +363,34 @@ void render_live(Camera &cam, World &world, bool progressive) {
 			keys.enter = false;
         }
 
+        if (keys.backspace) {
+            // Remove most recently spawned light
+            std::clog << "\nRemoving most recently spawned light" << "\n";
+            world.remove_last_point_light();
+            auto lights = world.get_lights();
+            light_sampler = RestirLightSampler(cam.image_width, cam.image_height, lights);
+            light_sampler.reset();
+            keys.backspace = false;
+        }
+
+        if (keys.l) {
+            // Spawn a point light
+            std::clog << "\nSpawning point light at: " << cam.position.x << ", "
+                << cam.position.y << ", " << cam.position.z << "\n";
+            // generate random color
+            glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f);
+            world.spawn_point_light(cam.position, cam.forward, color, 1.0f);
+            auto lights = world.get_lights();
+            light_sampler = RestirLightSampler(cam.image_width, cam.image_height, lights);
+            light_sampler.reset();
+            keys.l = false;
+        }
+
+
         if (keys.equals && !currently_outputting_render) {
 			// Render the current frame
-			std::clog << "\nOutput ground truth render with current camera" << std::endl;
+			std::clog << "\nOutput ground truth render with current camera: DISABLED" << std::endl;
             currently_outputting_render = true;
-            render_ground_truth_frame(cam, world);
             keys.equals = false;
         }
 

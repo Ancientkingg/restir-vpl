@@ -7,7 +7,7 @@
 #include <random>
 #include <iostream>
 
-#include "triangular_light.hpp"
+#include "light.hpp"
 #include "ray.hpp"
 #include "world.hpp"
 #include "hit_info.hpp"
@@ -38,18 +38,18 @@ inline std::ostream& operator<<(std::ostream& out, const SamplingMode& mode) {
 struct SamplerResult {
     glm::vec3 light_point;
     glm::vec3 light_dir;
-    TriangularLight light;
+    std::shared_ptr<Light> light;
     float W;
 
     SamplerResult();
 };
 
 struct SampleInfo {
-    TriangularLight light;
+    std::shared_ptr<Light> light;
 	glm::vec3 light_point;
 
     SampleInfo();
-	SampleInfo(const TriangularLight& light, const glm::vec3& light_point);
+	SampleInfo(const std::shared_ptr<Light> light, const glm::vec3& light_point);
 };
 
 class Reservoir {
@@ -71,11 +71,13 @@ public:
 class RestirLightSampler {
 public:
     RestirLightSampler(const int x, const int y,
-        std::vector<TriangularLight>& lights_vec);
+        std::vector<std::shared_ptr<Light>>& lights_vec);
 
     void reset();
 
-    std::vector<std::vector<SamplerResult> > sample_lights(std::vector<HitInfo> hit_infos, World& scene);
+    std::vector<std::vector<SamplerResult>> sample_lights(std::vector<HitInfo> hit_infos, World& scene);
+
+    [[nodiscard]] Ray sample_ray_from_light(const World& world, glm::vec3& throughput) const;
 
     void set_initial_sample(Reservoir& r, const HitInfo& hi);
 
@@ -91,15 +93,17 @@ public:
 
     SamplingMode sampling_mode = SamplingMode::ReSTIR;
 
-    int num_lights;
+	inline int num_lights() const {
+		return static_cast<int>(lights.size());
+	}
 private:
     int x_pixels;
     int y_pixels;
     std::vector<Reservoir> prev_reservoirs;
     std::vector<Reservoir> current_reservoirs;
-    TriangularLight* lights;
+    std::vector<std::shared_ptr<Light>> lights;
 
-    [[nodiscard]] TriangularLight pick_light() const;
+    [[nodiscard]] std::shared_ptr<Light> pick_light(float& pdf) const;
 
     [[nodiscard]] int sampleLightIndex() const;
 

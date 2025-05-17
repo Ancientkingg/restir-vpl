@@ -6,6 +6,7 @@
 #ifndef TINY_BVH_H_
 #include "lib/tiny_bvh.h"
 #endif
+#include <memory>
 
 #include "camera.hpp"
 #include "texture.hpp"
@@ -26,10 +27,10 @@ World load_world() {
 	//world.add_obj("objects/bistro_lights.obj", true);
 	 //world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
 	 //world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
-	 //world.add_obj("objects/monkeyLightInOne.obj", false);
+	 world.add_obj("objects/monkeyLightInOne.obj", false);
 	 //world.add_obj("objects/platform.obj",  false);
-	 world.add_obj("objects/scene_without_lights.obj", false);
-	 world.add_obj("objects/scene_lights.obj", false);
+	 //world.add_obj("objects/scene_without_lights.obj", false);
+	 //world.add_obj("objects/scene_lights.obj", false);
 	 //world.place_obj("objects/ceiling_light.obj", true, glm::vec3(0, 10, 0));
 	// world.place_obj("objects/Gauntlet.obj", false, glm::vec3(0, 0, 0));
 	auto loading_stop = std::chrono::high_resolution_clock::now();
@@ -182,6 +183,10 @@ void World::place_obj(std::string file_path, bool is_lights, glm::vec3 position)
 	load_obj_at(file_path, position, is_lights);
 }
 
+void World::spawn_point_light(glm::vec3 position, glm::vec3 normal, glm::vec3 color, float intensity) {
+	point_lights.push_back(std::make_shared<PointLight>(PointLight(color, intensity, position, normal)));
+}
+
 tinybvh::BVH& World::bvh(){
 	// Check if this->bvhInstance is already built
 	if (bvh_built) {
@@ -235,25 +240,31 @@ bool World::is_occluded(const Ray &ray, float dist) {
 	return this->bvhInstance.IsOccluded(r);
 }
 
-std::vector<TriangularLight> World::get_triangular_lights(){
-	std::vector<TriangularLight> out;
+std::vector<std::shared_ptr<Light>> World::get_lights() {
+	std::vector<std::shared_ptr<Light>> out;
 	float  max_pdf = -1;
 
 	int face_id = 0;
-	for(int i = 0; i < lights.size(); i++){
+	for (int i = 0; i < lights.size(); i++) {
 		glm::vec3 c = glm::vec3(
-			all_materials[light_material_ids[face_id]].emission[0],
-			all_materials[light_material_ids[face_id]].emission[1],
-			all_materials[light_material_ids[face_id]].emission[2]
+			all_materials[light_material_ids[face_id]].ambient[0],
+			all_materials[light_material_ids[face_id]].ambient[1],
+			all_materials[light_material_ids[face_id]].ambient[2]
 		);
 		float intensity = (c[0] + c[1] + c[2]) / 3;
-		TriangularLight tl(lights[i], c, intensity * BASE_LIGHT_INTENSITY);
+		std::shared_ptr<Light> tl = std::make_shared<TriangularLight>(TriangularLight(lights[i], c, intensity * BASE_LIGHT_INTENSITY));
 		out.push_back(tl);
 		face_id++;
 	}
 
+	// Add point lights
+	for (const auto& pl : point_lights) {
+		out.push_back(std::static_pointer_cast<Light>(pl));
+	}
+
 	return out;
 }
+
 
 std::vector<Material*> World::get_materials(bool ignore_textures){
 	if (mats_small.size() > 0) return mats_small;

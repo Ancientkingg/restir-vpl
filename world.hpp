@@ -9,8 +9,9 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
-#include "triangular_light.hpp"
+#include "light.hpp"
 #include "material.hpp"
 
 class World
@@ -20,6 +21,7 @@ class World
 	std::vector<tinyobj::material_t> all_materials;
 	std::vector<Triangle> lights;
 	std::vector<tinyobj::material_t> light_materials;
+	std::vector<std::shared_ptr<PointLight>> point_lights;
 	
 	
 	World(); // constructor makes an empty world
@@ -27,12 +29,17 @@ class World
 	void add_obj(std::string file, bool is_lights); // Add an obj, indicate if it is all lights
 	void place_obj(std::string file, bool is_lights, glm::vec3 position);
 
+	void spawn_point_light(glm::vec3 position, glm::vec3 normal, glm::vec3 color, float intensity);
+	inline void remove_last_point_light() {
+		point_lights.pop_back();
+	}
+
 	bool intersect(Ray& ray, HitInfo& hit);
 	bool is_occluded(const Ray &ray, float dist);
 
 	tinybvh::BVH& bvh(); // Build the bvh
 
-	std::vector<TriangularLight> get_triangular_lights();
+	std::vector<std::shared_ptr<Light>> get_lights();
 	std::vector<Material*> get_materials(bool ignore_textures = true);
 
 

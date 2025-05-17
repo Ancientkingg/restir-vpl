@@ -26,13 +26,14 @@ add_executable(RayTracerInOneWeekend
 "shading.cpp"
 "texture.cpp"
 "tiny_bvh_types.cpp"
-"triangular_light.cpp"
+"light.cpp"
 "util.cpp"
 "viewer.cpp"
 "world.cpp"
 "lib/stb_image.h" 
 "interval.cpp" 
-"geometry.cpp")
+"geometry.cpp" 
+"photon.cpp")
 
 file(COPY ${CMAKE_SOURCE_DIR}/objects DESTINATION ${CMAKE_BINARY_DIR})
 add_custom_command(TARGET RayTracerInOneWeekend POST_BUILD
