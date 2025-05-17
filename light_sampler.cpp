@@ -43,6 +43,15 @@ bool Reservoir::update(const SampleInfo x_i, const float w_i, const float n_phat
 	return false;
 }
 
+static float calculate_reservoir_weight(const float phat, const float M, const float w_sum) {
+	if (phat >= 0.0001f) {
+		return (1.0f / phat) * ((1.0f / M) * w_sum);
+	}
+	else {
+		return 0.0f;
+	}
+}
+
 Reservoir Reservoir::merge(const Reservoir& r1, const Reservoir& r2) {
 	// Merge the other reservoir into this one
 	Reservoir s;
@@ -52,12 +61,7 @@ Reservoir Reservoir::merge(const Reservoir& r1, const Reservoir& r2) {
 
 	s.M = r1.M + r2.M;
 
-	//if (s.phat >= 0.0001f) {
-	//	s.W = (1.0f / s.phat) * ((1.0f / s.M) * s.w_sum);
-	//} else {
-	//	s.W = 0.0f;
-	//}
-	s.W = (1.0f / s.phat) * ((1.0f / s.M) * s.w_sum);
+	s.W = calculate_reservoir_weight(s.phat, s.M, s.w_sum);
 
 	return s;
 }
@@ -80,13 +84,8 @@ Reservoir Reservoir::combineReservoirs(const std::span<const Reservoir*>& reserv
 	for (auto& r : reservoirs) {
 		s.M += r->M;
 	}
-	//if (s.phat >= 0.0001f) {
-	//	s.W = (1.0f / s.phat) * ((1.0f / s.M) * s.w_sum);
-	//}
-	//else {
-	//	s.W = 0.0f;
-	//}
-	s.W = (1.0f / s.phat) * ((1.0f / s.M) * s.w_sum);
+
+	s.W = calculate_reservoir_weight(s.phat, s.M, s.w_sum);
 
 	return s;
 }
