@@ -65,7 +65,7 @@ static glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, World& s
 
     // Visibility term
     Ray shadow_ray = Ray(I + EPS * L, L);
-    const float V = scene.is_occluded(shadow_ray, dist - 0.1f) ? 0.0 : 1.0;
+    const float V = scene.is_occluded(shadow_ray, dist - 0.1f) ? 0.0f : 1.0f;
 
     // Early return
     if (V == 0.0f) {
@@ -96,7 +96,7 @@ glm::vec3 shadeRIS(const HitInfo& hit, const SamplerResult& sample, World& scene
 
     glm::vec3 f = shade(hit, sample, scene);
 
-    const float W = float(sample.W);
+    const float W = sample.W;
 
     return f * W;
 }

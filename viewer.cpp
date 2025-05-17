@@ -462,7 +462,17 @@ void render_live(Camera &cam, World &world, bool progressive) {
                 << "\r" << std::flush;
 
         // update the accumulated colors
-		accumulate(accumulated_colors, colors, frame);
+        if (progressive) {
+		    accumulate(accumulated_colors, colors, frame);
+            frame++;
+        }
+        else {
+            accumulated_colors =
+                std::vector(cam.image_height,
+                    std::vector<glm::vec3>(cam.image_width, glm::vec3(0.0f)));
+            frame = 0;
+        }
+        accumulate(accumulated_colors, colors, frame);
         frame++;
 
         /// output frame

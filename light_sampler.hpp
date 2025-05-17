@@ -10,6 +10,7 @@
 #include "triangular_light.hpp"
 #include "ray.hpp"
 #include "world.hpp"
+#include "hit_info.hpp"
 
 
 enum class SamplingMode {
@@ -38,7 +39,7 @@ struct SamplerResult {
     glm::vec3 light_point;
     glm::vec3 light_dir;
     TriangularLight light;
-    double W;
+    float W;
 
     SamplerResult();
 };
@@ -54,14 +55,15 @@ struct SampleInfo {
 class Reservoir {
 public:
     SampleInfo y;
-    double w_sum;
-    long M;
-    double phat;
-    double W;
+    float w_sum;
+    int M;
+    float phat;
+    float W;
 
     Reservoir();
-    bool update(const SampleInfo x_i, const double w_i, const double n_phat);
+    bool update(const SampleInfo x_i, const float w_i, const float n_phat);
     static Reservoir merge(const Reservoir& r1, const Reservoir& r2);
+    static Reservoir combineReservoirs(const std::span<const Reservoir*>& reservoirs);
     void replace(const Reservoir& other);
     void reset();
 };
@@ -75,21 +77,19 @@ public:
 
     std::vector<std::vector<SamplerResult> > sample_lights(std::vector<HitInfo> hit_infos);
 
-    void set_initial_sample(const int x, const int y, const HitInfo& hi);
+    void set_initial_sample(Reservoir& r, const HitInfo& hi);
 
     void visibility_check(const int x, const int y, const HitInfo& hi, World& world);
 
     Reservoir temporal_update(const Reservoir& current, const Reservoir& prev);
 
-    void spatial_update(const int x, const int y);
-
-    void spatial_update(const int x, const int y, const int radius);
+    void spatial_update(const int x, const int y, const std::vector<HitInfo>& hit_infos);
 
     void swap_buffers();
 
     int m = 3;
 
-    SamplingMode sampling_mode = SamplingMode::RIS;
+    SamplingMode sampling_mode = SamplingMode::ReSTIR;
 
     int num_lights;
 private:
@@ -104,5 +104,5 @@ private:
     [[nodiscard]] int sampleLightIndex() const;
 
     void get_light_weight(const SampleInfo& sample,
-        const HitInfo& hi, double& W, double& phat) const;
+        const HitInfo& hi, float& W, float& phat) const;
 };
