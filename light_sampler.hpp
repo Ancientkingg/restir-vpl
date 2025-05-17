@@ -75,7 +75,7 @@ public:
 
     void reset();
 
-    std::vector<std::vector<SamplerResult> > sample_lights(std::vector<HitInfo> hit_infos);
+    std::vector<std::vector<SamplerResult> > sample_lights(std::vector<HitInfo> hit_infos, World& scene);
 
     void set_initial_sample(Reservoir& r, const HitInfo& hi);
 

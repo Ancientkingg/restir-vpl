@@ -14,7 +14,7 @@ std::vector<std::vector<glm::vec3>> raytrace(SamplingMode sampling_mode, Shading
     // send hit infos to ReSTIR
     std::vector<std::vector<SamplerResult>> light_samples_per_ray;
     if (render_mode != RENDER_NORMALS) {
-        light_samples_per_ray = info.light_sampler.sample_lights(hit_infos);
+        light_samples_per_ray = info.light_sampler.sample_lights(hit_infos, info.world);
     }
 
     std::vector<std::vector<glm::vec3> > colors = std::vector<std::vector<glm::vec3> >(

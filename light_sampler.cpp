@@ -35,7 +35,7 @@ bool Reservoir::update(const SampleInfo x_i, const float w_i, const float n_phat
 	w_sum = w_sum + w_i;
 	M = M + 1;
 	// Condition for when w_i is 0 and w_sum is also 0 so we get 0/0
-	if (dist(rng) < w_i / (w_sum + 0.00001f)) {
+	if (dist(rng) < w_i / w_sum) {
 		y = x_i;
 		phat = n_phat;
 		return true;
@@ -52,11 +52,12 @@ Reservoir Reservoir::merge(const Reservoir& r1, const Reservoir& r2) {
 
 	s.M = r1.M + r2.M;
 
-	if (s.phat >= 0.0001f) {
-		s.W = (1.0f / s.phat) * ((1.0f / s.M) * s.w_sum);
-	} else {
-		s.W = 0.0f;
-	}
+	//if (s.phat >= 0.0001f) {
+	//	s.W = (1.0f / s.phat) * ((1.0f / s.M) * s.w_sum);
+	//} else {
+	//	s.W = 0.0f;
+	//}
+	s.W = (1.0f / s.phat) * ((1.0f / s.M) * s.w_sum);
 
 	return s;
 }
@@ -79,12 +80,14 @@ Reservoir Reservoir::combineReservoirs(const std::span<const Reservoir*>& reserv
 	for (auto& r : reservoirs) {
 		s.M += r->M;
 	}
-	if (s.phat >= 0.0001f) {
-		s.W = (1.0f / s.phat) * ((1.0f / s.M) * s.w_sum);
-	}
-	else {
-		s.W = 0.0f;
-	}
+	//if (s.phat >= 0.0001f) {
+	//	s.W = (1.0f / s.phat) * ((1.0f / s.M) * s.w_sum);
+	//}
+	//else {
+	//	s.W = 0.0f;
+	//}
+	s.W = (1.0f / s.phat) * ((1.0f / s.M) * s.w_sum);
+
 	return s;
 }
 
@@ -114,7 +117,7 @@ void RestirLightSampler::reset() {
 	}
 }
 
-std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::vector<HitInfo> hit_infos) {
+std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::vector<HitInfo> hit_infos, World& scene) {
 	if (num_lights == 0) {
 		return std::vector(y_pixels, std::vector<SamplerResult>(x_pixels));
 	}
@@ -143,9 +146,9 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 			Reservoir& prev = prev_reservoirs[y * x_pixels + x];
 
 			set_initial_sample(current, hi);
+			visibility_check(x, y, hi, scene);
 
 			if (sampling_mode != SamplingMode::Uniform && sampling_mode != SamplingMode::RIS) {
-				// 
 				prev.M = fmin(M_CAP * current.M, prev.M);
 				current_reservoirs[y * x_pixels + x] = temporal_update(current, prev);
 			}
@@ -154,13 +157,13 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 
 	std::vector results(y_pixels, std::vector<SamplerResult>(x_pixels));
 	if (sampling_mode != SamplingMode::Uniform && sampling_mode != SamplingMode::RIS) {
-		 //swap_buffers();
+		 swap_buffers();
 	}
 #pragma omp parallel for
 	for (int y = 0; y < y_pixels; y++) {
 		for (int x = 0; x < x_pixels; x++) {
 			if (sampling_mode != SamplingMode::Uniform && sampling_mode != SamplingMode::RIS) {
-				 //spatial_update(x, y, hit_infos);
+				 spatial_update(x, y, hit_infos);
 			}
 
 			Reservoir& res = current_reservoirs[y * x_pixels + x];
@@ -193,19 +196,23 @@ void RestirLightSampler::set_initial_sample(Reservoir& r, const HitInfo& hi) {
 	r.W = (1.0f / r.phat) * ((1.0f / r.M) * r.w_sum);
 }
 
-void RestirLightSampler::visibility_check(const int x, const int y, const HitInfo& hi, World& world) {
+void RestirLightSampler::visibility_check(const int x, const int y, const HitInfo& hi, World& scene) {
 	// Check the visibility of the light sample
 	auto& res = current_reservoirs[y * x_pixels + x];
-	// Shadow dir = light sample - hit point
-	const glm::vec3 shadow_dir = res.y.light_point - hi.r.at(hi.t);
-	// Create a ray from the hit point to the light sample
-	Ray shadow(hi.r.at(hi.t), normalize(shadow_dir));
-	// Check if the ray intersects with the scene
-	HitInfo shadow_hit;
-	world.intersect(shadow, shadow_hit);
-	// If the ray intersects with the scene, discard the sample
-	if (shadow_hit.t > 1e-3f && shadow_hit.t < length(shadow_dir)) {
-		res.reset();
+
+	// Point of intersection [x]
+	const glm::vec3 I = hi.r.at(hi.t);
+
+	// Distance between the light and the intersection point
+	const float dist = glm::length(res.y.light_point - I);
+
+	const glm::vec3 L = (res.y.light_point - hi.r.at(hi.t)) / dist; // Direction to light
+
+	Ray shadow_ray = Ray(I + 0.001f * L, L);
+	const bool V = scene.is_occluded(shadow_ray, dist - 0.1f);
+
+	if (V) {
+		res.W = 0;
 	}
 }
 
