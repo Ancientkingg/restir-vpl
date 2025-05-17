@@ -75,8 +75,12 @@ static glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, World& s
 	// BRDF term
 	glm::vec3 fr = hit.mat_ptr->evaluate(hit, L);
 
+    // Geometry term
+    const float cos_theta = fabs(glm::dot(N, L));
+    const float G = cos_theta;
+
     // Final contribution
-    return Le * V * fr;
+    return Le * V * fr * G;
 }
 
 glm::vec3 shadeRIS(const HitInfo& hit, const SamplerResult& sample, World& scene) {
@@ -111,9 +115,6 @@ glm::vec3 shadeUniform(const HitInfo& hit, const SamplerResult& sample, World& s
     // Sampled light direction
     const glm::vec3 L = sample.light_dir;
 
-    // Normal of the intersection point
-    const glm::vec3 N = hit.triangle.normal(hit.uv);
-
     // Normal of the light source
     const glm::vec3 Nl = sample.light.triangle.normal();
 
@@ -125,14 +126,12 @@ glm::vec3 shadeUniform(const HitInfo& hit, const SamplerResult& sample, World& s
 
 	glm::vec3 f = shade(hit, sample, scene);
 
-    // Geometry term
-    const float cos_theta = fabs(glm::dot(N, L));
-    const float G = cos_theta;
-
-    // PDF term
+    // Source PDF: converting from area to solid angle
+    const float light_choose_pdf = 1.0f / sampler.num_lights;
+    const float light_area_pdf = 1.0f / sample.light.area();
     const float dist2 = dist * dist;
-    const float cos_theta_light = fabs(glm::dot(Nl, -L));
-    const float one_over_p = sample.light.area() * sampler.num_lights * cos_theta_light / dist2;
+	const float cos_theta_light = fabs(glm::dot(Nl, -L)); // Light angle
+    const float source = light_choose_pdf * light_area_pdf * (dist2 / cos_theta_light); // dA → dOmega
 
-	return f * G * one_over_p;
+	return f / source;
 }

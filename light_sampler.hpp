@@ -89,7 +89,7 @@ public:
 
     int m = 3;
 
-    SamplingMode sampling_mode = SamplingMode::Uniform;
+    SamplingMode sampling_mode = SamplingMode::RIS;
 
     int num_lights;
 private:

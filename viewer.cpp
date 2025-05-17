@@ -101,7 +101,7 @@ void update_and_present(SDL_Renderer *renderer,
 
 std::string get_frame_filename(int i) {
     std::ostringstream oss;
-    oss << "frame" << std::setfill('0') << std::setw(4) << i << (SAVE_FORMAT ? ".png" : ".pfm");
+    oss << "frame" << std::setfill('0') << std::setw(4) << i;
     return oss.str();
 }
 
@@ -167,6 +167,10 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
     oss << light_sampler.sampling_mode;
     sampling_mode_str = oss.str();
 
+	// Reset the progress bar
+    avg_time = 0.0f; // ms
+    total_frames = 1;
+
     for (int i = 0; i < framecount; i++) {
         auto render_start = std::chrono::high_resolution_clock::now();
 
@@ -187,21 +191,35 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
 
         /// output frame
         auto filename = get_frame_filename(i);
-        if constexpr (SAVE_FORMAT == 1) {
-            save_png(colors, "./images/" + sampling_mode_str + "_" + filename);
-        } else {
-            save_pfm(colors, "./images/" + sampling_mode_str + "_" + filename);
+        // Add this flag because PFM is big
+        if constexpr (SAVE_INTERMEDIATE == true) {
+            if constexpr (SAVE_FORMAT == 0) {
+                save_png(colors, "./images/" + sampling_mode_str + "_" + filename + ".png");
+            }
+            else if constexpr (SAVE_FORMAT == 1) {
+                save_pfm(colors, "./images/" + sampling_mode_str + "_" + filename + ".pfm");
+            }
+            else {
+                save_png(colors, "./images/" + sampling_mode_str + "_" + filename + ".png");
+                save_pfm(colors, "./images/" + sampling_mode_str + "_" + filename + ".pfm");
+            }
         }
+        
     }
 	if (accumulate_flag) {
 		std::clog << "Output accumulated frame" << std::endl;
 		auto filename = get_frame_filename(framecount);
 
-	    if constexpr (SAVE_FORMAT == 1) {
-	        save_png(accumulated_colors, "./images/" + sampling_mode_str + "_accumulate_" + filename);
-	    } else {
-	        save_pfm(accumulated_colors, "./images/" + sampling_mode_str + "_accumulate_" + filename);
-	    }
+        if constexpr (SAVE_FORMAT == 0) {
+            save_png(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + ".png");
+        }
+        else if constexpr (SAVE_FORMAT == 1) {
+            save_pfm(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + ".pfm");
+        }
+        else {
+            save_png(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + ".png");
+            save_pfm(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + ".pfm");
+        }
 	}
 
     currently_outputting_render = false;

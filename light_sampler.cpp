@@ -33,6 +33,7 @@ light(glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), 0), W(0) {
 bool Reservoir::update(const SampleInfo x_i, const double w_i, const double n_phat) {
 	w_sum = w_sum + w_i;
 	M = M + 1;
+	// Condition for when w_i is 0 and w_sum is also 0 so we get 0/0
 	if (dist(rng) < w_i / w_sum) {
 		y = x_i;
 		phat = n_phat;
@@ -50,11 +51,6 @@ Reservoir Reservoir::merge(const Reservoir& r1, const Reservoir& r2) {
 
 	s.M = r1.M + r2.M;
 	s.W = (1.0 / s.phat) * ((1.0 / s.M) * s.w_sum);
-
-	// check if W is NaN or infinity
-	//if (std::isnan(s.W) || std::isinf(s.W)) {
-	//	s.W = 0;
-	//}
 
 	return s;
 }
@@ -154,7 +150,7 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 			results[y][x].light_point = res.y.light_point;
 			results[y][x].light_dir = normalize(res.y.light_point - hi.r.at(hi.t));
 			results[y][x].light = res.y.light;
-			results[y][x].W = sampling_mode == SamplingMode::Uniform ? 1.0 : res.W;
+			results[y][x].W = res.W;
 		}
 	}
 	return results;
@@ -171,17 +167,14 @@ void RestirLightSampler::set_initial_sample(const int x, const int y, const HitI
 
 		SampleInfo sample = SampleInfo(l, sample_point);
 
-		double W = 1.0;
-		double phat = 1.0;
+		double W, phat;
 		get_light_weight(sample, hi, W, phat);
-
 		r.update(sample, W, phat);
-
-		r.W = (1.0 / phat) * ((1.0 / r.M) * r.w_sum);
 
 		if (sampling_mode == SamplingMode::Uniform)
 			break;
 	}
+	r.W = (1.0 / r.phat) * ((1.0 / r.M) * r.w_sum);
 }
 
 void RestirLightSampler::visibility_check(const int x, const int y, const HitInfo& hi, World& world) {
@@ -254,8 +247,6 @@ int RestirLightSampler::sampleLightIndex() const {
 
 	const int out = static_cast<int>(dist(rng) * cached_num_lights);
 
-	//std::cout << "Sampled light index: " << out << std::endl;
-
 	return out;
 }
 
@@ -268,7 +259,7 @@ void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 	// if not hit
 	if (hi.t == 1E30f || hi.mat_ptr->emits_light()) {
 		W = 0.0;
-		phat = 0.0;
+		phat = 1.0;
 		return;
 	}
 
@@ -284,19 +275,13 @@ void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 	const float cos_theta = fabs(glm::dot(N, L));                    // Surface angle
 	const float cos_theta_light = fabs(glm::dot(Nl, -L));            // Light angle
 
-	if (cos_theta <= 0.0f || cos_theta_light <= 0.0f) {
-		W = 0.0;
-		phat = 0.0;
-		return;
-	}
-
 	// BRDF
-	const glm::vec3 brdf = hi.mat_ptr->evaluate(hi, L);                    // f_r
-	const glm::vec3 Li = sample.light.intensity * sample.light.c;          // L_i
+	const glm::vec3 fr = hi.mat_ptr->evaluate(hi, L);                    // f_r
+	const glm::vec3 Le = sample.light.intensity * sample.light.c;          // L_i
 
 	// Target importance (importance of this sample for the current pixel)
-	const float geometry = cos_theta;
-	const float target = luminance(Li * brdf * geometry);
+	const float G = cos_theta;
+	const float target = luminance(Le * fr * G);
 
 	// Source PDF: converting from area to solid angle
 	const float light_choose_pdf = 1.0f / static_cast<float>(num_lights);
