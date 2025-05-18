@@ -139,7 +139,8 @@ static void progress_bar(float progress, float time, int framecount) {
 void render(Camera &cam, World &world, int framecount, bool accumulate_flag, SamplingMode sampling_mode) {
     Camera render_cam = Camera(cam.position, cam.target);
     render_cam.image_width = RENDER_WIDTH;
-    render_cam.image_height = RENDER_HEIGHT;
+    const float x = int(RENDER_WIDTH / render_cam.aspect_ratio);
+    render_cam.image_height = (x < 1) ? 1 : x;
 
     render_cam.yaw = cam.yaw;
     render_cam.pitch = cam.pitch;

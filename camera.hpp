@@ -9,6 +9,7 @@
 #include "hit_info.hpp"
 #include "restir.hpp"
 #include "world.hpp"
+#include "constants.hpp"
 
 
 tinybvh::Ray toBVHRay(const Ray& r);
@@ -41,7 +42,7 @@ public:
     /* Public Camera Parameters Here */
     const float aspect_ratio = 16.0 / 9; // Ratio of image width over height
     const float focal_length = 1.0;
-    int image_width = 400; // Rendered image width in pixel count
+    int image_width = LIVE_WIDTH; // Rendered image width in pixel count
     int image_height = (int(image_width / aspect_ratio) < 1) ? 1 : int(image_width / aspect_ratio); // Rendered image height in pixel count
     const float fov = glm::radians(75.0f); // horizontal fov
 

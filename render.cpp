@@ -8,7 +8,6 @@
 #include "shading.hpp"
 
 std::vector<std::vector<glm::vec3>> raytrace(SamplingMode sampling_mode, ShadingMode render_mode, RenderInfo& info) {
-
     auto hit_infos = info.cam.get_hit_info_from_camera_per_frame(info.world);
 
     // send hit infos to ReSTIR

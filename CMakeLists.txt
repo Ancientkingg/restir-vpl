@@ -30,7 +30,6 @@ add_executable(RayTracerInOneWeekend
 "util.cpp"
 "viewer.cpp"
 "world.cpp"
-"lib/stb_image.h" 
 "interval.cpp" 
 "geometry.cpp" 
 "photon.cpp")

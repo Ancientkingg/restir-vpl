@@ -53,20 +53,6 @@ static float calculate_reservoir_weight(const float phat, const float M, const f
 	}
 }
 
-Reservoir Reservoir::merge(const Reservoir& r1, const Reservoir& r2) {
-	// Merge the other reservoir into this one
-	Reservoir s;
-
-	s.update(r1.y, r1.phat * r1.W * r1.M, r1.phat);
-	s.update(r2.y, r2.phat * r2.W * r2.M, r2.phat);
-
-	s.M = r1.M + r2.M;
-
-	s.W = calculate_reservoir_weight(s.phat, s.M, s.w_sum);
-
-	return s;
-}
-
 void Reservoir::replace(const Reservoir &other) {
 	W = other.W;
 	M = other.M;
@@ -90,6 +76,35 @@ Reservoir Reservoir::combineReservoirs(const std::span<const Reservoir*>& reserv
 
 	return s;
 }
+
+Reservoir Reservoir::combineReservoirsUnbiased(const std::span<const Reservoir*>& reservoirs) {
+	Reservoir s;
+	for (auto& r : reservoirs) {
+		s.update(r->y, r->phat * r->W * r->M, r->phat);
+	}
+
+	s.M = 0;
+	for (auto& r : reservoirs) {
+		s.M += r->M;
+	}
+
+	int Z = 0;
+
+	for (auto& r : reservoirs) {
+		if (r->phat > 0) {
+			Z += r->M;
+		}
+	}
+
+	// m = 1.0f / Z
+	// We pass m to calculate_reservoir_weight, but in there it uses 1/m, so we can just pass Z
+
+	s.W = calculate_reservoir_weight(s.phat, Z, s.w_sum);
+
+	return s;
+}
+
+
 
 void Reservoir::reset() {
 	y = SampleInfo();
@@ -145,7 +160,7 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 			Reservoir& prev = prev_reservoirs[y * x_pixels + x];
 
 			set_initial_sample(current, hi);
-			visibility_check(x, y, hi, scene);
+			visibility_check(current, hi, scene);
 
 			if (sampling_mode != SamplingMode::Uniform && sampling_mode != SamplingMode::RIS) {
 				prev.M = fmin(M_CAP * current.M, prev.M);
@@ -162,7 +177,7 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 	for (int y = 0; y < y_pixels; y++) {
 		for (int x = 0; x < x_pixels; x++) {
 			if (sampling_mode != SamplingMode::Uniform && sampling_mode != SamplingMode::RIS) {
-				 spatial_update(x, y, hit_infos);
+				 spatial_update(x, y, hit_infos, scene);
 			}
 
 			Reservoir& res = current_reservoirs[y * x_pixels + x];
@@ -198,9 +213,8 @@ void RestirLightSampler::set_initial_sample(Reservoir& r, const HitInfo& hi) {
 	r.W = (1.0f / r.phat) * ((1.0f / r.M) * r.w_sum);
 }
 
-void RestirLightSampler::visibility_check(const int x, const int y, const HitInfo& hi, World& scene) {
+void RestirLightSampler::visibility_check(Reservoir& res, const HitInfo& hi, World& scene, bool reset_phat) {
 	// Check the visibility of the light sample
-	auto& res = current_reservoirs[y * x_pixels + x];
 
 	// Point of intersection [x]
 	const glm::vec3 I = hi.r.at(hi.t);
@@ -211,19 +225,22 @@ void RestirLightSampler::visibility_check(const int x, const int y, const HitInf
 	const glm::vec3 L = (res.y.light_point - hi.r.at(hi.t)) / dist; // Direction to light
 
 	Ray shadow_ray = Ray(I + 0.001f * L, L);
-	const bool V = scene.is_occluded(shadow_ray, dist - 0.1f);
+	const bool is_occluded = scene.is_occluded(shadow_ray, dist - 0.1f);
 
-	if (V) {
+	if (is_occluded) {
 		res.W = 0;
+		if (reset_phat) {
+			res.phat = 0;
+		}
 	}
 }
 
 Reservoir RestirLightSampler::temporal_update(const Reservoir& current, const Reservoir& prev) {
 	std::array<const Reservoir*, 2> refs = { &current, &prev };
-	return Reservoir::combineReservoirs(refs);
+	return Reservoir::combineReservoirsUnbiased(refs);
 }
 
-void RestirLightSampler::spatial_update(const int x, const int y, const std::vector<HitInfo>& hit_infos) {
+void RestirLightSampler::spatial_update(const int x, const int y, const std::vector<HitInfo>& hit_infos, World& scene) {
 	int c = 0;
 
 	std::vector<const Reservoir*> candidates;
@@ -232,37 +249,54 @@ void RestirLightSampler::spatial_update(const int x, const int y, const std::vec
 
 	const glm::vec3 N = current_hit.triangle.normal(current_hit.uv);
 
-	// Pick the 8 neighbors of the current pixel and check if they are valid
-	for (int yy = -1; yy <= 1; ++yy) {
-		for (int xx = -1; xx <= 1; ++xx) {
-			const int nx = x + xx;
-			const int ny = y + yy;
+	// Generate neighbours by randomly sampling a NEIGHBOUR_RADIUS radius around the current pixel
+	std::array<glm::ivec2, NEIGHBOUR_K> offsets;
 
-			const bool x_within_bounds = nx >= 0 && nx < x_pixels;
-			const bool y_within_bounds = ny >= 0 && ny < y_pixels;
+	for (int i = 0; i < NEIGHBOUR_K; i++) {
+		const float phi = dist(rng) * 2.0f * glm::pi<float>();
+		const float r = dist(rng) * NEIGHBOUR_RADIUS;
 
-			if (x_within_bounds && y_within_bounds) {
-				const HitInfo& hi = hit_infos[ny * x_pixels + nx];
+		const float x_offset = r * cosf(phi);
+		const float y_offset = r * sinf(phi);
 
-				// If the neighbour has no hit or is a light source, skip it, since it's reservoir is not valid
-				const bool invalid_sample = hi.t == 1E30f || hi.mat_ptr->emits_light();
+		offsets[i] = glm::ivec2(x_offset, y_offset);
+	}
 
-				// Check if the normals are similar
-				const glm::vec3 N2 = hi.triangle.normal(hi.uv);
-				const bool different_normals = glm::distance(N, N2) > NORMAL_DEVIATION;
+	for (glm::ivec2& offset : offsets) {
+		const int nx = x + offset.x;
+		const int ny = y + offset.y;
 
-				// Check if the hits are not far away from each other
-				const float dist = glm::distance(current_hit.r.at(current_hit.t), hi.r.at(hi.t));
-				const bool different_t = dist > T_DEVIATION;
+		const bool x_within_bounds = nx >= 0 && nx < x_pixels;
+		const bool y_within_bounds = ny >= 0 && ny < y_pixels;
 
-				if (!invalid_sample && !different_normals && !different_t) {
-					candidates.push_back(&prev_reservoirs[ny * x_pixels + nx]);
+		if (x_within_bounds && y_within_bounds) {
+			const HitInfo& hi = hit_infos[ny * x_pixels + nx];
+
+			// If the neighbour has no hit or is a light source, skip it, since it's reservoir is not valid
+			const bool invalid_sample = hi.t == 1E30f || hi.mat_ptr->emits_light();
+
+			// Check if the normals are similar
+			const glm::vec3 N2 = hi.triangle.normal(hi.uv);
+			const bool different_normals = glm::distance(N, N2) > NORMAL_DEVIATION;
+
+			// Check if the hits are not far away from each other
+			const float dist = glm::distance(current_hit.r.at(current_hit.t), hi.r.at(hi.t));
+			const bool different_t = dist > T_DEVIATION;
+
+			Reservoir& candidate = prev_reservoirs[ny * x_pixels + nx];
+
+			if (!invalid_sample && !different_normals && !different_t) {
+				candidates.push_back(&candidate);
+
+				// Visibility check for everything except current pixel since that was already done before the temporal reuse
+				if (offset.x != 0 && offset.y != 0) {
+					visibility_check(candidate, hi, scene, true);
 				}
 			}
 		}
 	}
 
-	current_reservoirs[y * x_pixels + x] = Reservoir::combineReservoirs(std::span(candidates));
+	current_reservoirs[y * x_pixels + x] = Reservoir::combineReservoirsUnbiased(std::span(candidates));
 }
 
 void RestirLightSampler::swap_buffers() {

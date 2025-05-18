@@ -62,8 +62,8 @@ public:
 
     Reservoir();
     bool update(const SampleInfo x_i, const float w_i, const float n_phat);
-    static Reservoir merge(const Reservoir& r1, const Reservoir& r2);
     static Reservoir combineReservoirs(const std::span<const Reservoir*>& reservoirs);
+	static Reservoir combineReservoirsUnbiased(const std::span<const Reservoir*>& reservoirs);
     void replace(const Reservoir& other);
     void reset();
 };
@@ -81,11 +81,11 @@ public:
 
     void set_initial_sample(Reservoir& r, const HitInfo& hi);
 
-    void visibility_check(const int x, const int y, const HitInfo& hi, World& world);
+    void visibility_check(Reservoir& res, const HitInfo& hi, World& world, bool reset_phat = false);
 
     Reservoir temporal_update(const Reservoir& current, const Reservoir& prev);
 
-    void spatial_update(const int x, const int y, const std::vector<HitInfo>& hit_infos);
+    void spatial_update(const int x, const int y, const std::vector<HitInfo>& hit_infos, World& scene);
 
     void swap_buffers();
 
