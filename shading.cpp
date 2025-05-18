@@ -1,4 +1,4 @@
-#include "shading.hpp"
+Add#include "shading.hpp"
 
 #include <glm/glm.hpp>
 
@@ -88,6 +88,10 @@ static glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, World& s
 }
 
 glm::vec3 shadeRIS(const HitInfo& hit, const SamplerResult& sample, World& scene) {
+    if (sample.light == nullptr) {
+        return glm::vec3(0.0f);
+    }
+
     // Ray has no intersection
     if (hit.t == 1E30f) {
         return sky_color(hit.r.direction());
@@ -106,6 +110,10 @@ glm::vec3 shadeRIS(const HitInfo& hit, const SamplerResult& sample, World& scene
 }
 
 glm::vec3 shadeUniform(const HitInfo& hit, const SamplerResult& sample, World& scene, RestirLightSampler& sampler) {
+    if (sample.light == nullptr) {
+        return glm::vec3(0.0f);
+    }
+
     // Ray has no intersection
     if (hit.t == 1E30f) {
         return sky_color(hit.r.direction());
