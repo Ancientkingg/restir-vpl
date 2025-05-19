@@ -36,7 +36,8 @@ glm::vec3 shade_debug(const HitInfo& hit, const SamplerResult& sample, World& sc
     }
 
     // Albedo
-	glm::vec3 fr = hit.mat_ptr->albedo(hit);
+    auto material = hit.mat_ptr.lock();
+	glm::vec3 fr = material->albedo(hit);
 
     return fr;
 }
@@ -45,9 +46,11 @@ glm::vec3 shade_debug(const HitInfo& hit, const SamplerResult& sample, World& sc
 // Reference: https://momentsingraphics.de/ToyRenderer4RayTracing.html
 
 static glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, World& scene) {
-	if (sample.light == nullptr) {
+	if (sample.light.expired()) {
 		return glm::vec3(0.0f);
 	}
+
+	auto light = sample.light.lock();
 
 	// Sampled light direction
     const glm::vec3 L = sample.light_dir;
@@ -56,7 +59,7 @@ static glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, World& s
     const glm::vec3 N = hit.triangle.normal(hit.uv);
 
     // Normal of the light source
-    const glm::vec3 Nl = sample.light->normal(sample.light_point);
+    const glm::vec3 Nl = light->normal(sample.light_point);
 
     // Point of intersection [x]
     const glm::vec3 I = hit.r.at(hit.t);
@@ -65,7 +68,7 @@ static glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, World& s
     const float dist = glm::length(sample.light_point - I);
 
     // Emitted radiance from the light source towards x. For uniform area lights, it's constant: L0.
-	const glm::vec3 Le = sample.light->c * sample.light->intensity;
+	const glm::vec3 Le = light->c * light->intensity;
 
     // Visibility term
     Ray shadow_ray = Ray(I + EPS * L, L);
@@ -77,7 +80,8 @@ static glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, World& s
     }
 
 	// BRDF term
-	glm::vec3 fr = hit.mat_ptr->evaluate(hit, L);
+	auto material = hit.mat_ptr.lock();
+	glm::vec3 fr = material->evaluate(hit, L);
 
     // Geometry term
     const float cos_theta = fabs(glm::dot(N, L));
@@ -88,7 +92,7 @@ static glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, World& s
 }
 
 glm::vec3 shadeRIS(const HitInfo& hit, const SamplerResult& sample, World& scene) {
-    if (sample.light == nullptr) {
+    if (sample.light.expired()) {
         return glm::vec3(0.0f);
     }
 
@@ -98,8 +102,9 @@ glm::vec3 shadeRIS(const HitInfo& hit, const SamplerResult& sample, World& scene
     }
 
     // If the material emits light, return the emitted radiance directly
-    if (hit.mat_ptr->emits_light()) {
-        return hit.mat_ptr->albedo(hit);
+	auto material = hit.mat_ptr.lock();
+    if (material->emits_light()) {
+        return material->albedo(hit);
     }
 
     glm::vec3 f = shade(hit, sample, scene);
@@ -110,9 +115,11 @@ glm::vec3 shadeRIS(const HitInfo& hit, const SamplerResult& sample, World& scene
 }
 
 glm::vec3 shadeUniform(const HitInfo& hit, const SamplerResult& sample, World& scene, RestirLightSampler& sampler) {
-    if (sample.light == nullptr) {
+    if (sample.light.expired()) {
         return glm::vec3(0.0f);
     }
+
+	auto light = sample.light.lock();
 
     // Ray has no intersection
     if (hit.t == 1E30f) {
@@ -120,15 +127,16 @@ glm::vec3 shadeUniform(const HitInfo& hit, const SamplerResult& sample, World& s
     }
 
     // If the material emits light, return the emitted radiance directly
-    if (hit.mat_ptr->emits_light()) {
-        return hit.mat_ptr->albedo(hit);
+	auto material = hit.mat_ptr.lock();
+    if (material->emits_light()) {
+        return material->albedo(hit);
     }
 
     // Sampled light direction
     const glm::vec3 L = sample.light_dir;
 
     // Normal of the light source
-    const glm::vec3 Nl = sample.light->normal(sample.light_point);
+    const glm::vec3 Nl = light->normal(sample.light_point);
 
     // Point of intersection [x]
     const glm::vec3 I = hit.r.at(hit.t);
@@ -140,7 +148,7 @@ glm::vec3 shadeUniform(const HitInfo& hit, const SamplerResult& sample, World& s
 
     // Source PDF: converting from area to solid angle
     const float light_choose_pdf = 1.0f / sampler.num_lights();
-    const float light_area_pdf = 1.0f / sample.light->area();
+    const float light_area_pdf = 1.0f / light->area();
     const float dist2 = dist * dist;
 	const float cos_theta_light = fabs(glm::dot(Nl, -L)); // Light angle
     const float source = light_choose_pdf * light_area_pdf * (dist2 / cos_theta_light); // dA → dOmega

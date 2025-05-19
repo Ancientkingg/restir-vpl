@@ -38,18 +38,18 @@ inline std::ostream& operator<<(std::ostream& out, const SamplingMode& mode) {
 struct SamplerResult {
     glm::vec3 light_point;
     glm::vec3 light_dir;
-    std::shared_ptr<Light> light;
+    std::weak_ptr<Light> light;
     float W;
 
     SamplerResult();
 };
 
 struct SampleInfo {
-    std::shared_ptr<Light> light;
+    std::weak_ptr<Light> light;
 	glm::vec3 light_point;
 
     SampleInfo();
-	SampleInfo(const std::shared_ptr<Light> light, const glm::vec3& light_point);
+	SampleInfo(const std::weak_ptr<Light> light, const glm::vec3& light_point);
 };
 
 class Reservoir {
@@ -71,7 +71,7 @@ public:
 class RestirLightSampler {
 public:
     RestirLightSampler(const int x, const int y,
-        std::vector<std::shared_ptr<Light>>& lights_vec);
+        std::vector<std::weak_ptr<Light>>& lights_vec);
 
     void reset();
 
@@ -101,9 +101,9 @@ private:
     int y_pixels;
     std::vector<Reservoir> prev_reservoirs;
     std::vector<Reservoir> current_reservoirs;
-    std::vector<std::shared_ptr<Light>> lights;
+    std::vector<std::weak_ptr<Light>> lights;
 
-    [[nodiscard]] std::shared_ptr<Light> pick_light(float& pdf) const;
+    [[nodiscard]] std::weak_ptr<Light> pick_light(float& pdf) const;
 
     [[nodiscard]] int sampleLightIndex() const;
 

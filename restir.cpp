@@ -17,10 +17,10 @@
 thread_local std::mt19937 rng(std::random_device{}());
 std::uniform_real_distribution<float> dist(0.0f, 1.0f);
 
-SampleInfo::SampleInfo() : light(nullptr), light_point(0.0f) {
+SampleInfo::SampleInfo() : light(), light_point(0.0f) {
 }
 
-SampleInfo::SampleInfo(const std::shared_ptr<Light> light, const glm::vec3& light_point) : light(light), light_point(light_point) {
+SampleInfo::SampleInfo(const std::weak_ptr<Light> light, const glm::vec3& light_point) : light(light), light_point(light_point) {
 }
 
 Reservoir::Reservoir() : M(0),
@@ -28,7 +28,7 @@ w_sum(0.0f), phat(0.0f), y(), W(0.0f) {
 }
 
 SamplerResult::SamplerResult() : light_point(0.0f), light_dir(0.0f),
-light(nullptr), W(0.0f) {
+light(), W(0.0f) {
 }
 
 
@@ -115,7 +115,7 @@ void Reservoir::reset() {
 }
 
 RestirLightSampler::RestirLightSampler(const int x, const int y,
-	std::vector<std::shared_ptr<Light>>& lights_vec) : x_pixels(x), y_pixels(y) {
+	std::vector<std::weak_ptr<Light>>& lights_vec) : x_pixels(x), y_pixels(y) {
 	prev_reservoirs = std::vector(y * x, Reservoir());
 	current_reservoirs = std::vector(y * x, Reservoir());
 	lights = lights_vec;
@@ -150,7 +150,8 @@ std::vector<std::vector<SamplerResult> > RestirLightSampler::sample_lights(std::
 		for (int x = 0; x < x_pixels; x++) {
 			HitInfo& hi = hit_infos[y * x_pixels + x];
 
-			if (hi.t == 1E30f || hi.mat_ptr->emits_light()) {
+			auto material = hi.mat_ptr.lock();
+			if (hi.t == 1E30f || material->emits_light()) {
 				continue;
 			}
 
@@ -196,7 +197,7 @@ void RestirLightSampler::set_initial_sample(Reservoir& r, const HitInfo& hi) {
 	// Sample M times from the light sources
 	for (int k = 0; k < m; k++) {
 		float light_choose_pdf;
-		std::shared_ptr<Light> l = pick_light(light_choose_pdf);
+		std::shared_ptr<Light> l = pick_light(light_choose_pdf).lock();
 
 		float light_pos_pdf;
 		const glm::vec3 sample_point = l->sample_on_light(light_pos_pdf);
@@ -273,7 +274,8 @@ void RestirLightSampler::spatial_update(const int x, const int y, const std::vec
 			const HitInfo& hi = hit_infos[ny * x_pixels + nx];
 
 			// If the neighbour has no hit or is a light source, skip it, since it's reservoir is not valid
-			const bool invalid_sample = hi.t == 1E30f || hi.mat_ptr->emits_light();
+			auto material = hi.mat_ptr.lock();
+			const bool invalid_sample = hi.t == 1E30f || material->emits_light();
 
 			// Check if the normals are similar
 			const glm::vec3 N2 = hi.triangle.normal(hi.uv);
@@ -304,7 +306,7 @@ void RestirLightSampler::swap_buffers() {
 	current_reservoirs.swap(prev_reservoirs);
 }
 
-[[nodiscard]] std::shared_ptr<Light> RestirLightSampler::pick_light(float& pdf) const {
+[[nodiscard]] std::weak_ptr<Light> RestirLightSampler::pick_light(float& pdf) const {
 	// Pick a random light source uniformly (standard, change this if you want to use a different sampling strategy)
 	const int index = sampleLightIndex();
 	pdf = 1.0f / static_cast<float>(num_lights());
@@ -313,7 +315,7 @@ void RestirLightSampler::swap_buffers() {
 
 [[nodiscard]] Ray RestirLightSampler::sample_ray_from_light(const World& world, glm::vec3& throughput) const {
 	float light_choose_pdf;
-	const std::shared_ptr<Light> light = pick_light(light_choose_pdf);
+	const std::shared_ptr<Light> light = pick_light(light_choose_pdf).lock();
 
 	float light_pos_pdf;
 	const glm::vec3 light_pos = light->sample_on_light(light_pos_pdf);
@@ -355,21 +357,24 @@ static float luminance(const glm::vec3& color) {
 
 void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 														 const HitInfo &hi, float& W, float& phat) const {
+	auto light = sample.light.lock();
+
 	// Geometry setup
 	const glm::vec3 hit_point = hi.r.at(hi.t);
 	const glm::vec3 light_vec = sample.light_point - hit_point;
 	const float dist2 = glm::dot(light_vec, light_vec);
-	const glm::vec3 L = glm::normalize(light_vec); // Direction to light
+	const glm::vec3 L = glm::normalize(light_vec);                // Direction to light
 
-	const glm::vec3 N = hi.triangle.normal(hi.uv);                         // Surface normal
-	const glm::vec3 Nl = sample.light->normal(sample.light_point);           // Light normal
+	const glm::vec3 N = hi.triangle.normal(hi.uv);                // Surface normal
+	const glm::vec3 Nl = light->normal(sample.light_point);       // Light normal
 
-	const float cos_theta = fabs(glm::dot(N, L));                    // Surface angle
-	const float cos_theta_light = fabs(glm::dot(Nl, -L));            // Light angle
+	const float cos_theta = fabs(glm::dot(N, L));                 // Surface angle
+	const float cos_theta_light = fabs(glm::dot(Nl, -L));         // Light angle
 
 	// BRDF
-	const glm::vec3 fr = hi.mat_ptr->evaluate(hi, L);                    // f_r
-	const glm::vec3 Le = sample.light->intensity * sample.light->c;          // L_i
+	auto material = hi.mat_ptr.lock();
+	const glm::vec3 fr = material->evaluate(hi, L);               // f_r
+	const glm::vec3 Le = light->intensity * light->c;             // L_i
 
 	// Target importance (importance of this sample for the current pixel)
 	const float G = cos_theta;
@@ -377,7 +382,7 @@ void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 
 	// Source PDF: converting from area to solid angle
 	const float light_choose_pdf = 1.0f / static_cast<float>(num_lights());
-	const float light_area_pdf = 1.0f / sample.light->area();
+	const float light_area_pdf = 1.0f / light->area();
 	const float source = light_choose_pdf * light_area_pdf * (dist2 / cos_theta_light); // dA → dOmega
 
 	// Final weight and importance

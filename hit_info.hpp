@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <memory>
 
 #include "ray.hpp"
 #include "geometry.hpp"
@@ -12,5 +13,5 @@ struct alignas(64) HitInfo {
     Ray r;
     glm::vec2 uv;
     float t;
-    Material* mat_ptr;
+    std::weak_ptr<Material> mat_ptr;
 };

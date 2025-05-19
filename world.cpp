@@ -240,8 +240,16 @@ bool World::is_occluded(const Ray &ray, float dist) {
 	return this->bvhInstance.IsOccluded(r);
 }
 
-std::vector<std::shared_ptr<Light>> World::get_lights() {
-	std::vector<std::shared_ptr<Light>> out;
+std::vector<std::weak_ptr<Light>> World::get_lights() {
+	if (!scene_lights.empty()) {
+		// convert scene lights to weak_ptr<Light>
+		std::vector<std::weak_ptr<Light>> weak_lights;
+		for (const auto& light : scene_lights) {
+			weak_lights.push_back(std::weak_ptr<Light>(light));
+		}
+		return weak_lights;
+	}
+
 	float  max_pdf = -1;
 
 	int face_id = 0;
@@ -253,51 +261,69 @@ std::vector<std::shared_ptr<Light>> World::get_lights() {
 		);
 		float intensity = (c[0] + c[1] + c[2]) / 3;
 		std::shared_ptr<Light> tl = std::make_shared<TriangularLight>(TriangularLight(lights[i], c, intensity * BASE_LIGHT_INTENSITY));
-		out.push_back(tl);
+		scene_lights.push_back(tl);
 		face_id++;
 	}
 
 	// Add point lights
 	for (const auto& pl : point_lights) {
-		out.push_back(std::static_pointer_cast<Light>(pl));
+		scene_lights.push_back(std::static_pointer_cast<Light>(pl));
 	}
 
-	return out;
+	// convert scene lights to weak_ptr<Light>
+	std::vector<std::weak_ptr<Light>> weak_lights;
+	for (const auto& light : scene_lights) {
+		weak_lights.push_back(std::weak_ptr<Light>(light));
+	}
+	return weak_lights;
 }
 
 
-std::vector<Material*> World::get_materials(bool ignore_textures){
-	if (mats_small.size() > 0) return mats_small;
+std::vector<std::weak_ptr<Material>> World::get_materials(bool ignore_textures){
+	if (mats_small.size() > 0) {
+		// convert mats_small to weak_ptr<Material>
+		std::vector<std::weak_ptr<Material>> weak_mats;
+		for (const auto& mat : mats_small) {
+			weak_mats.push_back(std::weak_ptr<Material>(mat));
+		}
+		return weak_mats;
+	}
 
-	std::vector<Material*> out;
+	std::vector <std::shared_ptr<Material>> out;
 	for(tinyobj::material_t mat : all_materials){
 		bool is_light = std::any_of(light_materials.begin(), light_materials.end(), [&](const tinyobj::material_t& m) {
 			return m.name == mat.name;
 		});
 
 		if (mat.diffuse_texname != "" && !ignore_textures) {
-			Texture* texture = new ImageTexture(mat.diffuse_texname.c_str());
+			auto texture = std::make_shared<ImageTexture>(mat.diffuse_texname.c_str());
 			if (is_light) {
-				Emissive* end_mat = new Emissive(texture);
+				auto end_mat = std::make_shared<Emissive>(texture);
 				out.push_back(end_mat);
 			}
 			else {
-				Lambertian* end_mat = new Lambertian(texture);
+				auto end_mat = std::make_shared<Lambertian>(texture);
 				out.push_back(end_mat);
 			}
 		}
 		else {
 			if (is_light) {
-				Emissive* end_mat = new Emissive({ mat.emission[0], mat.emission[1], mat.emission[2] });
+				auto end_mat = std::make_shared<Emissive>(glm::vec3(mat.emission[0], mat.emission[1], mat.emission[2]));
 				out.push_back(end_mat);
 			}
 			else {
-				Lambertian* end_mat = new Lambertian({ mat.diffuse[0], mat.diffuse[1], mat.diffuse[2] });
+				auto end_mat = std::make_shared<Lambertian>(glm::vec3(mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]));
 				out.push_back(end_mat);
 			}
 		}
 	}
 
 	mats_small = out;
-	return out;
+
+	// convert mats_small to weak_ptr<Material>
+	std::vector<std::weak_ptr<Material>> weak_mats;
+	for (const auto& mat : mats_small) {
+		weak_mats.push_back(std::weak_ptr<Material>(mat));
+	}
+	return weak_mats;
 }

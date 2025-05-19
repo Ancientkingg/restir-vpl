@@ -39,14 +39,15 @@ class World
 
 	tinybvh::BVH& bvh(); // Build the bvh
 
-	std::vector<std::shared_ptr<Light>> get_lights();
-	std::vector<Material*> get_materials(bool ignore_textures = true);
+	std::vector<std::weak_ptr<Light>> get_lights();
+	std::vector<std::weak_ptr<Material>> get_materials(bool ignore_textures = true);
 
 
 	private:
+	std::vector<std::shared_ptr<Light>> scene_lights;
 	std::vector<int> all_material_ids;
 	std::vector<int> light_material_ids;
-	std::vector<Material*> mats_small;
+	std::vector<std::shared_ptr<Material>> mats_small;
 	tinybvh::BVH bvhInstance;
 	bool bvh_built = false;
 	std::vector<tinybvh::bvhvec4> raw_bvh_data;

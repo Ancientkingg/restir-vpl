@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
+#include <memory>
 
 #include "ray.hpp"
 #include "texture.hpp"
@@ -25,7 +26,7 @@ static glm::vec2 calculate_texcoords(const glm::vec2& texcoord0, const glm::vec2
 }
 
 Lambertian::Lambertian(const glm::vec3& a) : _albedo(new SolidColor(a)) {}
-Lambertian::Lambertian(Texture* a) : _albedo(a) {}
+Lambertian::Lambertian(std::shared_ptr<Texture> a) : _albedo(a) {}
 bool Lambertian::scatter(const Ray& r_in, const HitInfo& hit, glm::vec3& attenuation, Ray& scattered) const {
 	glm::vec3 scatter_dir = random_in_hemisphere(hit.triangle.normal(hit.uv));
 
@@ -77,7 +78,7 @@ glm::vec3 Lambertian::albedo(const HitInfo& hit) const {
 
 Emissive::Emissive(const glm::vec3& a) : emit(new SolidColor(a)) {}
 
-Emissive::Emissive(Texture* a) : emit(a) {}
+Emissive::Emissive(std::shared_ptr<Texture> a) : emit(a) {}
 
 bool Emissive::scatter(const Ray& r_in, const HitInfo& hit, glm::vec3& attenuation, Ray& scattered) const {
 	return false;

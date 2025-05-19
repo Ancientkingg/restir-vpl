@@ -12,5 +12,6 @@ public:
 	inline float operator[](int i) const { return position[i]; }
 
 	Photon();
-	Photon(const glm::vec3 position, glm::vec3 direction, glm::vec3 color, glm::vec3 intensity);
+	Photon(glm::vec3 position, glm::vec3 direction, glm::vec3 color, glm::vec3 intensity);
+	Photon(glm::vec3 position, glm::vec3 direction, glm::vec3 color);
 };
