@@ -115,7 +115,7 @@ void Reservoir::reset() {
 }
 
 RestirLightSampler::RestirLightSampler(const int x, const int y,
-	std::vector<std::weak_ptr<Light>>& lights_vec) : x_pixels(x), y_pixels(y) {
+	std::vector<std::weak_ptr<PointLight>>& lights_vec) : x_pixels(x), y_pixels(y) {
 	prev_reservoirs = std::vector(y * x, Reservoir());
 	current_reservoirs = std::vector(y * x, Reservoir());
 	lights = lights_vec;
@@ -198,6 +198,11 @@ void RestirLightSampler::set_initial_sample(Reservoir& r, const HitInfo& hi) {
 	for (int k = 0; k < m; k++) {
 		float light_choose_pdf;
 		std::shared_ptr<Light> l = pick_light(light_choose_pdf).lock();
+
+		if (!l) {
+			std::cerr << "Error: No light source found!" << std::endl;
+			exit(1);
+		}
 
 		float light_pos_pdf;
 		const glm::vec3 sample_point = l->sample_on_light(light_pos_pdf);
@@ -306,11 +311,12 @@ void RestirLightSampler::swap_buffers() {
 	current_reservoirs.swap(prev_reservoirs);
 }
 
-[[nodiscard]] std::weak_ptr<Light> RestirLightSampler::pick_light(float& pdf) const {
+[[nodiscard]] std::weak_ptr<PointLight> RestirLightSampler::pick_light(float& pdf) const {
 	// Pick a random light source uniformly (standard, change this if you want to use a different sampling strategy)
-	const int index = sampleLightIndex();
+	const int index = sample_light_index();
 	pdf = 1.0f / static_cast<float>(num_lights());
-	return lights[index];
+	auto out = lights[index];
+	return out;
 }
 
 [[nodiscard]] Ray RestirLightSampler::sample_ray_from_light(const World& world, glm::vec3& throughput) const {
@@ -325,18 +331,15 @@ void RestirLightSampler::swap_buffers() {
 
 	const glm::vec3 light_emission = light->c * light->intensity;
 
-	glm::vec3 n = light_dir;
-	if (const auto tri_light = dynamic_cast<TriangularLight*>(light.get())) {
-		n = glm::normalize(tri_light->triangle.normal());
-	}
+	glm::vec3 Nl = light->normal(light_pos);
 
-	throughput = light_emission / (light_choose_pdf * light_pos_pdf * light_dir_pdf) * fabs(glm::dot(light_dir, n));
+	throughput = light_emission / (light_choose_pdf * light_pos_pdf * light_dir_pdf) * fabs(glm::dot(light_dir, Nl));
 
 	return Ray(light_pos, light_dir);
 }
 
 
-int RestirLightSampler::sampleLightIndex() const {
+int RestirLightSampler::sample_light_index() const {
 	// Thread-local pair to track last used upper bound and distribution
 	thread_local int cached_num_lights = -1;
 

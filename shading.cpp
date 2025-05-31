@@ -92,13 +92,13 @@ static glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, World& s
 }
 
 glm::vec3 shadeRIS(const HitInfo& hit, const SamplerResult& sample, World& scene) {
-    if (sample.light.expired()) {
-        return glm::vec3(0.0f);
-    }
-
     // Ray has no intersection
     if (hit.t == 1E30f) {
         return sky_color(hit.r.direction());
+    }
+
+    if (sample.light.expired()) {
+        return glm::vec3(0.0f);
     }
 
     // If the material emits light, return the emitted radiance directly
@@ -115,16 +115,16 @@ glm::vec3 shadeRIS(const HitInfo& hit, const SamplerResult& sample, World& scene
 }
 
 glm::vec3 shadeUniform(const HitInfo& hit, const SamplerResult& sample, World& scene, RestirLightSampler& sampler) {
+    // Ray has no intersection
+    if (hit.t == 1E30f) {
+        return sky_color(hit.r.direction());
+    }
+
     if (sample.light.expired()) {
         return glm::vec3(0.0f);
     }
 
 	auto light = sample.light.lock();
-
-    // Ray has no intersection
-    if (hit.t == 1E30f) {
-        return sky_color(hit.r.direction());
-    }
 
     // If the material emits light, return the emitted radiance directly
 	auto material = hit.mat_ptr.lock();

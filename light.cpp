@@ -18,8 +18,13 @@ PointLight::PointLight(const glm::vec3 c, const float intensity, const glm::vec3
     : Light(c, intensity), position(position), _normal(normal) {
 }
 
+PointLight::PointLight(const glm::vec3 c, const glm::vec3 position, const glm::vec3 normal)
+    : Light(c, 1.0f), position(position), _normal(normal) {
+}
+
 float PointLight::area() const {
-    return 2.0f * glm::pi<float>(); // Point light has area of a hemisphere with radius 1
+    //return 2.0f * glm::pi<float>(); // Point light has area of a hemisphere with radius 1
+    return 1.0f;
 }
 
 glm::vec3 PointLight::normal(const glm::vec2& uv) const {
@@ -31,6 +36,7 @@ glm::vec3 PointLight::normal(const glm::vec3& light_pos) const {
 }
 
 glm::vec3 PointLight::sample_on_light(float& pdf) const {
+	pdf = 1.0f; // PDF for point light is uniform
     return position; // Sample the position of the point light
 }
 

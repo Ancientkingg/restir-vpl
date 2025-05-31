@@ -71,7 +71,7 @@ public:
 class RestirLightSampler {
 public:
     RestirLightSampler(const int x, const int y,
-        std::vector<std::weak_ptr<Light>>& lights_vec);
+        std::vector<std::weak_ptr<PointLight>>& lights_vec);
 
     void reset();
 
@@ -101,11 +101,11 @@ private:
     int y_pixels;
     std::vector<Reservoir> prev_reservoirs;
     std::vector<Reservoir> current_reservoirs;
-    std::vector<std::weak_ptr<Light>> lights;
+    std::vector<std::weak_ptr<PointLight>> lights;
 
-    [[nodiscard]] std::weak_ptr<Light> pick_light(float& pdf) const;
+    [[nodiscard]] std::weak_ptr<PointLight> pick_light(float& pdf) const;
 
-    [[nodiscard]] int sampleLightIndex() const;
+    [[nodiscard]] int sample_light_index() const;
 
     void get_light_weight(const SampleInfo& sample,
         const HitInfo& hi, float& W, float& phat) const;

@@ -7,6 +7,7 @@
 #include "lib/tiny_bvh.h"
 #endif
 #include <memory>
+#include <random>
 
 #include "camera.hpp"
 #include "texture.hpp"
@@ -25,9 +26,9 @@ World load_world() {
 	//world.add_obj("objects/bigCubeLight.obj", true);
 	//world.add_obj("objects/bistro_normal.obj", false);
 	//world.add_obj("objects/bistro_lights.obj", true);
-	 world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
-	 world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
-	 //world.add_obj("objects/monkeyLightInOne.obj", false);
+	 //world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
+	 //world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
+	 world.add_obj("objects/monkeyLightInOne.obj", false);
 	 //world.add_obj("objects/platform.obj",  false);
 	 //world.add_obj("objects/scene_without_lights.obj", false);
 	 //world.add_obj("objects/scene_lights.obj", false);
@@ -240,19 +241,25 @@ bool World::is_occluded(const Ray &ray, float dist) {
 	return this->bvhInstance.IsOccluded(r);
 }
 
-std::vector<std::weak_ptr<Light>> World::get_lights() {
-	if (!scene_lights.empty()) {
-		// convert scene lights to weak_ptr<Light>
-		std::vector<std::weak_ptr<Light>> weak_lights;
-		for (const auto& light : scene_lights) {
-			weak_lights.push_back(std::weak_ptr<Light>(light));
-		}
-		return weak_lights;
+std::vector <std::weak_ptr<PointLight>> World::get_lights() {
+	if (point_lights.empty()) {
+		point_lights = generate_point_lights();
 	}
 
-	float  max_pdf = -1;
 
+	const int num_lights = point_lights.size();
+	std::vector<std::weak_ptr<PointLight>> weak_lights(num_lights);
+	for (size_t i = 0; i < num_lights; i++) {
+		std::shared_ptr<PointLight> light = point_lights[i];
+		weak_lights[i] = std::weak_ptr<PointLight>(light);
+	}
+	return weak_lights;
+}
+
+std::vector<std::shared_ptr<TriangularLight>> World::get_triangular_lights() {
+	std::vector<std::shared_ptr<TriangularLight>> scene_lights;
 	int face_id = 0;
+
 	for (int i = 0; i < lights.size(); i++) {
 		glm::vec3 c = glm::vec3(
 			all_materials[light_material_ids[face_id]].ambient[0],
@@ -260,70 +267,161 @@ std::vector<std::weak_ptr<Light>> World::get_lights() {
 			all_materials[light_material_ids[face_id]].ambient[2]
 		);
 		float intensity = (c[0] + c[1] + c[2]) / 3;
-		std::shared_ptr<Light> tl = std::make_shared<TriangularLight>(TriangularLight(lights[i], c, intensity * BASE_LIGHT_INTENSITY));
+		std::shared_ptr<TriangularLight> tl = std::make_shared<TriangularLight>(TriangularLight(lights[i], c, intensity * BASE_LIGHT_INTENSITY));
 		scene_lights.push_back(tl);
 		face_id++;
 	}
 
-	// Add point lights
-	for (const auto& pl : point_lights) {
-		scene_lights.push_back(std::static_pointer_cast<Light>(pl));
+	return scene_lights;
+}
+
+thread_local std::mt19937 rng2(std::random_device{}());
+std::uniform_real_distribution<float> dist2(0.0f, 1.0f);
+
+static int sample_light_index(const int num_lights) {
+	// Thread-local pair to track last used upper bound and distribution
+	thread_local int cached_num_lights = -1;
+
+
+	if (cached_num_lights != num_lights) {
+		cached_num_lights = num_lights;
 	}
 
-	// convert scene lights to weak_ptr<Light>
-	std::vector<std::weak_ptr<Light>> weak_lights;
-	for (const auto& light : scene_lights) {
-		weak_lights.push_back(std::weak_ptr<Light>(light));
+	const int out = static_cast<int>(dist2(rng2) * cached_num_lights);
+
+	return out;
+}
+
+static std::shared_ptr<TriangularLight> pick_triangular_light(std::vector<std::shared_ptr<TriangularLight>>& lights) {
+	// Pick a random light source uniformly (regardless of its area)
+	// FUTURE: Implement importance sampling based on the area and intensity of the light source
+	const int index = sample_light_index(lights.size());
+	return lights[index];
+}
+
+std::vector<std::shared_ptr<PointLight>> World::generate_point_lights() {
+	constexpr auto num_photons = N_PHOTONS * (N_PHOTON_BOUNCES + 1);
+	std::vector<std::shared_ptr<PointLight>> out(num_photons, nullptr);
+
+	// 1) For every triangular light in the scene, randomly generate point lights on it, similarly to how random light samples were generated.
+	auto scene_lights = get_triangular_lights();
+
+	//for (size_t i = 0; i < N_PHOTONS; i++) {
+	//	// Select a random light source
+	//	const auto light = pick_triangular_light(scene_lights);
+
+	//	// Generate a random point on the light source
+	//	// FUTURE: Implement solid angle sampling based
+	//	float _pdf;
+	//	const glm::vec3 random_point = light->sample_on_light(_pdf);
+
+	//	// Put a point light with the same normal and color as the light source
+	//	const glm::vec3 normal = light->normal(random_point);
+	//	const glm::vec3 color = light->c;
+
+	//	auto pl = std::make_shared<PointLight>(color, 0.1f, random_point, normal);
+
+	//	out[i] = pl;
+	//}
+
+	// Calculate total intensity of all lights
+	float total_intensity = 0.0f;
+	for (auto& light : scene_lights) {
+		total_intensity += light->intensity * light->area();
 	}
-	return weak_lights;
+
+	size_t j = 0;
+
+	for (auto& light : scene_lights) {
+		// For each light source, generate point lights proportional to its intensity
+		// and area (FUTURE: implement solid angle sampling)
+		const float light_intensity = light->intensity * light->area() / total_intensity;
+		const int num_lights = static_cast<int>(light_intensity * N_PHOTONS);
+
+		const glm::vec3 color = light->c;
+
+		for (int i = 0; i < num_lights; i++) {
+			// Generate a random point on the light source
+			float _pdf;
+			const glm::vec3 random_point = light->sample_on_light(_pdf);
+
+			// Put a point light with the same normal and color as the light source
+			const glm::vec3 normal = light->normal(random_point);
+			const float intensity = light->intensity * light->area() / num_lights;
+
+			auto pl = std::make_shared<PointLight>(color, intensity, random_point, normal);
+			out[j++] = pl;
+		}
+	}
+
+	for (size_t i = j; i < out.size(); i++) {
+		// Select a random light source
+		const auto light = pick_triangular_light(scene_lights);
+
+		// Generate a random point on the light source
+		// FUTURE: Implement solid angle sampling based
+		float _pdf;
+		const glm::vec3 random_point = light->sample_on_light(_pdf);
+
+		// Put a point light with the same normal and color as the light source
+		const glm::vec3 normal = light->normal(random_point);
+		const glm::vec3 color = light->c;
+
+		auto pl = std::make_shared<PointLight>(color, 0.0f, random_point, normal);
+
+		out[i] = pl;
+	}
+
+	// 2) Perform first bounce ray tracing to determine point lights for GI.
+
+
+
+	// 3) Return the generated point lights
+	return out;
 }
 
 
 std::vector<std::weak_ptr<Material>> World::get_materials(bool ignore_textures){
-	if (mats_small.size() > 0) {
-		// convert mats_small to weak_ptr<Material>
-		std::vector<std::weak_ptr<Material>> weak_mats;
-		for (const auto& mat : mats_small) {
-			weak_mats.push_back(std::weak_ptr<Material>(mat));
-		}
-		return weak_mats;
-	}
+	if (mats_small.empty()) {
 
-	std::vector <std::shared_ptr<Material>> out;
-	for(tinyobj::material_t mat : all_materials){
-		bool is_light = std::any_of(light_materials.begin(), light_materials.end(), [&](const tinyobj::material_t& m) {
-			return m.name == mat.name;
-		});
+		std::vector <std::shared_ptr<Material>> out;
+		for (tinyobj::material_t mat : all_materials) {
+			bool is_light = std::any_of(light_materials.begin(), light_materials.end(), [&](const tinyobj::material_t& m) {
+				return m.name == mat.name;
+				});
 
-		if (mat.diffuse_texname != "" && !ignore_textures) {
-			auto texture = std::make_shared<ImageTexture>(mat.diffuse_texname.c_str());
-			if (is_light) {
-				auto end_mat = std::make_shared<Emissive>(texture);
-				out.push_back(end_mat);
+			if (mat.diffuse_texname != "" && !ignore_textures) {
+				auto texture = std::make_shared<ImageTexture>(mat.diffuse_texname.c_str());
+				if (is_light) {
+					auto end_mat = std::make_shared<Emissive>(texture);
+					out.push_back(end_mat);
+				}
+				else {
+					auto end_mat = std::make_shared<Lambertian>(texture);
+					out.push_back(end_mat);
+				}
 			}
 			else {
-				auto end_mat = std::make_shared<Lambertian>(texture);
-				out.push_back(end_mat);
+				if (is_light) {
+					auto end_mat = std::make_shared<Emissive>(glm::vec3(mat.emission[0], mat.emission[1], mat.emission[2]));
+					out.push_back(end_mat);
+				}
+				else {
+					auto end_mat = std::make_shared<Lambertian>(glm::vec3(mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]));
+					out.push_back(end_mat);
+				}
 			}
 		}
-		else {
-			if (is_light) {
-				auto end_mat = std::make_shared<Emissive>(glm::vec3(mat.emission[0], mat.emission[1], mat.emission[2]));
-				out.push_back(end_mat);
-			}
-			else {
-				auto end_mat = std::make_shared<Lambertian>(glm::vec3(mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]));
-				out.push_back(end_mat);
-			}
-		}
-	}
 
-	mats_small = out;
+		mats_small = out;
+	}
 
 	// convert mats_small to weak_ptr<Material>
-	std::vector<std::weak_ptr<Material>> weak_mats;
-	for (const auto& mat : mats_small) {
-		weak_mats.push_back(std::weak_ptr<Material>(mat));
+	const int num_mats = mats_small.size();
+	std::vector<std::weak_ptr<Material>> weak_mats(num_mats);
+	for (size_t i = 0; i < num_mats; i++) {
+		std::shared_ptr<Material> mat = mats_small[i];
+		weak_mats[i] = std::weak_ptr<Material>(mat);
 	}
 	return weak_mats;
 }

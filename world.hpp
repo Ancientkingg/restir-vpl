@@ -39,12 +39,12 @@ class World
 
 	tinybvh::BVH& bvh(); // Build the bvh
 
-	std::vector<std::weak_ptr<Light>> get_lights();
+	std::vector<std::weak_ptr<PointLight>> get_lights();
 	std::vector<std::weak_ptr<Material>> get_materials(bool ignore_textures = true);
 
 
+
 	private:
-	std::vector<std::shared_ptr<Light>> scene_lights;
 	std::vector<int> all_material_ids;
 	std::vector<int> light_material_ids;
 	std::vector<std::shared_ptr<Material>> mats_small;
@@ -53,6 +53,9 @@ class World
 	std::vector<tinybvh::bvhvec4> raw_bvh_data;
 
 	void load_obj_at(std::string& file_path, glm::vec3 position, bool force_light = false);
+
+	std::vector<std::shared_ptr<PointLight>> generate_point_lights();
+	std::vector<std::shared_ptr<TriangularLight>> get_triangular_lights();
 };
 
 World load_world();

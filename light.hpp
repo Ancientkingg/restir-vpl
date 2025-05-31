@@ -29,6 +29,7 @@ public:
     glm::vec3 position; // Position of the point light
 
     PointLight(const glm::vec3 c, const float intensity, const glm::vec3 position, const glm::vec3 normal);
+    PointLight(const glm::vec3 c, const glm::vec3 position, const glm::vec3 normal);
 
     float area() const override;
     glm::vec3 normal(const glm::vec2& uv) const override;
