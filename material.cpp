@@ -3,11 +3,15 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <memory>
+#include <random>
 
 #include "ray.hpp"
 #include "texture.hpp"
 #include "hit_info.hpp"
 #include "util.hpp"
+
+thread_local std::mt19937 rngFloat(std::random_device{}());
+std::uniform_real_distribution<float> distFloat(0.0f, 1.0f);
 
 bool Material::emits_light() const { return false; }
 
@@ -49,11 +53,6 @@ bool Lambertian::scatter(const Ray& r_in, const HitInfo& hit, glm::vec3& attenua
 }
 
 glm::vec3 Lambertian::evaluate(const HitInfo& hit, const glm::vec3& wi) const {
-	//const glm::vec3 N = hit.triangle.normal(hit.uv);
-	//if (glm::dot(N, wi) <= 0.0f) {
-	//	return glm::vec3(0.0f);
-	//}
-
 	glm::vec2 texcoords = calculate_texcoords(
 		hit.triangle.v0.texcoord,
 		hit.triangle.v1.texcoord,
@@ -62,6 +61,32 @@ glm::vec3 Lambertian::evaluate(const HitInfo& hit, const glm::vec3& wi) const {
 	);
 
 	return _albedo->value(texcoords.x, texcoords.y, hit.r.at(hit.t)) / glm::pi<float>();
+}
+
+glm::vec3 Lambertian::sample_direction(
+	const glm::vec3& wi,
+	const glm::vec3& normal,
+	float& pdf
+) const {
+	// Cosine-weighted hemisphere sampling
+	float u = distFloat(rngFloat);
+	float v = distFloat(rngFloat);
+	float r = sqrt(u);
+	float theta = 2.0f * glm::pi<float>() * v;
+	// local coordinates
+	float x = r * cos(theta);
+	float y = r * sin(theta);
+	float z = sqrt(1.0f - u);
+	// build tangent space basis
+	glm::vec3 tangent = fabs(normal.x) > 0.1f ?
+		glm::normalize(glm::cross(normal, glm::vec3(0, 1, 0))) :
+		glm::normalize(glm::cross(normal, glm::vec3(1, 0, 0)));
+	glm::vec3 bitangent = glm::cross(normal, tangent);
+	// transform to world
+	glm::vec3 sample = x * tangent + y * bitangent + z * normal;
+
+	pdf = z / glm::pi<float>(); // cos(theta) / pi
+	return glm::normalize(sample);
 }
 
 glm::vec3 Lambertian::albedo(const HitInfo& hit) const {
@@ -94,6 +119,16 @@ glm::vec3 Emissive::evaluate(const HitInfo& hit, const glm::vec3& wi) const {
 	return emit->value(texcoords.x, texcoords.y, hit.r.at(hit.t));
 }
 bool Emissive::emits_light() const { return true; }
+
+glm::vec3 Emissive::sample_direction(
+	const glm::vec3& wi,
+	const glm::vec3& normal,
+	float& pdf
+) const {
+	// Emissive materials do not scatter, so we return a zero vector
+	pdf = 0.0f;
+	return glm::vec3(0.0f);
+}
 
 glm::vec3 Emissive::albedo(const HitInfo& hit) const {
 	glm::vec2 texcoords = calculate_texcoords(

@@ -32,7 +32,7 @@ add_executable(RayTracerInOneWeekend
 "world.cpp"
 "interval.cpp" 
 "geometry.cpp" 
-"photon.cpp")
+"photon.cpp" "spheres.cpp")
 
 file(COPY ${CMAKE_SOURCE_DIR}/objects DESTINATION ${CMAKE_BINARY_DIR})
 add_custom_command(TARGET RayTracerInOneWeekend POST_BUILD

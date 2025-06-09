@@ -91,7 +91,7 @@ public:
 
     int m = 3;
 
-    SamplingMode sampling_mode = SamplingMode::ReSTIR;
+    SamplingMode sampling_mode = SamplingMode::Uniform;
 
 	inline int num_lights() const {
 		return static_cast<int>(lights.size());

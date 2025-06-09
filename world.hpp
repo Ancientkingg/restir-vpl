@@ -13,6 +13,7 @@
 
 #include "light.hpp"
 #include "material.hpp"
+#include "spheres.hpp"
 
 class World
 {
@@ -30,6 +31,7 @@ class World
 	void place_obj(std::string file, bool is_lights, glm::vec3 position);
 
 	void spawn_point_light(glm::vec3 position, glm::vec3 normal, glm::vec3 color, float intensity);
+	void spawn_vpl(glm::vec3 position, glm::vec3 normal, glm::vec3 color, float intensity);
 	inline void remove_last_point_light() {
 		point_lights.pop_back();
 	}
@@ -42,7 +44,10 @@ class World
 	std::vector<std::weak_ptr<PointLight>> get_lights();
 	std::vector<std::weak_ptr<Material>> get_materials(bool ignore_textures = true);
 
+	std::vector<std::shared_ptr<PointLight>> vpls; // Virtual point lights
 
+	SphereCloud point_light_cloud; // Sphere cloud for point lights
+	SphereCloud vpl_cloud; // Sphere cloud for VPLs
 
 	private:
 	std::vector<int> all_material_ids;

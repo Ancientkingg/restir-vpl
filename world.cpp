@@ -14,7 +14,8 @@
 #include "tiny_bvh_types.hpp"
 #include "geometry.hpp"
 #include "constants.hpp"
-
+#include "photon.hpp"
+#include "spheres.hpp"
 
 
 World load_world() {
@@ -26,9 +27,9 @@ World load_world() {
 	//world.add_obj("objects/bigCubeLight.obj", true);
 	//world.add_obj("objects/bistro_normal.obj", false);
 	//world.add_obj("objects/bistro_lights.obj", true);
-	 //world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
-	 //world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
-	 world.add_obj("objects/monkeyLightInOne.obj", false);
+	 world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
+	 world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
+	 //world.add_obj("objects/monkeyLightInOne.obj", false);
 	 //world.add_obj("objects/platform.obj",  false);
 	 //world.add_obj("objects/scene_without_lights.obj", false);
 	 //world.add_obj("objects/scene_lights.obj", false);
@@ -184,6 +185,10 @@ void World::place_obj(std::string file_path, bool is_lights, glm::vec3 position)
 	load_obj_at(file_path, position, is_lights);
 }
 
+void World::spawn_vpl(glm::vec3 position, glm::vec3 normal, glm::vec3 color, float intensity) {
+	vpls.push_back(std::make_shared<PointLight>(PointLight(color, intensity, position, normal)));
+}
+
 void World::spawn_point_light(glm::vec3 position, glm::vec3 normal, glm::vec3 color, float intensity) {
 	point_lights.push_back(std::make_shared<PointLight>(PointLight(color, intensity, position, normal)));
 }
@@ -244,8 +249,43 @@ bool World::is_occluded(const Ray &ray, float dist) {
 std::vector <std::weak_ptr<PointLight>> World::get_lights() {
 	if (point_lights.empty()) {
 		point_lights = generate_point_lights();
-	}
 
+		// Convert point lights to glm::vec3
+		auto point_light_positions = std::make_unique<std::vector<glm::vec3>>();
+		point_light_positions->reserve(point_lights.size());
+		for (const auto& pl : point_lights) {
+			glm::vec3 pos = pl->position;
+			if (std::isnan(pos.x) || std::isnan(pos.y) || std::isnan(pos.z)) {
+				std::cerr << "Error: Point light position is NaN!" << std::endl;
+			}
+			else {
+				point_light_positions->push_back(pos);
+			}
+		}
+
+		point_light_cloud.points = std::move(point_light_positions);
+		point_light_cloud.build_index();
+
+		// Add all the vpls
+		for (const auto& vpl : vpls) {
+			point_lights.push_back(vpl);
+		}
+
+		// Convert vpls to points glm::vec3
+		auto vpl_positions = std::make_unique<std::vector<glm::vec3>>();
+		vpl_positions->reserve(vpls.size());
+		for (const auto& vpl : vpls) {
+			glm::vec3 pos = vpl->position;
+			if (std::isnan(pos.x) || std::isnan(pos.y) || std::isnan(pos.z)) {
+				std::cerr << "Error: VPL position is NaN!" << std::endl;
+			}
+			else {
+				vpl_positions->push_back(pos);
+			}
+		}
+		vpl_cloud.points = std::move(vpl_positions);
+		vpl_cloud.build_index();
+	}
 
 	const int num_lights = point_lights.size();
 	std::vector<std::weak_ptr<PointLight>> weak_lights(num_lights);
@@ -300,81 +340,86 @@ static std::shared_ptr<TriangularLight> pick_triangular_light(std::vector<std::s
 }
 
 std::vector<std::shared_ptr<PointLight>> World::generate_point_lights() {
-	constexpr auto num_photons = N_PHOTONS * (N_PHOTON_BOUNCES + 1);
-	std::vector<std::shared_ptr<PointLight>> out(num_photons, nullptr);
+	constexpr size_t num_photons = N_PHOTONS;
+	std::vector<std::shared_ptr<PointLight>> out;
+	out.reserve(num_photons);
 
 	// 1) For every triangular light in the scene, randomly generate point lights on it, similarly to how random light samples were generated.
 	auto scene_lights = get_triangular_lights();
 
-	//for (size_t i = 0; i < N_PHOTONS; i++) {
-	//	// Select a random light source
-	//	const auto light = pick_triangular_light(scene_lights);
-
-	//	// Generate a random point on the light source
-	//	// FUTURE: Implement solid angle sampling based
-	//	float _pdf;
-	//	const glm::vec3 random_point = light->sample_on_light(_pdf);
-
-	//	// Put a point light with the same normal and color as the light source
-	//	const glm::vec3 normal = light->normal(random_point);
-	//	const glm::vec3 color = light->c;
-
-	//	auto pl = std::make_shared<PointLight>(color, 0.1f, random_point, normal);
-
-	//	out[i] = pl;
-	//}
-
-	// Calculate total intensity of all lights
-	float total_intensity = 0.0f;
+	// Compute total weighted area (intensity * area)
+	float total_weight = 0.0f;
 	for (auto& light : scene_lights) {
-		total_intensity += light->intensity * light->area();
+		total_weight += light->intensity * light->area();
 	}
 
 	size_t j = 0;
-
 	for (auto& light : scene_lights) {
-		// For each light source, generate point lights proportional to its intensity
-		// and area (FUTURE: implement solid angle sampling)
-		const float light_intensity = light->intensity * light->area() / total_intensity;
-		const int num_lights = static_cast<int>(light_intensity * N_PHOTONS);
+		float weight = light->intensity * light->area() / total_weight;
+		int num_dl = static_cast<int>(weight * num_photons);
 
-		const glm::vec3 color = light->c;
+		for (int i = 0; i < num_dl; ++i) {
+			float pdf_pt;
+			glm::vec3 pos = light->sample_on_light(pdf_pt);
+			glm::vec3 norm = light->normal(pos);
+			float area = light->area();
 
-		for (int i = 0; i < num_lights; i++) {
-			// Generate a random point on the light source
-			float _pdf;
-			const glm::vec3 random_point = light->sample_on_light(_pdf);
+			// Direct light emitted flux per photon = (intensity * area) / total_photons
+			float per_photon_flux = (light->intensity * area) / float(num_photons);
 
-			// Put a point light with the same normal and color as the light source
-			const glm::vec3 normal = light->normal(random_point);
-			const float intensity = light->intensity * light->area() / num_lights;
-
-			auto pl = std::make_shared<PointLight>(color, intensity, random_point, normal);
-			out[j++] = pl;
+			auto pl = std::make_shared<PointLight>(light->c, per_photon_flux, pos, norm);
+			out.push_back(pl);
 		}
 	}
 
-	for (size_t i = j; i < out.size(); i++) {
-		// Select a random light source
-		const auto light = pick_triangular_light(scene_lights);
-
-		// Generate a random point on the light source
-		// FUTURE: Implement solid angle sampling based
-		float _pdf;
-		const glm::vec3 random_point = light->sample_on_light(_pdf);
-
-		// Put a point light with the same normal and color as the light source
-		const glm::vec3 normal = light->normal(random_point);
-		const glm::vec3 color = light->c;
-
-		auto pl = std::make_shared<PointLight>(color, 0.0f, random_point, normal);
-
-		out[i] = pl;
+	if constexpr (N_INDIRECT_PHOTONS == 0) {
+		// If we are not doing any bounces, we can return the point lights immediately
+		return out;
 	}
 
-	// 2) Perform first bounce ray tracing to determine point lights for GI.
+	// 2) Generate indirect VPLs for GI via photon tracing
+	size_t generated = 0;
+	while (generated < N_INDIRECT_PHOTONS) {
+		// Generate photon from existing point light in the scene
+		const int idx = dist2(rng2) * out.size();
+		const auto base = out[idx];
+		if (!base) {
+			// Error
+			std::cerr << "Error: Light is null at index " << idx << std::endl;
+		}
 
+		float pdf_pt;
+		const glm::vec3 emit_pos = base->sample_on_light(pdf_pt);
 
+		// Offset the random point slightly in the direction of the normal to avoid self-occlusion
+		const glm::vec3 normal = base->normal(emit_pos);
+		const glm::vec3 offset_pt = emit_pos + 1e-4f * normal;
+
+		// Sample a random direction from the hemisphere above the light source
+		float pdf_dir;
+		const glm::vec3 random_dir = base->sample_direction(emit_pos, pdf_dir);
+
+		const float cos_theta = glm::dot(normal, random_dir); // Cosine of the angle between the light normal and the random direction
+		if (cos_theta <= 0.0f) {
+			// If the cosine is zero or negative, skip this photon
+			continue;
+		}
+
+		const float raw_flux = base->intensity * cos_theta / (pdf_pt * pdf_dir);
+		const float per_photon_flux = raw_flux / float(N_INDIRECT_PHOTONS);
+
+		// check if the intensity is valid
+		if (!std::isfinite(per_photon_flux)) {
+			std::cerr << "Error: Photon intensity is NaN or Inf!" << std::endl;
+			continue; // Skip this photon if the intensity is invalid
+		}
+
+		// Create a photon with the random point and direction
+		Photon photon(offset_pt, random_dir, base->c, per_photon_flux);
+
+		// Shoot the photon into the scene
+		photon.shoot(*this, MAX_BOUNCES, generated, N_INDIRECT_PHOTONS);
+	}
 
 	// 3) Return the generated point lights
 	return out;

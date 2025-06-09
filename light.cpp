@@ -16,6 +16,9 @@ Light::Light(const glm::vec3 c, const float intensity) : c(c), intensity(intensi
 
 PointLight::PointLight(const glm::vec3 c, const float intensity, const glm::vec3 position, const glm::vec3 normal)
     : Light(c, intensity), position(position), _normal(normal) {
+    if (any(glm::isnan(c)) || any(glm::isinf(c))) {
+		std::cerr << "Error: PointLight color is NaN or Inf!" << std::endl;
+    }
 }
 
 PointLight::PointLight(const glm::vec3 c, const glm::vec3 position, const glm::vec3 normal)
@@ -41,17 +44,7 @@ glm::vec3 PointLight::sample_on_light(float& pdf) const {
 }
 
 glm::vec3 PointLight::sample_direction(const glm::vec3& p, float& pdf) const {
-    static thread_local std::mt19937 rng(std::random_device{}());
-    static thread_local std::uniform_real_distribution<float> dist(0.0f, 1.0f);
-
-    float z = dist(rng) * 2.0f - 1.0f;  // [-1, 1]
-    float phi = dist(rng) * glm::two_pi<float>();  // [0, 2pi)
-    float r = std::sqrt(1.0f - z * z);
-
-    float x = r * std::cos(phi);
-    float y = r * std::sin(phi);
-
-    return glm::vec3(x, y, z);
+    return cosine_weighted_hemisphere_sample(_normal, pdf);
 }
 
 TriangularLight::TriangularLight(const glm::vec3 v0, const glm::vec3 v1, const glm::vec3 v2, const glm::vec3 c, const float intensity)
@@ -87,6 +80,9 @@ glm::vec3 TriangularLight::sample_on_light(float& pdf) const {
     float sqrt_r1 = std::sqrt(r1);
     float u = 1 - sqrt_r1;
     float v = r2 * sqrt_r1;
+
+	pdf = 1.0f / area(); // PDF is uniform over the triangle area
+
     return (1 - u - v) * triangle.v0.position + u * triangle.v1.position + v * triangle.v2.position;
 }
 
@@ -118,7 +114,10 @@ glm::vec3 cosine_weighted_hemisphere_sample(const glm::vec3& normal, float& pdf)
     glm::vec3 T = glm::normalize(glm::abs(N.x) > 0.1f ? glm::cross(N, glm::vec3(0, 1, 0)) : glm::cross(N, glm::vec3(1, 0, 0)));
     glm::vec3 B = glm::cross(N, T);
 
-    return glm::normalize(x * T + y * B + z * N);
+    const glm::vec3 out = glm::normalize(x * T + y * B + z * N);
+	pdf = glm::dot(out, N) / glm::pi<float>(); // PDF for cosine-weighted hemisphere sampling
+
+    return out;
 }
 
 glm::vec2 calculate_uv(const Triangle& triangle, const glm::vec3& point) {

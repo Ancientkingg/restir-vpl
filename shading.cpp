@@ -10,6 +10,8 @@
 #define RED glm::vec3(1.0f,0.0f,0.0f)
 #define GREEN glm::vec3(0.0f,1.0f,0.0f)
 #define BLUE glm::vec3(0.0f,0.0f,1.0f)
+#define PURPLE glm::vec3(0.5f,0.0f,0.5f)
+#define BLACK glm::vec3(0.0f,0.0f,0.0f)
 #define EPS 0.001f
 #define rougheq(x,y) (fabs(x-y) < EPS)
 
@@ -35,11 +37,30 @@ glm::vec3 shade_debug(const HitInfo& hit, const SamplerResult& sample, World& sc
 		return sky_color(hit.r.direction());
     }
 
+    // loop through all vpls and find out if the hit point is within a certain radius r of any of the vpls
+	glm::vec3 hit_point = hit.r.at(hit.t);
+
+    glm::vec3 closest_vpl = scene.vpl_cloud.find_closest(hit_point);
+    float dist = glm::length(hit_point - closest_vpl);
+    if (dist < 0.05f) {
+        return GREEN;
+    }
+
+    glm::vec3 closest_pl = scene.point_light_cloud.find_closest(hit_point);
+    dist = glm::length(hit_point - closest_pl);
+    if (dist < 0.05f) {
+        return BLUE;
+    }
+
     // Albedo
     auto material = hit.mat_ptr.lock();
 	glm::vec3 fr = material->albedo(hit);
 
-    return fr;
+	// Cosine of the angle between the surface normal and the ray direction
+	const glm::vec3 N = hit.triangle.normal(hit.uv);
+	const float cos_theta = fmax(glm::dot(N, -hit.r.direction()), 0.0f);
+
+    return fr * cos_theta;
 }
 
 
@@ -72,6 +93,7 @@ static glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, World& s
 
     // Visibility term
     Ray shadow_ray = Ray(I + EPS * L, L);
+    // 0.005f
     const float V = scene.is_occluded(shadow_ray, dist - 0.1f) ? 0.0f : 1.0f;
 
     // Early return
@@ -84,7 +106,7 @@ static glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, World& s
 	glm::vec3 fr = material->evaluate(hit, L);
 
     // Geometry term
-    const float cos_theta = fabs(glm::dot(N, L));
+    const float cos_theta = fmax(glm::dot(N, L), 0.0f);
     const float G = cos_theta;
 
     // Final contribution
@@ -97,14 +119,15 @@ glm::vec3 shadeRIS(const HitInfo& hit, const SamplerResult& sample, World& scene
         return sky_color(hit.r.direction());
     }
 
-    if (sample.light.expired()) {
-        return glm::vec3(0.0f);
-    }
-
     // If the material emits light, return the emitted radiance directly
 	auto material = hit.mat_ptr.lock();
     if (material->emits_light()) {
         return material->albedo(hit);
+    }
+
+    if (sample.light.expired()) {
+        return BLACK;
+        return rand() % 2 == 0 ? GREEN : BLACK; // Return a random color if no light is sampled
     }
 
     glm::vec3 f = shade(hit, sample, scene);
@@ -120,17 +143,18 @@ glm::vec3 shadeUniform(const HitInfo& hit, const SamplerResult& sample, World& s
         return sky_color(hit.r.direction());
     }
 
-    if (sample.light.expired()) {
-        return glm::vec3(0.0f);
-    }
-
-	auto light = sample.light.lock();
-
     // If the material emits light, return the emitted radiance directly
 	auto material = hit.mat_ptr.lock();
     if (material->emits_light()) {
         return material->albedo(hit);
     }
+
+    if (sample.light.expired()) {
+        return BLACK;
+        return rand() % 2 == 0 ? GREEN : BLACK; // Return a random color if no light is sampled
+    }
+
+    auto light = sample.light.lock();
 
     // Sampled light direction
     const glm::vec3 L = sample.light_dir;
@@ -150,8 +174,13 @@ glm::vec3 shadeUniform(const HitInfo& hit, const SamplerResult& sample, World& s
     const float light_choose_pdf = 1.0f / sampler.num_lights();
     const float light_area_pdf = 1.0f / light->area();
     const float dist2 = dist * dist;
-	const float cos_theta_light = fabs(glm::dot(Nl, -L)); // Light angle
+	const float cos_theta_light = fmax(glm::dot(Nl, -L), 0.0f); // Light angle
     const float source = light_choose_pdf * light_area_pdf * (dist2 / cos_theta_light); // dA → dOmega
+
+    if (cos_theta_light == 0.0f) {
+		// If the cosine of the angle is zero, we cannot divide by zero.
+		return glm::vec3(0.0f);
+    }
 
 	return f / source;
 }

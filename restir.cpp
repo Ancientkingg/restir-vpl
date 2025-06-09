@@ -31,11 +31,18 @@ SamplerResult::SamplerResult() : light_point(0.0f), light_dir(0.0f),
 light(), W(0.0f) {
 }
 
+//static std::shared_ptr<PointLight> empty_light = std::make_shared<PointLight>(PointLight(glm::vec3(1.0f), 1.0f, glm::vec3(0.0f), glm::vec3(1.0f,0.0f,0.0f)));
+
 
 bool Reservoir::update(const SampleInfo x_i, const float w_i, const float n_phat) {
 	w_sum = w_sum + w_i;
-	M = M + 1;
 	// Condition for when w_i is 0 and w_sum is also 0 so we get 0/0
+	if (w_sum == 0.0f) {
+		//y = SampleInfo(empty_light, glm::vec3(0.0f));
+		return false;
+	}
+
+	M = M + 1;
 	if (dist(rng) < w_i / w_sum) {
 		y = x_i;
 		phat = n_phat;
@@ -231,7 +238,7 @@ void RestirLightSampler::visibility_check(Reservoir& res, const HitInfo& hi, Wor
 	const glm::vec3 L = (res.y.light_point - hi.r.at(hi.t)) / dist; // Direction to light
 
 	Ray shadow_ray = Ray(I + 0.001f * L, L);
-	const bool is_occluded = scene.is_occluded(shadow_ray, dist - 0.1f);
+	const bool is_occluded = scene.is_occluded(shadow_ray, dist - 0.25f); // The smaller the offset, the brighter ReSTIR becomes
 
 	if (is_occluded) {
 		res.W = 0;
@@ -243,7 +250,7 @@ void RestirLightSampler::visibility_check(Reservoir& res, const HitInfo& hi, Wor
 
 Reservoir RestirLightSampler::temporal_update(const Reservoir& current, const Reservoir& prev) {
 	std::array<const Reservoir*, 2> refs = { &current, &prev };
-	return Reservoir::combineReservoirsUnbiased(refs);
+	return Reservoir::combineReservoirs(refs);
 }
 
 void RestirLightSampler::spatial_update(const int x, const int y, const std::vector<HitInfo>& hit_infos, World& scene) {
@@ -303,7 +310,7 @@ void RestirLightSampler::spatial_update(const int x, const int y, const std::vec
 		}
 	}
 
-	current_reservoirs[y * x_pixels + x] = Reservoir::combineReservoirsUnbiased(std::span(candidates));
+	current_reservoirs[y * x_pixels + x] = Reservoir::combineReservoirs(std::span(candidates));
 }
 
 void RestirLightSampler::swap_buffers() {
@@ -333,7 +340,7 @@ void RestirLightSampler::swap_buffers() {
 
 	glm::vec3 Nl = light->normal(light_pos);
 
-	throughput = light_emission / (light_choose_pdf * light_pos_pdf * light_dir_pdf) * fabs(glm::dot(light_dir, Nl));
+	throughput = light_emission / (light_choose_pdf * light_pos_pdf * light_dir_pdf) * fmax(glm::dot(light_dir, Nl), 0.0f);
 
 	return Ray(light_pos, light_dir);
 }
@@ -371,8 +378,8 @@ void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 	const glm::vec3 N = hi.triangle.normal(hi.uv);                // Surface normal
 	const glm::vec3 Nl = light->normal(sample.light_point);       // Light normal
 
-	const float cos_theta = fabs(glm::dot(N, L));                 // Surface angle
-	const float cos_theta_light = fabs(glm::dot(Nl, -L));         // Light angle
+	const float cos_theta = fmax(glm::dot(N, L), 0.0f);           // Surface angle
+	const float cos_theta_light = fmax(glm::dot(Nl, -L), 0.0f);   // Light angle
 
 	// BRDF
 	auto material = hi.mat_ptr.lock();
@@ -390,6 +397,10 @@ void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 
 	// Final weight and importance
 	W = target / source;
+
+	if (cos_theta_light == 0.0f) {
+		W = 0.0f;
+	}
 
 	phat = target; // This is the "target pdf" value used by ReSTIR
 }
