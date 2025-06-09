@@ -331,6 +331,16 @@ void render_live(Camera &cam, World &world, bool progressive) {
                         break;
                     case SDLK_BACKSPACE: keys.backspace = isDown;
                         break;
+					case SDLK_g: 
+                        if (isDown) {
+                            DISABLE_GI = !DISABLE_GI;
+                            world.point_lights.clear();
+                            world.vpls.clear();
+                            lights = world.get_lights();
+                            light_sampler = RestirLightSampler(cam.image_width, cam.image_height, lights);
+							camera_moved = true;
+                        }
+						break;
                     case SDLK_b: render_mode = RENDER_DEBUG;
                         break;
                     case SDLK_n: render_mode = RENDER_NORMALS;

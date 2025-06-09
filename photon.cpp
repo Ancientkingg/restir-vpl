@@ -58,7 +58,7 @@ void Photon::shoot(World& scene, int max_bounces, size_t& photon_count, const si
 
 	if (!mat_ptr.get()->emits_light()) {
 		photon_count++; // Increment the number of photons shot
-		scene.spawn_vpl(light_position, normal, flux, 1.0f);
+		scene.spawn_vpl(light_position, normal, flux, N_PHOTONS / float(N_INDIRECT_PHOTONS));
 	}
 
 	bounces++; // Increment the number of bounces

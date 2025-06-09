@@ -1,6 +1,6 @@
 #pragma once
 
-constexpr auto BASE_LIGHT_INTENSITY = 100.0f;
+constexpr auto BASE_LIGHT_INTENSITY = 50.0f;
 
 constexpr auto ENABLE_TEXTURES = false;
 
@@ -22,6 +22,8 @@ constexpr auto SAVE_INTERMEDIATE = false;
 constexpr auto SAVE_FORMAT = 1; // 0: png, 1: pfm, 2: both
 
 constexpr float sphere_radius = 1.0f;
+
+extern bool DISABLE_GI;
 
 //#define INTERPOLATE_NORMALS
 

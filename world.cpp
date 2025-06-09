@@ -17,6 +17,8 @@
 #include "photon.hpp"
 #include "spheres.hpp"
 
+bool DISABLE_GI = false;
+
 
 World load_world() {
 	auto loading_start = std::chrono::high_resolution_clock::now();
@@ -377,6 +379,11 @@ std::vector<std::shared_ptr<PointLight>> World::generate_point_lights() {
 		return out;
 	}
 
+	if (DISABLE_GI) {
+		// If GI is disabled, we can return the point lights immediately
+		return out;
+	}
+
 	// 2) Generate indirect VPLs for GI via photon tracing
 	size_t generated = 0;
 	while (generated < N_INDIRECT_PHOTONS) {
@@ -406,7 +413,7 @@ std::vector<std::shared_ptr<PointLight>> World::generate_point_lights() {
 		}
 
 		const float raw_flux = base->intensity * cos_theta / (pdf_pt * pdf_dir);
-		const float per_photon_flux = raw_flux / float(N_INDIRECT_PHOTONS);
+		const float per_photon_flux = raw_flux;
 
 		// check if the intensity is valid
 		if (!std::isfinite(per_photon_flux)) {
