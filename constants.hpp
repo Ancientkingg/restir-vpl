@@ -17,11 +17,11 @@ constexpr auto NEIGHBOUR_RADIUS = 20; // pixels
 
 constexpr auto LIVE_WIDTH = 400;
 constexpr auto RENDER_WIDTH = 1280;
-constexpr auto RENDER_FRAME_COUNT = 50;
+constexpr auto RENDER_FRAME_COUNT = 5;
 constexpr auto SAVE_INTERMEDIATE = false;
 constexpr auto SAVE_FORMAT = 1; // 0: png, 1: pfm, 2: both
 
-constexpr float sphere_radius = 1.0f;
+constexpr float SPHERE_R = 0.025f;
 
 extern bool DISABLE_GI;
 

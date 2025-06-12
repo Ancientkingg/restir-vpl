@@ -38,18 +38,18 @@ inline std::ostream& operator<<(std::ostream& out, const SamplingMode& mode) {
 struct SamplerResult {
     glm::vec3 light_point;
     glm::vec3 light_dir;
-    std::weak_ptr<Light> light;
     float W;
+    std::weak_ptr<PointLight> light;
 
     SamplerResult();
 };
 
 struct SampleInfo {
-    std::weak_ptr<Light> light;
+    std::weak_ptr<PointLight> light;
 	glm::vec3 light_point;
 
     SampleInfo();
-	SampleInfo(const std::weak_ptr<Light> light, const glm::vec3& light_point);
+	SampleInfo(const std::weak_ptr<PointLight> light, const glm::vec3& light_point);
 };
 
 class Reservoir {
@@ -77,11 +77,9 @@ public:
 
     std::vector<std::vector<SamplerResult>> sample_lights(std::vector<HitInfo> hit_infos, World& scene);
 
-    [[nodiscard]] Ray sample_ray_from_light(const World& world, glm::vec3& throughput) const;
-
     void set_initial_sample(Reservoir& r, const HitInfo& hi);
 
-    void visibility_check(Reservoir& res, const HitInfo& hi, World& world, bool reset_phat = false);
+    bool visibility_check(Reservoir& res, const HitInfo& hi, World& world, bool reset_phat = false);
 
     Reservoir temporal_update(const Reservoir& current, const Reservoir& prev);
 

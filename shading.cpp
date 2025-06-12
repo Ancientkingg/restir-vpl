@@ -6,6 +6,7 @@
 #include "restir.hpp"
 #include "world.hpp"
 #include "ray.hpp"
+#include "constants.hpp"
 
 #define RED glm::vec3(1.0f,0.0f,0.0f)
 #define GREEN glm::vec3(0.0f,1.0f,0.0f)
@@ -40,16 +41,18 @@ glm::vec3 shade_debug(const HitInfo& hit, const SamplerResult& sample, World& sc
     // loop through all vpls and find out if the hit point is within a certain radius r of any of the vpls
 	glm::vec3 hit_point = hit.r.at(hit.t);
 
-    glm::vec3 closest_vpl = scene.vpl_cloud.find_closest(hit_point);
-    float dist = glm::length(hit_point - closest_vpl);
-    if (dist < 0.05f) {
-        return GREEN;
+    glm::vec3 closest_pl = scene.point_light_cloud.find_closest(hit_point);
+    float dist = glm::length(hit_point - closest_pl);
+    if (dist < SPHERE_R) {
+        return BLUE;
     }
 
-    glm::vec3 closest_pl = scene.point_light_cloud.find_closest(hit_point);
-    dist = glm::length(hit_point - closest_pl);
-    if (dist < 0.05f) {
-        return BLUE;
+    if (!scene.vpls.empty()) {
+        glm::vec3 closest_vpl = scene.vpl_cloud.find_closest(hit_point);
+        dist = glm::length(hit_point - closest_vpl);
+        if (dist < SPHERE_R) {
+            return RED;
+        }
     }
 
     // Albedo
@@ -113,6 +116,22 @@ static glm::vec3 shade(const HitInfo& hit, const SamplerResult& sample, World& s
     return Le * V * fr * G;
 }
 
+float distancePointToPlane(const glm::vec3& point, const Triangle& tri) {
+    // Get triangle vertices
+    glm::vec3 p0 = tri.v0.position;
+    glm::vec3 p1 = tri.v1.position;
+    glm::vec3 p2 = tri.v2.position;
+
+    // Compute normal of the plane
+    glm::vec3 normal = glm::normalize(glm::cross(p1 - p0, p2 - p0));
+
+    // Compute signed distance from point to plane
+    float distance = glm::dot(point - p0, normal);
+
+    // Return absolute value for unsigned distance
+    return std::abs(distance);
+}
+
 glm::vec3 shadeRIS(const HitInfo& hit, const SamplerResult& sample, World& scene) {
     // Ray has no intersection
     if (hit.t == 1E30f) {
@@ -125,14 +144,30 @@ glm::vec3 shadeRIS(const HitInfo& hit, const SamplerResult& sample, World& scene
         return material->albedo(hit);
     }
 
+    if (sample.light.expired() && sample.W != 0.0f) {
+        return PURPLE;
+    }
+
     if (sample.light.expired()) {
         return BLACK;
-        return rand() % 2 == 0 ? GREEN : BLACK; // Return a random color if no light is sampled
     }
+
+    const glm::vec3 hit_point = hit.r.at(hit.t);
+
+    const glm::vec3 light_point = sample.light.lock().get()->position;
+    const Triangle plane = hit.triangle;
+    //if (distancePointToPlane(light_point, plane) < 1.0f) {
+    //    return RED;
+    //}
 
     glm::vec3 f = shade(hit, sample, scene);
 
     const float W = sample.W;
+
+    if (!std::isfinite(sample.W)) {
+        return GREEN;
+    }
+
 
     return f * W;
 }
@@ -149,9 +184,12 @@ glm::vec3 shadeUniform(const HitInfo& hit, const SamplerResult& sample, World& s
         return material->albedo(hit);
     }
 
+    if (sample.light.expired() && sample.W != 0.0f) {
+		return PURPLE;
+    }
+
     if (sample.light.expired()) {
         return BLACK;
-        return rand() % 2 == 0 ? GREEN : BLACK; // Return a random color if no light is sampled
     }
 
     auto light = sample.light.lock();
@@ -173,7 +211,8 @@ glm::vec3 shadeUniform(const HitInfo& hit, const SamplerResult& sample, World& s
     // Source PDF: converting from area to solid angle
     const float light_choose_pdf = 1.0f / sampler.num_lights();
     const float light_area_pdf = 1.0f / light->area();
-    const float dist2 = dist * dist;
+    const float dist2_ = dist * dist;
+    const float dist2 = dist2_;
 	const float cos_theta_light = fmax(glm::dot(Nl, -L), 0.0f); // Light angle
     const float source = light_choose_pdf * light_area_pdf * (dist2 / cos_theta_light); // dA → dOmega
 

@@ -136,7 +136,7 @@ static void progress_bar(float progress, float time, int framecount) {
 	std::cout.flush();
 }
 
-void render(Camera &cam, World &world, int framecount, bool accumulate_flag, SamplingMode sampling_mode) {
+void render(Camera &cam, World &world, int framecount, bool accumulate_flag, SamplingMode sampling_mode, ShadingMode shading_mode) {
     Camera render_cam = Camera(cam.position, cam.target);
     render_cam.image_width = RENDER_WIDTH;
     const float x = int(RENDER_WIDTH / render_cam.aspect_ratio);
@@ -175,7 +175,7 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
         auto render_start = std::chrono::high_resolution_clock::now();
 
         RenderInfo info = RenderInfo{render_cam, world, light_sampler};
-        std::vector<std::vector<glm::vec3> > colors = raytrace(light_sampler.sampling_mode, RENDER_SHADING, info);
+        std::vector<std::vector<glm::vec3> > colors = raytrace(light_sampler.sampling_mode, shading_mode, info);
 
 		if (accumulate_flag) {
 			accumulate(accumulated_colors, colors, i);
@@ -190,35 +190,43 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
 			duration, framecount);
 
         /// output frame
-        auto filename = get_frame_filename(i);
+        const auto filename = get_frame_filename(i);
+        // generate short timestamp
+		const auto id = std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+			std::chrono::system_clock::now().time_since_epoch()).count() % 1000000);
+
         // Add this flag because PFM is big
         if constexpr (SAVE_INTERMEDIATE == true) {
             if constexpr (SAVE_FORMAT == 0) {
-                save_png(colors, "./images/" + sampling_mode_str + "_" + filename + ".png");
+                save_png(colors, "./images/" + sampling_mode_str + "_" + filename + id + ".png");
             }
             else if constexpr (SAVE_FORMAT == 1) {
-                save_pfm(colors, "./images/" + sampling_mode_str + "_" + filename + ".pfm");
+                save_pfm(colors, "./images/" + sampling_mode_str + "_" + filename + id + ".pfm");
             }
             else {
-                save_png(colors, "./images/" + sampling_mode_str + "_" + filename + ".png");
-                save_pfm(colors, "./images/" + sampling_mode_str + "_" + filename + ".pfm");
+                save_png(colors, "./images/" + sampling_mode_str + "_" + filename + id + ".png");
+                save_pfm(colors, "./images/" + sampling_mode_str + "_" + filename + id + ".pfm");
             }
         }
         
     }
+
+    const auto id = std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count() % 1000000);
+
 	if (accumulate_flag) {
 		std::clog << "Output accumulated frame" << std::endl;
 		auto filename = get_frame_filename(framecount);
 
         if constexpr (SAVE_FORMAT == 0) {
-            save_png(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + ".png");
+            save_png(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + id + ".png");
         }
         else if constexpr (SAVE_FORMAT == 1) {
-            save_pfm(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + ".pfm");
+            save_pfm(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + id + ".pfm");
         }
         else {
-            save_png(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + ".png");
-            save_pfm(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + ".pfm");
+            save_png(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + id + ".png");
+            save_pfm(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + id + ".pfm");
         }
 	}
 
@@ -337,19 +345,27 @@ void render_live(Camera &cam, World &world, bool progressive) {
                             world.point_lights.clear();
                             world.vpls.clear();
                             lights = world.get_lights();
+                            auto mode = light_sampler.sampling_mode;
                             light_sampler = RestirLightSampler(cam.image_width, cam.image_height, lights);
+							light_sampler.sampling_mode = mode;
 							camera_moved = true;
                         }
 						break;
-                    case SDLK_b: render_mode = RENDER_DEBUG;
+                    case SDLK_b: render_mode = RENDER_DEBUG; camera_moved = true;
                         break;
-                    case SDLK_n: render_mode = RENDER_NORMALS;
+					case SDLK_n: render_mode = RENDER_NORMALS; camera_moved = true;
                         break;
-                    case SDLK_v: render_mode = RENDER_SHADING;
+					case SDLK_v: render_mode = RENDER_SHADING; camera_moved = true;
                         break;
-                    case SDLK_UP: light_sampler.m++; light_sampler.reset();
+                    case SDLK_UP: 
+                        if (isDown) {
+                            light_sampler.m++; light_sampler.reset();
+                        }
                         break;
-                    case SDLK_DOWN: light_sampler.m--; light_sampler.reset();
+                    case SDLK_DOWN: 
+                        if (isDown) {
+                            light_sampler.m--; light_sampler.reset();
+                        }
                         break;
                     case SDLK_p:
                         if (isDown) progressive = !progressive;
@@ -370,7 +386,7 @@ void render_live(Camera &cam, World &world, bool progressive) {
 			// Render the current frame
 			std::clog << "\nOutput render with current camera" << std::endl;
             currently_outputting_render = true;
-            render(cam, world, RENDER_FRAME_COUNT, progressive, light_sampler.sampling_mode);
+            render(cam, world, RENDER_FRAME_COUNT, progressive, light_sampler.sampling_mode, render_mode);
 			keys.enter = false;
         }
 

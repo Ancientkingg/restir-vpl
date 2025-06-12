@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(RayTracerInOneWeekend)
+project(restir-vpl)
 
 set(CMAKE_OSX_ARCHITECTURES "arm64")
 set(CMAKE_CXX_STANDARD 20)
@@ -14,7 +14,7 @@ set(GLM ${CMAKE_CURRENT_SOURCE_DIR}/lib/glm)
 include_directories(${GLM})
 link_directories(${GLM})
 
-add_executable(RayTracerInOneWeekend 
+add_executable(restir-vpl 
 "camera.cpp"
 "hit_info.hpp"
 "image_writer.cpp"
@@ -35,17 +35,17 @@ add_executable(RayTracerInOneWeekend
 "photon.cpp" "spheres.cpp")
 
 file(COPY ${CMAKE_SOURCE_DIR}/objects DESTINATION ${CMAKE_BINARY_DIR})
-add_custom_command(TARGET RayTracerInOneWeekend POST_BUILD
+add_custom_command(TARGET restir-vpl POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     "${CMAKE_SOURCE_DIR}/objects"
-    "$<TARGET_FILE_DIR:RayTracerInOneWeekend>/objects"
+    "$<TARGET_FILE_DIR:restir-vpl>/objects"
 )
 
 # Add the include directory for GLM
-target_include_directories(RayTracerInOneWeekend PUBLIC ${GLM})
+target_include_directories(restir-vpl PUBLIC ${GLM})
 
-target_link_libraries(RayTracerInOneWeekend PUBLIC OpenMP::OpenMP_CXX ${SDL2_LIBRARIES})
-target_link_libraries(RayTracerInOneWeekend PRIVATE SDL2::SDL2 SDL2::SDL2main)
+target_link_libraries(restir-vpl PUBLIC OpenMP::OpenMP_CXX ${SDL2_LIBRARIES})
+target_link_libraries(restir-vpl PRIVATE SDL2::SDL2 SDL2::SDL2main)
 
 message(STATUS "Host processor: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
 
@@ -56,10 +56,10 @@ check_cxx_compiler_flag("-mavx2" COMPILER_SUPPORTS_MAVX2)
 
 if (MSVC AND COMPILER_SUPPORTS_AVX2)
     message(STATUS "Enabling AVX2 for MSVC")
-    target_compile_options(RayTracerInOneWeekend PRIVATE /arch:AVX2)
+    target_compile_options(restir-vpl PRIVATE /arch:AVX2)
 elseif ((CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND COMPILER_SUPPORTS_MAVX2)
     message(STATUS "Enabling AVX2 for GCC/Clang")
-    target_compile_options(RayTracerInOneWeekend PRIVATE -mavx2)
+    target_compile_options(restir-vpl PRIVATE -mavx2)
 else()
     message(WARNING "AVX2 not supported or enabled. Check your compiler/target.")
 endif()
@@ -70,7 +70,7 @@ if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "aarch64" OR CMAKE_HOST_SYSTEM_PROCESSOR 
     # Check for the ARMv8 SIMD flag
     check_cxx_compiler_flag("-march=armv8-a+simd" COMPILER_SUPPORTS_ARMV8_SIMD)
     if(COMPILER_SUPPORTS_ARMV8_SIMD)
-        target_compile_options(RayTracerInOneWeekend
+        target_compile_options(restir-vpl
                 PRIVATE
                 $<$<CXX_COMPILER_ID:GNU,Clang>:-march=armv8-a+simd>
         )
@@ -82,7 +82,7 @@ else()
     message(STATUS "Non-ARM host (${CMAKE_HOST_SYSTEM_PROCESSOR}); skipping NEON flags")
 endif()
 
-target_compile_definitions(RayTracerInOneWeekend
+target_compile_definitions(restir-vpl
         PRIVATE
         __ARM_NEON__=1            # pretend the compiler defined this
 )

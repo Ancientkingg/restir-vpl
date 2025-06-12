@@ -17,7 +17,7 @@
 #include "photon.hpp"
 #include "spheres.hpp"
 
-bool DISABLE_GI = false;
+bool DISABLE_GI = true;
 
 
 World load_world() {
@@ -205,9 +205,9 @@ tinybvh::BVH& World::bvh(){
 	raw_bvh_data = toBVHVec(triangle_soup);
 
 #if defined(__AVX__) || defined(__AVX2__)
-	bvhInstance.BuildAVX(raw_bvh_data.data(), triangle_soup.size());
+	bvhInstance.BuildHQ(raw_bvh_data.data(), triangle_soup.size());
 #else
-	bvhInstance.Build(raw_bvh_data.data(), triangle_soup.size());
+	bvhInstance.BuildHQ(raw_bvh_data.data(), triangle_soup.size());
 #endif
 
 	return bvhInstance;
@@ -355,6 +355,7 @@ std::vector<std::shared_ptr<PointLight>> World::generate_point_lights() {
 		total_weight += light->intensity * light->area();
 	}
 
+	// Per light, sample a number of photons proportional to its area and intensity
 	size_t j = 0;
 	for (auto& light : scene_lights) {
 		float weight = light->intensity * light->area() / total_weight;
