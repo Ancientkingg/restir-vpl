@@ -2,76 +2,108 @@
 
 #include <glm/glm.hpp>
 #include <random>
+#include <chrono>
+#include <iostream>
+#include <atomic>
+#include <thread>
+#include <omp.h>
 
 #include "camera.hpp"
 #include "world.hpp"
 #include "restir.hpp"
 #include "shading.hpp"
 
+#define EPS 0.001f
+
 thread_local std::mt19937 rng_pt(std::random_device{}());
 std::uniform_real_distribution<float> dist_pt(0.0f, 1.0f);
 
-static glm::vec3 pathtrace_ray(Ray& ray, World& world, int depth, glm::vec3 throughput) {
-    if (depth > MAX_RAY_DEPTH) {
-        return glm::vec3(0.0f); // Return black color if max depth is reached
-    }
+static glm::vec3 pathtrace_ray(Ray& ray, World& world, int depth, glm::vec3 throughput, std::vector<std::weak_ptr<PointLight>>& lights) {
+    if (depth > MAX_RAY_DEPTH)
+        return glm::vec3(0.0f);
 
     HitInfo hit;
-    bool is_hit = world.intersect(ray, hit);
+    if (!world.intersect(ray, hit))
+        return sky_color(ray.direction()) * throughput;
 
-    if (!is_hit) {
-        return sky_color(hit.r.direction());
-    }
-
-    // BSDF term
     auto material = hit.mat_ptr.lock();
-    auto emitted = material->albedo(hit);
+    glm::vec3 emitted = material->emits_light() ? material->albedo(hit) : glm::vec3(0.0f);
     glm::vec3 L = emitted * throughput;
-
-    // If the material emits light, return the emitted radiance directly
-    if (material->emits_light()) {
+    if (material->emits_light())
         return L;
+
+    // --- Direct lighting from point lights (single-light sampling)
+    glm::vec3 L_direct(0.0f);
+    glm::vec3 P = hit.r.at(hit.t);
+    glm::vec3 N = glm::normalize(hit.triangle.normal(hit.uv));
+
+    // get total number of lights
+    size_t nLights = lights.size();
+    if (nLights > 0) {
+        // pick one at random
+        std::uniform_int_distribution<size_t> lightDist(0, nLights - 1);
+        size_t idx = lightDist(rng_pt);    // rng_pt is your threaded RNG
+
+        auto light = lights[idx].lock();
+        glm::vec3 toL = light->position - P;
+        const float _dist2 = glm::dot(toL, toL);
+        const float _dist = sqrtf(_dist2);
+        constexpr float _r = 3.0f;
+        constexpr float _r2 = _r * _r;
+        const float dist2 = (_dist2 + _r2 + _dist * sqrtf(_dist2 + _r2)) / 2.0f;
+
+        float dist = std::sqrt(_dist2);
+        glm::vec3 L_dir = toL / dist;
+
+        glm::vec3 fr = material->evaluate(hit, L_dir);
+
+        Ray shadow_ray = Ray(P + EPS * L_dir, L_dir);
+        if (!world.is_occluded(shadow_ray, dist - 0.1f)) {
+            float cos_theta = glm::max(glm::dot(N, L_dir), 0.0f);
+            glm::vec3 Li = (light->intensity * light->c) / dist2;
+
+            L_direct = fr * cos_theta * Li * float(nLights);
+        }
     }
 
+    L += throughput * L_direct;
+
+    // --- Indirect bounce as before ---
     Ray scattered;
     glm::vec3 attenuation;
     float pdf;
-    bool is_scatter = material->scatter(ray, hit, attenuation, scattered, pdf);
-
-    if (!is_scatter) {
+    if (!material->scatter(ray, hit, attenuation, scattered, pdf))
         return L;
-    }
 
-    const glm::vec3 N = hit.triangle.normal(hit.uv);
-    const float cos_theta = glm::dot(N, scattered.direction());
-    throughput *= attenuation * (cos_theta / pdf);
+    float cos_theta = glm::dot(N, scattered.direction());
+    throughput *= attenuation * cos_theta / pdf;
 
-    float max_component = std::max(throughput.r, std::max(throughput.g, throughput.b));
-    float rr_prob = std::min(max_component, 0.95f); // Prevent long paths
-
-    if (dist_pt(rng_pt) > rr_prob) {
+    // Russian roulette
+    float rr = std::min(
+        std::max({ throughput.r, throughput.g, throughput.b }),
+        0.95f
+    );
+    if (dist_pt(rng_pt) > rr)
         return L;
-    }
+    throughput /= rr;
 
-    throughput /= rr_prob;
-
-    glm::vec3 indirect = (attenuation * pathtrace_ray(scattered, world, depth + 1, throughput));
-
-    return L + indirect;
+    return L + pathtrace_ray(scattered, world, depth + 1, throughput, lights);
 }
-
 
 std::vector<std::vector<glm::vec3>> pathtrace(RenderInfo& info) {
     auto rays = info.cam.generate_rays_for_frame();
+    auto lights = info.world.get_lights();
 
     std::vector<std::vector<glm::vec3> > colors = std::vector<std::vector<glm::vec3> >(
         info.cam.image_height, std::vector<glm::vec3>(info.cam.image_width, glm::vec3(0.0f)));
 
+    int total_pixels = info.cam.image_height * info.cam.image_width;
+
+    #pragma omp parallel for
     for (int i = 0; i < rays.size(); i++) {
         for (int j = 0; j < rays[i].size(); j++) {
             Ray& ray = rays[i][j];
-            glm::vec3 color = pathtrace_ray(ray, info.world, 0, glm::vec3(1.0f));
-
+            glm::vec3 color = pathtrace_ray(ray, info.world, 0, glm::vec3(1.0f), lights);
             colors[i][j] = color;
         }
     }

@@ -180,7 +180,15 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
         auto render_start = std::chrono::high_resolution_clock::now();
 
         RenderInfo info = RenderInfo{render_cam, world, light_sampler};
-        std::vector<std::vector<glm::vec3> > colors = raytrace(light_sampler.sampling_mode, shading_mode, info);
+
+        std::vector<std::vector<glm::vec3>> colors;
+
+        if (!ENABLE_PT) {
+            colors = raytrace(light_sampler.sampling_mode, shading_mode, info);
+        }
+        else {
+            colors = pathtrace(info);
+        }
 
 		if (accumulate_flag) {
 			accumulate(accumulated_colors, colors, i);
@@ -483,6 +491,7 @@ void render_live(Camera &cam, World &world, bool progressive) {
         }
         else {
 			colors = pathtrace(info);
+            //colors = raytrace(light_sampler.sampling_mode, RENDER_NORMALS, info);
         }
 
         auto render_stop = std::chrono::high_resolution_clock::now();
