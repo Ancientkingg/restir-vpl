@@ -116,6 +116,7 @@ void accumulate(std::vector<std::vector<glm::vec3>>& colors, std::vector<std::ve
 bool currently_outputting_render = false;
 float avg_time = 0.0f; // ms
 int total_frames = 1;
+bool ENABLE_PT = false;
 
 static void progress_bar(float progress, float time, int framecount) {
 	avg_time = (avg_time * total_frames + time) / (total_frames + 1);
@@ -137,6 +138,10 @@ static void progress_bar(float progress, float time, int framecount) {
 }
 
 void render(Camera &cam, World &world, int framecount, bool accumulate_flag, SamplingMode sampling_mode, ShadingMode shading_mode) {
+    if (shading_mode != RENDER_SHADING) {
+        framecount = 1;
+    }
+
     Camera render_cam = Camera(cam.position, cam.target);
     render_cam.image_width = RENDER_WIDTH;
     const float x = int(RENDER_WIDTH / render_cam.aspect_ratio);
@@ -198,14 +203,14 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
         // Add this flag because PFM is big
         if constexpr (SAVE_INTERMEDIATE == true) {
             if constexpr (SAVE_FORMAT == 0) {
-                save_png(colors, "./images/" + sampling_mode_str + "_" + filename + id + ".png");
+                save_png(colors, "./images/" + sampling_mode_str + "_" + filename + "_" + id + ".png");
             }
             else if constexpr (SAVE_FORMAT == 1) {
-                save_pfm(colors, "./images/" + sampling_mode_str + "_" + filename + id + ".pfm");
+                save_pfm(colors, "./images/" + sampling_mode_str + "_" + filename + "_" + id + ".pfm");
             }
             else {
-                save_png(colors, "./images/" + sampling_mode_str + "_" + filename + id + ".png");
-                save_pfm(colors, "./images/" + sampling_mode_str + "_" + filename + id + ".pfm");
+                save_png(colors, "./images/" + sampling_mode_str + "_" + filename + "_" + id + ".png");
+                save_pfm(colors, "./images/" + sampling_mode_str + "_" + filename + "_" + id + ".pfm");
             }
         }
         
@@ -219,14 +224,14 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
 		auto filename = get_frame_filename(framecount);
 
         if constexpr (SAVE_FORMAT == 0) {
-            save_png(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + id + ".png");
+            save_png(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + "_" + id + ".png");
         }
         else if constexpr (SAVE_FORMAT == 1) {
-            save_pfm(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + id + ".pfm");
+            save_pfm(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + "_" + id + ".pfm");
         }
         else {
-            save_png(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + id + ".png");
-            save_pfm(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + id + ".pfm");
+            save_png(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + "_" + id + ".png");
+            save_pfm(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + "_" + id + ".pfm");
         }
 	}
 
@@ -310,11 +315,13 @@ void render_live(Camera &cam, World &world, bool progressive) {
                         running = false;
                         break;
                     case SDLK_1:
-                        light_sampler.sampling_mode = SamplingMode::Uniform; camera_moved = true; break;
+                        light_sampler.sampling_mode = SamplingMode::Uniform; camera_moved = true; ENABLE_PT = false; break;
                     case SDLK_2:
-						light_sampler.sampling_mode = SamplingMode::RIS; camera_moved = true; break;
+                        light_sampler.sampling_mode = SamplingMode::RIS; camera_moved = true; ENABLE_PT = false; break;
                     case SDLK_3:
-						light_sampler.sampling_mode = SamplingMode::ReSTIR; camera_moved = true; break;
+                        light_sampler.sampling_mode = SamplingMode::ReSTIR; camera_moved = true; ENABLE_PT = false; break;
+                    case SDLK_4:
+                        ENABLE_PT = true; camera_moved = true; break;
                     case SDLK_w: keys.w = isDown;
                         break;
                     case SDLK_a: keys.a = isDown;
@@ -351,9 +358,9 @@ void render_live(Camera &cam, World &world, bool progressive) {
 							camera_moved = true;
                         }
 						break;
-                    case SDLK_b: render_mode = RENDER_DEBUG; camera_moved = true;
+                    case SDLK_b: render_mode = RENDER_DEBUG; ENABLE_PT = false; camera_moved = true;
                         break;
-					case SDLK_n: render_mode = RENDER_NORMALS; camera_moved = true;
+                    case SDLK_n: render_mode = RENDER_NORMALS; ENABLE_PT = false; camera_moved = true;
                         break;
 					case SDLK_v: render_mode = RENDER_SHADING; camera_moved = true;
                         break;
@@ -468,7 +475,15 @@ void render_live(Camera &cam, World &world, bool progressive) {
         auto render_start = std::chrono::high_resolution_clock::now();
 
         RenderInfo info = RenderInfo{cam, world, light_sampler};
-        std::vector<std::vector<glm::vec3> > colors = raytrace(light_sampler.sampling_mode, render_mode, info);
+
+        std::vector<std::vector<glm::vec3>> colors;
+
+        if (!ENABLE_PT) {
+            colors = raytrace(light_sampler.sampling_mode, render_mode, info);
+        }
+        else {
+			colors = pathtrace(info);
+        }
 
         auto render_stop = std::chrono::high_resolution_clock::now();
 

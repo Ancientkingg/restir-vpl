@@ -80,6 +80,7 @@ public:
     void set_initial_sample(Reservoir& r, const HitInfo& hi);
 
     bool visibility_check(Reservoir& res, const HitInfo& hi, World& world, bool reset_phat = false);
+    bool is_visible(Reservoir& res, const HitInfo& hi, World& world);
 
     Reservoir temporal_update(const Reservoir& current, const Reservoir& prev);
 

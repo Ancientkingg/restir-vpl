@@ -26,7 +26,6 @@ PointLight::PointLight(const glm::vec3 c, const glm::vec3 position, const glm::v
 }
 
 float PointLight::area() const {
-    //return 2.0f * glm::pi<float>(); // Point light has area of a hemisphere with radius 1
     return 1.0f;
 }
 

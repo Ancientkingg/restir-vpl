@@ -211,8 +211,11 @@ glm::vec3 shadeUniform(const HitInfo& hit, const SamplerResult& sample, World& s
     // Source PDF: converting from area to solid angle
     const float light_choose_pdf = 1.0f / sampler.num_lights();
     const float light_area_pdf = 1.0f / light->area();
-    const float dist2_ = dist * dist;
-    const float dist2 = dist2_;
+    const float _dist2 = dist * dist;
+	const float _dist = sqrtf(_dist2);
+	constexpr float _r = 3.0f;
+	constexpr float _r2 = _r * _r;
+	const float dist2 = (_dist2 + _r2 + _dist * sqrtf(_dist2 + _r2)) / 2.0f;
 	const float cos_theta_light = fmax(glm::dot(Nl, -L), 0.0f); // Light angle
     const float source = light_choose_pdf * light_area_pdf * (dist2 / cos_theta_light); // dA → dOmega
 

@@ -221,7 +221,7 @@ void RestirLightSampler::set_initial_sample(Reservoir& r, const HitInfo& hi) {
 	r.W = calculate_reservoir_weight(r.phat, r.M, r.w_sum);
 }
 
-bool RestirLightSampler::visibility_check(Reservoir& res, const HitInfo& hi, World& scene, bool reset_phat) {
+bool RestirLightSampler::is_visible(Reservoir& res, const HitInfo& hi, World& scene) {
 	// Check the visibility of the light sample
 
 	// Point of intersection [x]
@@ -235,14 +235,20 @@ bool RestirLightSampler::visibility_check(Reservoir& res, const HitInfo& hi, Wor
 	Ray shadow_ray = Ray(I + 0.001f * L, L);
 	const bool is_occluded = scene.is_occluded(shadow_ray, dist - 1e-2f);
 
-	if (is_occluded) {
+	return !is_occluded;
+}
+
+bool RestirLightSampler::visibility_check(Reservoir& res, const HitInfo& hi, World& scene, bool reset_phat) {
+	const bool visible = is_visible(res, hi, scene);
+
+	if (!visible) {
 		res.W = 0;
 		if (reset_phat) {
 			res.phat = 0;
 		}
 	}
 
-	return !is_occluded;
+	return visible;
 }
 
 Reservoir RestirLightSampler::temporal_update(const Reservoir& current, const Reservoir& prev) {
@@ -251,9 +257,8 @@ Reservoir RestirLightSampler::temporal_update(const Reservoir& current, const Re
 }
 
 void RestirLightSampler::spatial_update(const int x, const int y, const std::vector<HitInfo>& hit_infos, World& scene) {
-	int c = 0;
-
 	std::vector<const Reservoir*> candidates;
+	candidates.push_back(&prev_reservoirs[y * x_pixels + x]);
 
 	const HitInfo& current_hit = hit_infos[y * x_pixels + x];
 
@@ -262,14 +267,21 @@ void RestirLightSampler::spatial_update(const int x, const int y, const std::vec
 	// Generate neighbours by randomly sampling a NEIGHBOUR_RADIUS radius around the current pixel
 	std::array<glm::ivec2, NEIGHBOUR_K> offsets;
 
-	for (int i = 0; i < NEIGHBOUR_K; i++) {
+	int c = 0;
+	while (c < NEIGHBOUR_K) {
 		const float phi = dist(rng) * 2.0f * glm::pi<float>();
 		const float r = dist(rng) * NEIGHBOUR_RADIUS;
 
-		const float x_offset = r * cosf(phi);
-		const float y_offset = r * sinf(phi);
+		const int x_offset = r * cosf(phi);
+		const int y_offset = r * sinf(phi);
 
-		offsets[i] = glm::ivec2(x_offset, y_offset);
+		if (x_offset == 0 && y_offset == 0) {
+			// Skip the current pixel
+			continue;
+		}
+
+		offsets[c] = glm::ivec2(x_offset, y_offset);
+		c++;
 	}
 
 	for (glm::ivec2& offset : offsets) {
@@ -297,12 +309,11 @@ void RestirLightSampler::spatial_update(const int x, const int y, const std::vec
 			Reservoir& candidate = prev_reservoirs[ny * x_pixels + nx];
 
 			if (!invalid_sample && !different_normals && !different_t) {
-				candidates.push_back(&candidate);
-
-				// Visibility check for everything except current pixel since that was already done before the temporal reuse
-				if (offset.x != 0 && offset.y != 0) {
-					visibility_check(candidate, current_hit, scene, true);
+				//visibility_check(candidate, current_hit, scene, true);
+				if (is_visible(candidate, current_hit, scene)) {
+					candidates.push_back(&candidate);
 				}
+				
 			}
 		}
 	}
@@ -355,9 +366,7 @@ void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 	const float _dist = sqrtf(_dist2);
 	constexpr float _r = 3.0f;
 	constexpr float _r2 = _r * _r;
-	//const float dist2 = (_dist2 + _r2 + _dist * sqrtf(_dist2 + _r2)) / 2.0f;
-
-	const float dist2 = _dist2;
+	const float dist2 = (_dist2 + _r2 + _dist * sqrtf(_dist2 + _r2)) / 2.0f;
 
 	const glm::vec3 L = glm::normalize(light_vec);                // Direction to light
 
@@ -395,6 +404,9 @@ void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 
 	// Final weight and importance
 	W = target / source;
-	W = fmin(W, 20.0f);
+
+	// Clamping is really bad in reality (since it makes the output image biased) but it helps against fireflies
+	// FIX: Fix fireflies in a better way that makes the final image not biased.
+	//W = fmin(W, 20.0f);
 	phat = target; // This is the "target pdf" value used by ReSTIR
 }

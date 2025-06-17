@@ -23,6 +23,8 @@ constexpr auto SAVE_FORMAT = 1; // 0: png, 1: pfm, 2: both
 
 constexpr float SPHERE_R = 0.025f;
 
+constexpr int MAX_RAY_DEPTH = 5;
+
 extern bool DISABLE_GI;
 
 //#define INTERPOLATE_NORMALS

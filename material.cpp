@@ -9,6 +9,7 @@
 #include "texture.hpp"
 #include "hit_info.hpp"
 #include "util.hpp"
+#include "light.hpp"
 
 thread_local std::mt19937 rngFloat(std::random_device{}());
 std::uniform_real_distribution<float> distFloat(0.0f, 1.0f);
@@ -31,8 +32,8 @@ static glm::vec2 calculate_texcoords(const glm::vec2& texcoord0, const glm::vec2
 
 Lambertian::Lambertian(const glm::vec3& a) : _albedo(new SolidColor(a)) {}
 Lambertian::Lambertian(std::shared_ptr<Texture> a) : _albedo(a) {}
-bool Lambertian::scatter(const Ray& r_in, const HitInfo& hit, glm::vec3& attenuation, Ray& scattered) const {
-	glm::vec3 scatter_dir = random_in_hemisphere(hit.triangle.normal(hit.uv));
+bool Lambertian::scatter(const Ray& r_in, const HitInfo& hit, glm::vec3& attenuation, Ray& scattered, float& pdf) const {
+	glm::vec3 scatter_dir = cosine_weighted_hemisphere_sample(hit.triangle.normal(hit.uv), pdf);
 
 	if (near_zero(scatter_dir)) {
 		scatter_dir = hit.triangle.normal(hit.uv);
@@ -47,7 +48,7 @@ bool Lambertian::scatter(const Ray& r_in, const HitInfo& hit, glm::vec3& attenua
 		hit.uv
 	);
 
-	attenuation = _albedo->value(texcoords.x, texcoords.y, hit.r.at(hit.t));
+	attenuation = _albedo->value(texcoords.x, texcoords.y, hit.r.at(hit.t)) / glm::pi<float>();
 
 	return true;
 }
@@ -105,7 +106,7 @@ Emissive::Emissive(const glm::vec3& a) : emit(new SolidColor(a)) {}
 
 Emissive::Emissive(std::shared_ptr<Texture> a) : emit(a) {}
 
-bool Emissive::scatter(const Ray& r_in, const HitInfo& hit, glm::vec3& attenuation, Ray& scattered) const {
+bool Emissive::scatter(const Ray& r_in, const HitInfo& hit, glm::vec3& attenuation, Ray& scattered, float& pdf) const {
 	return false;
 }
 glm::vec3 Emissive::evaluate(const HitInfo& hit, const glm::vec3& wi) const {
