@@ -3,6 +3,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
+#include <string>
+#include <fstream>
 
 #include "ray.hpp"
 #include "material.hpp"
@@ -17,6 +19,50 @@ tinybvh::Ray toBVHRay(const Ray& r) {
 
 tinybvh::Ray toBVHRay(const Ray& r, const float max_t) {
 	return tinybvh::Ray(toBVHVec(r.origin()), toBVHVec(r.direction()), max_t);
+}
+
+
+void Camera::save_to_file(std::string filename) {
+	std::ofstream file(filename);
+	if (!file.is_open()) {
+		std::cerr << "Error: Could not open file " << filename << " for writing." << std::endl;
+		return;
+	}
+	file << position.x << " " << position.y << " " << position.z << "\n";
+	file << yaw << "\n";
+	file << pitch << "\n";
+	file.close();
+	std::cout << "Camera parameters saved to " << filename << std::endl;
+}
+
+void Camera::load_from_file(std::string filename) {
+	std::ifstream file(filename);
+	if (!file.is_open()) {
+		std::cerr << "Error: Could not open file " << filename << " for reading." << std::endl;
+		return;
+	}
+
+	// Read position, yaw, and pitch
+	file >> position.x >> position.y >> position.z;
+	file >> yaw;
+	file >> pitch;
+
+	file.close();
+	std::cout << "Camera parameters loaded from " << filename << std::endl;
+
+	// Recalculate orientation from yaw and pitch
+	glm::vec3 dir;
+	dir.x = cosf(glm::radians(yaw)) * cosf(glm::radians(pitch));
+	dir.y = sinf(glm::radians(pitch));
+	dir.z = sinf(glm::radians(yaw)) * cosf(glm::radians(pitch));
+	direction = glm::normalize(dir);
+
+	forward = direction;
+	right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
+	up = glm::normalize(glm::cross(right, forward));
+
+	// Recalculate target
+	target = position + forward;
 }
 
 Camera::Camera() : Camera(glm::vec3(0, 0, 3), glm::vec3(0, 0, 1)) {

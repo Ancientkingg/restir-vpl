@@ -256,6 +256,8 @@ struct KeyState {
     bool s = false;
     bool d = false;
     bool l = false;
+    bool o = false;
+    bool i = false;
     bool space = false;
     bool shift = false;
     bool ctrl = false;
@@ -342,6 +344,10 @@ void render_live(Camera &cam, World &world, bool progressive) {
                         break;
                     case SDLK_d: keys.d = isDown;
                         break;
+                    case SDLK_o: keys.o = isDown;
+                        break;
+					case SDLK_i: keys.i = isDown;
+						break;
                     case SDLK_SPACE: keys.space = isDown;
                         break;
                     case SDLK_LCTRL: keys.ctrl = isDown;
@@ -440,6 +446,22 @@ void render_live(Camera &cam, World &world, bool progressive) {
             keys.equals = false;
         }
 
+        if (keys.o) {
+            // Save current position and orientation to a file
+			std::clog << "\nSaving current camera position and orientation to file" << std::endl;
+
+			cam.save_to_file("camera_position.txt");
+			keys.o = false;
+        }
+
+        if (keys.i) {
+            // Load camera position and orientation from file
+            std::clog << "\nLoading camera position and orientation from file" << std::endl;
+            cam.load_from_file("camera_position.txt");
+            cam.updateDirection(); // Recalculate vectors
+            camera_moved = true;
+        }
+
         // Apply camera movement
         glm::vec3 movement(0.0f);
         if (keys.w) movement += cam.forward;
@@ -503,7 +525,7 @@ void render_live(Camera &cam, World &world, bool progressive) {
         float duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(render_stop - render_start).count();
 
         std::string sampling_mode_str = light_sampler.sampling_mode == SamplingMode::Uniform ? "Uniform" :
-			(light_sampler.sampling_mode == SamplingMode::RIS ? "RIS" : "ReSTIR");
+			(light_sampler.sampling_mode == SamplingMode::RIS ? "RIS    " : "ReSTIR ");
 
         if (ENABLE_PT) {
 			sampling_mode_str = "PT";
@@ -514,12 +536,12 @@ void render_live(Camera &cam, World &world, bool progressive) {
                 << " | View: " << ((render_mode == RENDER_SHADING)
                                        ? "Shading"
                                        : (render_mode == RENDER_DEBUG)
-                                             ? "Debug"
+                                             ? "Debug  "
                                              : "Normals")
 			    << " | M: " << light_sampler.m
 			    << " | Sampling Mode: " << sampling_mode_str
                 << " | Camera: (" << std::fixed << std::setprecision(2) << cam.position.x << ", " << cam.position.y << ", " << cam.position.z << ")"
-                << "\r" << std::flush;
+                << "    \r" << std::flush;
 
         // update the accumulated colors
         if (progressive) {

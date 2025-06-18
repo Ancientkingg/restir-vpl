@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <iostream>
 #include <vector>
+#include <string>
 
 #include "ray.hpp"
 #include "material.hpp"
@@ -49,6 +50,9 @@ public:
     std::vector<std::vector<Ray>> generate_rays_for_frame();
 
     std::vector<HitInfo> get_hit_info_from_camera_per_frame(World& world);
+
+    void save_to_file(std::string filename);
+	void load_from_file(std::string filename);
 
 private:
     std::vector<HitInfo> hit_infos;

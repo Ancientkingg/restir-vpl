@@ -30,18 +30,19 @@ static glm::vec2 calculate_texcoords(const glm::vec2& texcoord0, const glm::vec2
 	return texcoords;
 }
 
-#define EPS 0.1f
+#define EPS 0.16f
 
 Lambertian::Lambertian(const glm::vec3& a) : _albedo(new SolidColor(a)) {}
 Lambertian::Lambertian(std::shared_ptr<Texture> a) : _albedo(a) {}
 bool Lambertian::scatter(const Ray& r_in, const HitInfo& hit, glm::vec3& attenuation, Ray& scattered, float& pdf) const {
-	glm::vec3 scatter_dir = cosine_weighted_hemisphere_sample(hit.triangle.normal(hit.uv), pdf);
+	const glm::vec3 N = hit.triangle.normal(hit.uv);
+	glm::vec3 scatter_dir = cosine_weighted_hemisphere_sample(N, pdf);
 
 	if (near_zero(scatter_dir)) {
-		scatter_dir = hit.triangle.normal(hit.uv);
+		scatter_dir = N;
 	}
 
-	const glm::vec3 offset_point = hit.r.at(hit.t) + EPS * scatter_dir;
+	const glm::vec3 offset_point = hit.r.at(hit.t) + EPS * N;
 
 	scattered = Ray(offset_point, scatter_dir);
 
