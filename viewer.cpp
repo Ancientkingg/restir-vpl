@@ -172,6 +172,10 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
     oss << light_sampler.sampling_mode;
     sampling_mode_str = oss.str();
 
+    if (ENABLE_PT) {
+        sampling_mode_str = "PT";
+    }
+
 	// Reset the progress bar
     avg_time = 0.0f; // ms
     total_frames = 1;
@@ -498,6 +502,13 @@ void render_live(Camera &cam, World &world, bool progressive) {
 
         float duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(render_stop - render_start).count();
 
+        std::string sampling_mode_str = light_sampler.sampling_mode == SamplingMode::Uniform ? "Uniform" :
+			(light_sampler.sampling_mode == SamplingMode::RIS ? "RIS" : "ReSTIR");
+
+        if (ENABLE_PT) {
+			sampling_mode_str = "PT";
+        }
+
         std::clog << "Frame " << frame
                 << " | Time: " << duration_ms << " ms"
                 << " | View: " << ((render_mode == RENDER_SHADING)
@@ -506,8 +517,8 @@ void render_live(Camera &cam, World &world, bool progressive) {
                                              ? "Debug"
                                              : "Normals")
 			    << " | M: " << light_sampler.m
-			    << " | Sampling Mode: " << light_sampler.sampling_mode
-                << " | Camera: (" << cam.position.x << ", " << cam.position.y << ", " << cam.position.z << ")"
+			    << " | Sampling Mode: " << sampling_mode_str
+                << " | Camera: (" << std::fixed << std::setprecision(2) << cam.position.x << ", " << cam.position.y << ", " << cam.position.z << ")"
                 << "\r" << std::flush;
 
         // update the accumulated colors

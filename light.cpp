@@ -102,6 +102,37 @@ glm::vec3 cosine_weighted_hemisphere_sample(const glm::vec3& normal, float& pdf)
     float u2 = dist(rng);
 
     float r = std::sqrt(u1);
+    float theta = 2.0f * 3.14159265359f * u2;
+    float x = r * std::cos(theta);
+    float y = r * std::sin(theta);
+    float z = std::sqrt(1.0f - u1);
+
+    // Create orthonormal basis
+    glm::vec3 N = glm::normalize(normal);
+    glm::vec3 T;
+    if (std::abs(N.x) > 0.1f) {
+        T = glm::vec3(-N.y, N.x, 0.0f);
+    }
+    else {
+        T = glm::vec3(0.0f, -N.z, N.y);
+    }
+    T = glm::normalize(T);
+    glm::vec3 B = glm::cross(N, T);
+
+    glm::vec3 out = x * T + y * B + z * N;
+    pdf = z * 0.31830988618f; // 1/pi
+
+    return out;
+}
+
+static glm::vec3 cosine_weighted_hemisphere_sample_old(const glm::vec3& normal, float& pdf) {
+    static thread_local std::mt19937 rng(std::random_device{}());
+    static thread_local std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+
+    float u1 = dist(rng);
+    float u2 = dist(rng);
+
+    float r = std::sqrt(u1);
     float theta = 2.0f * glm::pi<float>() * u2;
 
     float x = r * std::cos(theta);
@@ -114,7 +145,7 @@ glm::vec3 cosine_weighted_hemisphere_sample(const glm::vec3& normal, float& pdf)
     glm::vec3 B = glm::cross(N, T);
 
     const glm::vec3 out = glm::normalize(x * T + y * B + z * N);
-	pdf = glm::dot(out, N) / glm::pi<float>(); // PDF for cosine-weighted hemisphere sampling
+	pdf = fmax(glm::dot(out, N), 0.0f) / glm::pi<float>(); // PDF for cosine-weighted hemisphere sampling
 
     return out;
 }

@@ -48,7 +48,7 @@ bool Lambertian::scatter(const Ray& r_in, const HitInfo& hit, glm::vec3& attenua
 		hit.uv
 	);
 
-	attenuation = _albedo->value(texcoords.x, texcoords.y, hit.r.at(hit.t)) / glm::pi<float>();
+	attenuation = _albedo->value(texcoords.x, texcoords.y, hit.r.at(hit.t));
 
 	return true;
 }
