@@ -30,6 +30,8 @@ static glm::vec2 calculate_texcoords(const glm::vec2& texcoord0, const glm::vec2
 	return texcoords;
 }
 
+#define EPS 0.1f
+
 Lambertian::Lambertian(const glm::vec3& a) : _albedo(new SolidColor(a)) {}
 Lambertian::Lambertian(std::shared_ptr<Texture> a) : _albedo(a) {}
 bool Lambertian::scatter(const Ray& r_in, const HitInfo& hit, glm::vec3& attenuation, Ray& scattered, float& pdf) const {
@@ -39,7 +41,9 @@ bool Lambertian::scatter(const Ray& r_in, const HitInfo& hit, glm::vec3& attenua
 		scatter_dir = hit.triangle.normal(hit.uv);
 	}
 
-	scattered = Ray(hit.r.at(hit.t), scatter_dir);
+	const glm::vec3 offset_point = hit.r.at(hit.t) + EPS * scatter_dir;
+
+	scattered = Ray(offset_point, scatter_dir);
 
 	glm::vec2 texcoords = calculate_texcoords(
 		hit.triangle.v0.texcoord,
@@ -48,7 +52,7 @@ bool Lambertian::scatter(const Ray& r_in, const HitInfo& hit, glm::vec3& attenua
 		hit.uv
 	);
 
-	attenuation = _albedo->value(texcoords.x, texcoords.y, hit.r.at(hit.t));
+	attenuation = _albedo->value(texcoords.x, texcoords.y, hit.r.at(hit.t)) / glm::pi<float>();
 
 	return true;
 }
@@ -69,25 +73,27 @@ glm::vec3 Lambertian::sample_direction(
 	const glm::vec3& normal,
 	float& pdf
 ) const {
-	// Cosine-weighted hemisphere sampling
-	float u = distFloat(rngFloat);
-	float v = distFloat(rngFloat);
-	float r = sqrt(u);
-	float theta = 2.0f * glm::pi<float>() * v;
-	// local coordinates
-	float x = r * cos(theta);
-	float y = r * sin(theta);
-	float z = sqrt(1.0f - u);
-	// build tangent space basis
-	glm::vec3 tangent = fabs(normal.x) > 0.1f ?
-		glm::normalize(glm::cross(normal, glm::vec3(0, 1, 0))) :
-		glm::normalize(glm::cross(normal, glm::vec3(1, 0, 0)));
-	glm::vec3 bitangent = glm::cross(normal, tangent);
-	// transform to world
-	glm::vec3 sample = x * tangent + y * bitangent + z * normal;
+	//// Cosine-weighted hemisphere sampling
+	//float u = distFloat(rngFloat);
+	//float v = distFloat(rngFloat);
+	//float r = sqrt(u);
+	//float theta = 2.0f * glm::pi<float>() * v;
+	//// local coordinates
+	//float x = r * cos(theta);
+	//float y = r * sin(theta);
+	//float z = sqrt(1.0f - u);
+	//// build tangent space basis
+	//glm::vec3 tangent = fabs(normal.x) > 0.1f ?
+	//	glm::normalize(glm::cross(normal, glm::vec3(0, 1, 0))) :
+	//	glm::normalize(glm::cross(normal, glm::vec3(1, 0, 0)));
+	//glm::vec3 bitangent = glm::cross(normal, tangent);
+	//// transform to world
+	//glm::vec3 sample = x * tangent + y * bitangent + z * normal;
 
-	pdf = z / glm::pi<float>(); // cos(theta) / pi
-	return glm::normalize(sample);
+	//pdf = z / glm::pi<float>(); // cos(theta) / pi
+	//return glm::normalize(sample);
+
+	return cosine_weighted_hemisphere_sample(normal, pdf);
 }
 
 glm::vec3 Lambertian::albedo(const HitInfo& hit) const {

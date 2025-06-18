@@ -94,60 +94,39 @@ inline int add_light_to_triangle_soup(
     std::vector<Triangle>& triangle_soup,
     const TriangularLight& light);
 
-glm::vec3 cosine_weighted_hemisphere_sample(const glm::vec3& normal, float& pdf) {
-    static thread_local std::mt19937 rng(std::random_device{}());
-    static thread_local std::uniform_real_distribution<float> dist(0.0f, 1.0f);
-
-    float u1 = dist(rng);
-    float u2 = dist(rng);
-
-    float r = std::sqrt(u1);
-    float theta = 2.0f * 3.14159265359f * u2;
-    float x = r * std::cos(theta);
-    float y = r * std::sin(theta);
-    float z = std::sqrt(1.0f - u1);
-
-    // Create orthonormal basis
-    glm::vec3 N = glm::normalize(normal);
-    glm::vec3 T;
-    if (std::abs(N.x) > 0.1f) {
-        T = glm::vec3(-N.y, N.x, 0.0f);
-    }
-    else {
-        T = glm::vec3(0.0f, -N.z, N.y);
-    }
-    T = glm::normalize(T);
-    glm::vec3 B = glm::cross(N, T);
-
-    glm::vec3 out = x * T + y * B + z * N;
-    pdf = z * 0.31830988618f; // 1/pi
-
-    return out;
+static void branchlessONB(const glm::vec3& n, glm::vec3& b1, glm::vec3& b2)
+{
+    const float sign = copysign(1.0f, n.y);
+    const float a = -1.0f / (sign + n.y);
+    const float b = n.x * n.z * a;
+    b1 = glm::vec3(1.0f + sign * n.x * n.x * a, -sign * n.x, sign * b);
+    b2 = glm::vec3(b, -n.z, sign + n.z * n.z * a);
 }
 
-static glm::vec3 cosine_weighted_hemisphere_sample_old(const glm::vec3& normal, float& pdf) {
-    static thread_local std::mt19937 rng(std::random_device{}());
-    static thread_local std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+static glm::vec3 rotate_vector_around_normal(const glm::vec3& normal, const glm::vec3& random_dir_local_space) {
+    glm::vec3 tangent, bitangent;
+    branchlessONB(normal, tangent, bitangent);
+    return random_dir_local_space.x * tangent + 
+           random_dir_local_space.y * normal + 
+           random_dir_local_space.z * bitangent;
+}
 
-    float u1 = dist(rng);
-    float u2 = dist(rng);
+thread_local std::mt19937 rng_light(std::random_device{}());
+std::uniform_real_distribution<float> dist_light(0.0f, 1.0f);
 
-    float r = std::sqrt(u1);
-    float theta = 2.0f * glm::pi<float>() * u2;
+glm::vec3 cosine_weighted_hemisphere_sample(const glm::vec3& normal, float& pdf) {
+    float rand_1 = dist_light(rng_light);
+    float rand_2 = dist_light(rng_light);
 
-    float x = r * std::cos(theta);
-    float y = r * std::sin(theta);
-    float z = std::sqrt(1.0f - u1);  // z = cos(theta) for hemisphere
+    float sqrt_rand_2 = sqrtf(rand_2);
+    float phi = 2.0f * glm::pi<float>() * rand_1;
+    float cos_theta = sqrt_rand_2;
+    float sin_theta = sqrtf(fmax(0.0f, 1.0f - cos_theta * cos_theta));
 
-    // Create an orthonormal basis (T, B, N) from normal
-    glm::vec3 N = glm::normalize(normal);
-    glm::vec3 T = glm::normalize(glm::abs(N.x) > 0.1f ? glm::cross(N, glm::vec3(0, 1, 0)) : glm::cross(N, glm::vec3(1, 0, 0)));
-    glm::vec3 B = glm::cross(N, T);
+    pdf = sqrt_rand_2 / glm::pi<float>();
 
-    const glm::vec3 out = glm::normalize(x * T + y * B + z * N);
-	pdf = fmax(glm::dot(out, N), 0.0f) / glm::pi<float>(); // PDF for cosine-weighted hemisphere sampling
-
-    return out;
+    glm::vec3 random_dir_local_space = glm::vec3(cosf(phi) * sin_theta, sqrt_rand_2, sinf(phi) * sin_theta);
+    return rotate_vector_around_normal(normal, random_dir_local_space);
 }
 
 glm::vec2 calculate_uv(const Triangle& triangle, const glm::vec3& point) {
