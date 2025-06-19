@@ -6,8 +6,8 @@ constexpr auto ENABLE_TEXTURES = false;
 
 constexpr auto N_PHOTONS = 100000;
 constexpr auto N_INDIRECT_PHOTONS = 100000;
-constexpr auto MAX_BOUNCES = 20;
-constexpr auto MIN_BOUNCES = 1;
+constexpr auto MAX_BOUNCES = 32;
+constexpr auto MIN_BOUNCES = 0;
 
 constexpr auto M_CAP = 20.0f;
 constexpr auto NORMAL_DEVIATION = 0.4f;
@@ -27,5 +27,5 @@ constexpr int MAX_RAY_DEPTH = 8;
 
 extern bool DISABLE_GI;
 
-//#define INTERPOLATE_NORMALS
-
+#define INTERPOLATE_NORMALS
+#define PL_ATTENUATION
