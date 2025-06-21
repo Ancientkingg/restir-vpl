@@ -24,23 +24,15 @@ World load_world() {
 	auto loading_start = std::chrono::high_resolution_clock::now();
 
 	World world;
-	//world.add_obj("objects/whiteMonkey.obj", false);
-	//world.add_obj("objects/blueMonkey_rotated.obj", false);
-	//world.add_obj("objects/bigCubeLight.obj", true);
-	//world.add_obj("objects/bistro_normal.obj", false);
-	//world.add_obj("objects/bistro_lights.obj", true);
-	 //world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
-	 //world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
-	 //world.add_obj("objects/monkeyLightInOne.obj", false);
-	 //world.add_obj("objects/platform.obj",  false);
-	 //world.add_obj("objects/scene_without_lights.obj", false);
-	 //world.add_obj("objects/scene_lights.obj", false);
-	 //world.place_obj("objects/ceiling_light.obj", true, glm::vec3(0, 10, 0));
-	// world.place_obj("objects/Gauntlet.obj", false, glm::vec3(0, 0, 0));
+	// Scene 1
 	//world.place_obj("objects/sahur.obj", false, glm::vec3(0, 0, 0));
-	//world.place_obj("objects/test.obj", false, glm::vec3(0, 0, 0));
-	//world.place_obj("objects/test2.obj", false, glm::vec3(0, 0, 0));
-	world.place_obj("objects/cornell-box.obj", false, glm::vec3(0, 0, 0));
+	
+	// Scene 2
+	//world.place_obj("objects/cornell-box.obj", false, glm::vec3(0, 0, 0));
+
+	// Scene 3
+	world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
+	world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
 
 	auto loading_stop = std::chrono::high_resolution_clock::now();
 

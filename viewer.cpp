@@ -180,6 +180,10 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
     avg_time = 0.0f; // ms
     total_frames = 1;
 
+    // generate short timestamp
+    const auto id = std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count() % 1000000);
+
     for (int i = 0; i < framecount; i++) {
         auto render_start = std::chrono::high_resolution_clock::now();
 
@@ -208,9 +212,6 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
 
         /// output frame
         const auto filename = get_frame_filename(i);
-        // generate short timestamp
-		const auto id = std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
-			std::chrono::system_clock::now().time_since_epoch()).count() % 1000000);
 
         // Add this flag because PFM is big
         if constexpr (SAVE_INTERMEDIATE == true) {
