@@ -215,7 +215,7 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
 
         // Add this flag because PFM is big
         if constexpr (SAVE_INTERMEDIATE == true) {
-            if (framecount % SAVE_INTERVAL == 0) {
+            if (i % SAVE_INTERVAL == 0) {
                 save_pfm(colors, "./images/" + sampling_mode_str + "_" + filename + "_" + id + ".pfm");
             }
         }
