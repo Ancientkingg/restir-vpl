@@ -6,6 +6,7 @@
 #include <iostream>
 #include <chrono>
 #include <fstream>
+#include <filesystem>
 
 #include "shading.hpp"
 #include "image_writer.hpp"
@@ -191,6 +192,13 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
     // generate short timestamp
     const auto id = std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count() % 1000000);
+
+    // create folder with name id
+
+	std::string folder_path = "./images/" + id + "/";
+    if (!std::filesystem::exists(folder_path)) {
+        std::filesystem::create_directories(folder_path);
+	}
 
     std::ofstream duration_file("./images/" + id + "/durations.csv", std::ios::app);
 

@@ -20,7 +20,7 @@ constexpr auto LIVE_WIDTH = 400;
 constexpr auto RENDER_WIDTH = 1280;
 constexpr auto RENDER_FRAME_COUNT = 500;
 constexpr auto SAVE_INTERMEDIATE = true;
-constexpr auto SAVE_INTERVAL = 100;
+constexpr auto SAVE_INTERVAL = 1;
 
 constexpr float SPHERE_R = 0.025f;
 
@@ -29,4 +29,4 @@ constexpr int MAX_RAY_DEPTH = 8;
 extern bool DISABLE_GI;
 
 //#define INTERPOLATE_NORMALS
-//#define PL_ATTENUATION
+#define PL_ATTENUATION
