@@ -192,7 +192,7 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
     const auto id = std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count() % 1000000);
 
-    std::ofstream duration_file("./images/durations.csv", std::ios::app);
+    std::ofstream duration_file("./images/" + id + "/durations.csv", std::ios::app);
 
     for (int i = 0; i < framecount; i++) {
         auto render_start = std::chrono::high_resolution_clock::now();
@@ -237,7 +237,6 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
                 save_pfm(colors, "./images/" + id + "/" + sampling_mode_str + "_" + filename + ".pfm");
             }
         }
-        
     }
 
 	//if (accumulate_flag) {
