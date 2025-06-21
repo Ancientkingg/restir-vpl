@@ -64,7 +64,11 @@ static glm::vec3 pathtrace_ray(Ray& ray, World& world, int depth, glm::vec3 thro
 
     constexpr float _r = 3.0f;
     constexpr float r2 = _r * _r;
+#ifdef PL_ATTENUATION
     const float dist2 = (_dist2 + r2 + dist_simple * sqrtf(_dist2 + r2)) / 2.0f;
+#else
+    const float dist2 = _dist2;
+#endif
 
     glm::vec3 L_dir = toL / dist_simple;
 

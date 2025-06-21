@@ -26,7 +26,7 @@ glm::vec3 reflect(const glm::vec3& v, const glm::vec3& n) {
 }
 
 bool near_zero(const glm::vec3& v) {
-	float theta = 1e-8;
+	float theta = 1e-4;
 	return (fabs(v[0]) < theta) && (fabs(v[1]) < theta) && (fabs(v[2]) < theta);
 }
 

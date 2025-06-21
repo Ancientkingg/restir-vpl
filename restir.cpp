@@ -366,7 +366,11 @@ void RestirLightSampler::get_light_weight(const SampleInfo& sample,
 	const float _dist = sqrtf(_dist2);
 	constexpr float _r = 3.0f;
 	constexpr float _r2 = _r * _r;
+#ifdef PL_ATTENUATION
 	const float dist2 = (_dist2 + _r2 + _dist * sqrtf(_dist2 + _r2)) / 2.0f;
+#else
+    const float dist2 = _dist2;
+#endif
 
 	const glm::vec3 L = glm::normalize(light_vec);                // Direction to light
 

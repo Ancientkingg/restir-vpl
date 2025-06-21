@@ -215,7 +215,11 @@ glm::vec3 shadeUniform(const HitInfo& hit, const SamplerResult& sample, World& s
 	const float _dist = sqrtf(_dist2);
 	constexpr float _r = 3.0f;
 	constexpr float _r2 = _r * _r;
+#ifdef PL_ATTENUATION
 	const float dist2 = (_dist2 + _r2 + _dist * sqrtf(_dist2 + _r2)) / 2.0f;
+#else
+    const float dist2 = _dist2;
+#endif
 	const float cos_theta_light = fmax(glm::dot(Nl, -L), 0.0f); // Light angle
     const float source = light_choose_pdf * light_area_pdf * (dist2 / cos_theta_light); // dA → dOmega
 

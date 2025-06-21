@@ -27,5 +27,5 @@ constexpr int MAX_RAY_DEPTH = 8;
 
 extern bool DISABLE_GI;
 
-//#define INTERPOLATE_NORMALS
-
+#define INTERPOLATE_NORMALS
+#define PL_ATTENUATION
