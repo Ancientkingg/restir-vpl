@@ -18,9 +18,10 @@ constexpr auto NEIGHBOUR_RADIUS = 20; // pixels
 constexpr auto ASPECT_RATIO = 16.0f / 9.0f;
 constexpr auto LIVE_WIDTH = 400;
 constexpr auto RENDER_WIDTH = 1280;
-constexpr auto RENDER_FRAME_COUNT = 10000;
-constexpr auto SAVE_INTERMEDIATE = false;
+constexpr auto RENDER_FRAME_COUNT = 4000;
+constexpr auto SAVE_INTERMEDIATE = true;
 constexpr auto SAVE_FORMAT = 1; // 0: png, 1: pfm, 2: both
+constexpr auto SAVE_INTERVAL = 100;
 
 constexpr float SPHERE_R = 0.025f;
 
