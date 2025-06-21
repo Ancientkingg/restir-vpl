@@ -222,12 +222,12 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
         
     }
 
-	if (accumulate_flag) {
-		std::clog << "Output accumulated frame" << std::endl;
-		auto filename = get_frame_filename(framecount);
+	//if (accumulate_flag) {
+    std::clog << "Output accumulated frame" << std::endl;
+    auto filename = get_frame_filename(framecount);
 
-        save_pfm(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + "_" + id + ".pfm");
-	}
+    save_pfm(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + "_" + id + ".pfm");
+	//}
 
     currently_outputting_render = false;
 }
