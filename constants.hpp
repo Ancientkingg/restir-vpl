@@ -15,10 +15,11 @@ constexpr auto T_DEVIATION = 0.05f;
 constexpr auto NEIGHBOUR_K = 8;
 constexpr auto NEIGHBOUR_RADIUS = 20; // pixels
 
+constexpr auto ASPECT_RATIO = 1.0f;
 constexpr auto LIVE_WIDTH = 400;
 constexpr auto RENDER_WIDTH = 1280;
 constexpr auto RENDER_FRAME_COUNT = 500;
-constexpr auto SAVE_INTERMEDIATE = false;
+constexpr auto SAVE_INTERMEDIATE = true;
 constexpr auto SAVE_FORMAT = 1; // 0: png, 1: pfm, 2: both
 
 constexpr float SPHERE_R = 0.025f;
@@ -27,5 +28,5 @@ constexpr int MAX_RAY_DEPTH = 8;
 
 extern bool DISABLE_GI;
 
-#define INTERPOLATE_NORMALS
+//#define INTERPOLATE_NORMALS
 #define PL_ATTENUATION

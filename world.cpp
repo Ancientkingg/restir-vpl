@@ -37,9 +37,10 @@ World load_world() {
 	 //world.add_obj("objects/scene_lights.obj", false);
 	 //world.place_obj("objects/ceiling_light.obj", true, glm::vec3(0, 10, 0));
 	// world.place_obj("objects/Gauntlet.obj", false, glm::vec3(0, 0, 0));
-	world.place_obj("objects/sahur.obj", false, glm::vec3(0, 0, 0));
+	//world.place_obj("objects/sahur.obj", false, glm::vec3(0, 0, 0));
 	//world.place_obj("objects/test.obj", false, glm::vec3(0, 0, 0));
 	//world.place_obj("objects/test2.obj", false, glm::vec3(0, 0, 0));
+	world.place_obj("objects/cornell-box.obj", false, glm::vec3(0, 0, 0));
 
 	auto loading_stop = std::chrono::high_resolution_clock::now();
 

@@ -30,7 +30,7 @@ static glm::vec2 calculate_texcoords(const glm::vec2& texcoord0, const glm::vec2
 	return texcoords;
 }
 
-#define EPS 0.16f
+#define EPS 0.01f
 
 Lambertian::Lambertian(const glm::vec3& a) : _albedo(new SolidColor(a)) {}
 Lambertian::Lambertian(std::shared_ptr<Texture> a) : _albedo(a) {}
