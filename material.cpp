@@ -38,10 +38,6 @@ bool Lambertian::scatter(const Ray& r_in, const HitInfo& hit, glm::vec3& attenua
 	const glm::vec3 N = hit.triangle.normal(hit.uv);
 	glm::vec3 scatter_dir = cosine_weighted_hemisphere_sample(N, pdf);
 
-	if (near_zero(scatter_dir)) {
-		scatter_dir = N;
-	}
-
 	const glm::vec3 offset_point = hit.r.at(hit.t) + EPS * N;
 
 	scattered = Ray(offset_point, scatter_dir);

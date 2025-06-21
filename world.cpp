@@ -29,14 +29,18 @@ World load_world() {
 	//world.add_obj("objects/bigCubeLight.obj", true);
 	//world.add_obj("objects/bistro_normal.obj", false);
 	//world.add_obj("objects/bistro_lights.obj", true);
-	 world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
-	 world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
+	 //world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
+	 //world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
 	 //world.add_obj("objects/monkeyLightInOne.obj", false);
 	 //world.add_obj("objects/platform.obj",  false);
 	 //world.add_obj("objects/scene_without_lights.obj", false);
 	 //world.add_obj("objects/scene_lights.obj", false);
 	 //world.place_obj("objects/ceiling_light.obj", true, glm::vec3(0, 10, 0));
 	// world.place_obj("objects/Gauntlet.obj", false, glm::vec3(0, 0, 0));
+	world.place_obj("objects/sahur.obj", false, glm::vec3(0, 0, 0));
+	//world.place_obj("objects/test.obj", false, glm::vec3(0, 0, 0));
+	//world.place_obj("objects/test2.obj", false, glm::vec3(0, 0, 0));
+
 	auto loading_stop = std::chrono::high_resolution_clock::now();
 
 	std::clog << "Loading took ";
@@ -390,11 +394,11 @@ std::vector<std::shared_ptr<PointLight>> World::generate_point_lights() {
 	while (generated < N_INDIRECT_PHOTONS) {
 		// Generate photon from existing point light in the scene
 		const int idx = dist2(rng2) * out.size();
-		const auto base = out[idx];
-		if (!base) {
-			// Error
-			std::cerr << "Error: Light is null at index " << idx << std::endl;
-		}
+		const auto& base = out[idx];
+		//if (!base) {
+		//	// Error
+		//	std::cerr << "Error: Light is null at index " << idx << std::endl;
+		//}
 
 		float pdf_pt;
 		const glm::vec3 emit_pos = base->sample_on_light(pdf_pt);
@@ -407,6 +411,11 @@ std::vector<std::shared_ptr<PointLight>> World::generate_point_lights() {
 		float pdf_dir;
 		const glm::vec3 random_dir = base->sample_direction(emit_pos, pdf_dir);
 
+		if (pdf_dir <= 0.0f) {
+			// If the PDF is zero or negative, skip this photon
+			continue;
+		}
+
 		const float cos_theta = glm::dot(normal, random_dir); // Cosine of the angle between the light normal and the random direction
 		if (cos_theta <= 0.0f) {
 			// If the cosine is zero or negative, skip this photon
@@ -418,7 +427,8 @@ std::vector<std::shared_ptr<PointLight>> World::generate_point_lights() {
 
 		// check if the intensity is valid
 		if (!std::isfinite(per_photon_flux)) {
-			std::cerr << "Error: Photon intensity is NaN or Inf!" << std::endl;
+			std::cerr << "Error: per_photon_flux is NaN or Inf!" << std::endl;
+			// print base->intensity, cos_theta, pdf_pt and pdf_dir
 			continue; // Skip this photon if the intensity is invalid
 		}
 
@@ -435,6 +445,8 @@ std::vector<std::shared_ptr<PointLight>> World::generate_point_lights() {
 
 
 std::vector<std::weak_ptr<Material>> World::get_materials(bool ignore_textures){
+	if (!weak_mats.empty()) return weak_mats;
+
 	if (mats_small.empty()) {
 
 		std::vector <std::shared_ptr<Material>> out;
@@ -471,7 +483,7 @@ std::vector<std::weak_ptr<Material>> World::get_materials(bool ignore_textures){
 
 	// convert mats_small to weak_ptr<Material>
 	const int num_mats = mats_small.size();
-	std::vector<std::weak_ptr<Material>> weak_mats(num_mats);
+	weak_mats = std::vector<std::weak_ptr<Material>>(num_mats);
 	for (size_t i = 0; i < num_mats; i++) {
 		std::shared_ptr<Material> mat = mats_small[i];
 		weak_mats[i] = std::weak_ptr<Material>(mat);

@@ -53,6 +53,7 @@ class World
 	std::vector<int> all_material_ids;
 	std::vector<int> light_material_ids;
 	std::vector<std::shared_ptr<Material>> mats_small;
+	std::vector<std::weak_ptr<Material>> weak_mats;
 	tinybvh::BVH bvhInstance;
 	bool bvh_built = false;
 	std::vector<tinybvh::bvhvec4> raw_bvh_data;

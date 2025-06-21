@@ -52,6 +52,8 @@ void Photon::shoot(World& scene, int max_bounces, size_t& photon_count, const si
 	float pdf_dir;
 	glm::vec3 new_dir = mat_ptr->sample_direction(-direction, normal, pdf_dir);
 
+	if (pdf_dir <= 0.0f) return; // If the PDF is zero or negative, skip this photon
+
 	HitInfo hi;
 	const glm::vec3 brdf = mat_ptr.get()->evaluate(hi, -direction);
 	flux = flux * brdf * cos_theta / pdf_dir;
