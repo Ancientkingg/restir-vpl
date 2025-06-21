@@ -25,10 +25,10 @@ World load_world() {
 
 	World world;
 	// Scene 1
-	//world.place_obj("objects/sahur.obj", false, glm::vec3(0, 0, 0));
+	world.place_obj("objects/sahur.obj", false, glm::vec3(0, 0, 0));
 	
 	// Scene 2
-	world.place_obj("objects/cornell-box.obj", false, glm::vec3(0, 0, 0));
+	//world.place_obj("objects/cornell-box.obj", false, glm::vec3(0, 0, 0));
 
 	// Scene 3
 	//world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
@@ -393,8 +393,9 @@ std::vector<std::shared_ptr<PointLight>> World::generate_point_lights() {
 		//	std::cerr << "Error: Light is null at index " << idx << std::endl;
 		//}
 
-		float pdf_pt;
-		const glm::vec3 emit_pos = base->sample_on_light(pdf_pt);
+		float pdf_pt = 1.0f;
+		//const glm::vec3 emit_pos = base->sample_on_light(pdf_pt);
+		const glm::vec3 emit_pos = base->position; // Use the position of the point light directly (more optimized)
 
 		// Offset the random point slightly in the direction of the normal to avoid self-occlusion
 		const glm::vec3 normal = base->normal(emit_pos);
