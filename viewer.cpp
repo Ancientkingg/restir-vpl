@@ -133,7 +133,7 @@ static void progress_bar(float progress, float time, int framecount) {
 	float estimated_time = avg_time * (framecount - total_frames); // ms
 	int minutes = static_cast<int>(estimated_time / 60000);
 	int seconds = static_cast<int>((estimated_time - (minutes * 60000)) / 1000);
-	std::cout << "] " << int(progress * 100.0f) << "% Estimated time left: " << minutes << "m" << seconds << "s\r";
+	std::cout << std::setfill('0') << std::setw(2) << "] " << int(progress * 100.0f) << "% Estimated time left: " << minutes << "m" << seconds << "s\r";
 	std::cout.flush();
 }
 
