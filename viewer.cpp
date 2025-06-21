@@ -133,7 +133,7 @@ static void progress_bar(float progress, float time, int framecount) {
 	float estimated_time = avg_time * (framecount - total_frames); // ms
 	int minutes = static_cast<int>(estimated_time / 60000);
 	int seconds = static_cast<int>((estimated_time - (minutes * 60000)) / 1000);
-	std::cout << std::setfill('0') << std::setw(2) << "] " << int(progress * 100.0f) << "% Estimated time left: " << minutes << "m" << seconds << "s\r";
+	std::cout << std::setfill('0') << std::setw(2) << "] " << int(progress * 100.0f) << "Frame: " << framecount << "% Estimated time left: " << minutes << "m" << seconds << "s\r";
 	std::cout.flush();
 }
 
@@ -215,17 +215,8 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
 
         // Add this flag because PFM is big
         if constexpr (SAVE_INTERMEDIATE == true) {
-            if (framecount % SAVE_INTERVAL) {
-                if constexpr (SAVE_FORMAT == 0) {
-                    save_png(colors, "./images/" + sampling_mode_str + "_" + filename + "_" + id + ".png");
-                }
-                else if constexpr (SAVE_FORMAT == 1) {
-                    save_pfm(colors, "./images/" + sampling_mode_str + "_" + filename + "_" + id + ".pfm");
-                }
-                else {
-                    save_png(colors, "./images/" + sampling_mode_str + "_" + filename + "_" + id + ".png");
-                    save_pfm(colors, "./images/" + sampling_mode_str + "_" + filename + "_" + id + ".pfm");
-                }
+            if (framecount % SAVE_INTERVAL == 0) {
+                save_pfm(colors, "./images/" + sampling_mode_str + "_" + filename + "_" + id + ".pfm");
             }
         }
         
@@ -235,16 +226,7 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
 		std::clog << "Output accumulated frame" << std::endl;
 		auto filename = get_frame_filename(framecount);
 
-        if constexpr (SAVE_FORMAT == 0) {
-            save_png(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + "_" + id + ".png");
-        }
-        else if constexpr (SAVE_FORMAT == 1) {
-            save_pfm(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + "_" + id + ".pfm");
-        }
-        else {
-            save_png(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + "_" + id + ".png");
-            save_pfm(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + "_" + id + ".pfm");
-        }
+        save_pfm(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + "_" + id + ".pfm");
 	}
 
     currently_outputting_render = false;
