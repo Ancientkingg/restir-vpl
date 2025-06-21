@@ -118,12 +118,14 @@ float avg_time = 0.0f; // ms
 int total_frames = 1;
 bool ENABLE_PT = false;
 
-static void progress_bar(float progress, float time, int framecount) {
+static void progress_bar(int current_frame, float time, int framecount) {
 	avg_time = (avg_time * total_frames + time) / (total_frames + 1);
 	total_frames++;
 
 	int barWidth = 70;
 	std::cout << "[";
+	float progress = static_cast<int>(static_cast<float>(current_frame + 1) / static_cast<float>(framecount));
+	progress = fmin(progress, 1.0f);
 	int pos = barWidth * progress;
 	for (int i = 0; i < barWidth; ++i) {
 		if (i < pos) std::cout << "=";
@@ -133,7 +135,7 @@ static void progress_bar(float progress, float time, int framecount) {
 	float estimated_time = avg_time * (framecount - total_frames); // ms
 	int minutes = static_cast<int>(estimated_time / 60000);
 	int seconds = static_cast<int>((estimated_time - (minutes * 60000)) / 1000);
-	std::cout << std::setfill('0') << std::setw(2) << "] " << int(progress * 100.0f) << "Frame: " << framecount << "% Estimated time left: " << minutes << "m" << seconds << "s\r";
+	std::cout << std::setfill('0') << std::setw(2) << "] " << int(progress * 100.0f) << "% " << "Frame: " << current_frame << "/" << framecount << " Estimated time left : " << minutes << "m" << seconds << "s\r";
 	std::cout.flush();
 }
 
@@ -206,9 +208,7 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
 
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(render_stop - render_start).count();
 
-		progress_bar(
-			static_cast<float>(i + 1) / static_cast<float>(framecount),
-			duration, framecount);
+		progress_bar(i, duration, framecount);
 
         /// output frame
         const auto filename = get_frame_filename(i);
