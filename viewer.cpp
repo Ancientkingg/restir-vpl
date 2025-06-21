@@ -229,9 +229,6 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
         
     }
 
-    const auto id = std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::system_clock::now().time_since_epoch()).count() % 1000000);
-
 	if (accumulate_flag) {
 		std::clog << "Output accumulated frame" << std::endl;
 		auto filename = get_frame_filename(framecount);
