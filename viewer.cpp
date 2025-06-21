@@ -124,7 +124,7 @@ static void progress_bar(int current_frame, float time, int framecount) {
 
 	int barWidth = 70;
 	std::cout << "[";
-	float progress = static_cast<int>(static_cast<float>(current_frame + 1) / static_cast<float>(framecount));
+	float progress = static_cast<float>(current_frame + 1) / static_cast<float>(framecount);
 	progress = fmin(progress, 1.0f);
 	int pos = barWidth * progress;
 	for (int i = 0; i < barWidth; ++i) {
