@@ -5,6 +5,7 @@
 #include <vector>
 #include <iostream>
 #include <chrono>
+#include <fstream>
 
 #include "shading.hpp"
 #include "image_writer.hpp"
@@ -191,6 +192,8 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
     const auto id = std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count() % 1000000);
 
+    std::ofstream duration_file("./images/durations.csv", std::ios::app);
+
     for (int i = 0; i < framecount; i++) {
         auto render_start = std::chrono::high_resolution_clock::now();
 
@@ -213,15 +216,25 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
 
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(render_stop - render_start).count();
 
+        // Save duration to file in csv format
+        if (duration_file.is_open()) {
+            duration_file << duration;
+            if (i < framecount - 1) {
+				duration_file << ","; // Add comma if not the last frame
+            }
+        } else {
+            std::cerr << "Could not open durations file for writing." << std::endl;
+		}
+
 		progress_bar(i, duration, framecount);
 
-        /// output frame
+        // output frame
         const auto filename = get_frame_filename(i);
 
         // Add this flag because PFM is big
         if constexpr (SAVE_INTERMEDIATE == true) {
             if (i % SAVE_INTERVAL == 0) {
-                save_pfm(colors, "./images/" + sampling_mode_str + "_" + filename + "_" + id + ".pfm");
+                save_pfm(colors, "./images/" + id + "/" + sampling_mode_str + "_" + filename + ".pfm");
             }
         }
         
@@ -231,8 +244,12 @@ void render(Camera &cam, World &world, int framecount, bool accumulate_flag, Sam
     std::clog << "Output accumulated frame" << std::endl;
     auto filename = get_frame_filename(framecount);
 
-    save_pfm(accumulated_colors, "./images/accumulate_" + sampling_mode_str + "_" + filename + "_" + id + ".pfm");
+    save_pfm(accumulated_colors, "./images/" + id + "/accumulate_" + sampling_mode_str + "_" + filename + ".pfm");
 	//}
+
+    if (duration_file.is_open()) {
+        duration_file.close();
+	}
 
     currently_outputting_render = false;
 }
