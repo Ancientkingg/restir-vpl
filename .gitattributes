@@ -1,0 +1,2 @@
+objects/bistro_normal.obj filter=lfs diff=lfs merge=lfs -text
+objects/room.obj filter=lfs diff=lfs merge=lfs -text
