@@ -15,7 +15,7 @@ constexpr auto T_DEVIATION = 0.05f;
 constexpr auto NEIGHBOUR_K = 8;
 constexpr auto NEIGHBOUR_RADIUS = 20; // pixels
 
-constexpr auto ASPECT_RATIO = 1.0f;
+constexpr auto ASPECT_RATIO = 16.0 / 9.0f;
 constexpr auto LIVE_WIDTH = 400;
 constexpr auto RENDER_WIDTH = 1280;
 constexpr auto RENDER_FRAME_COUNT = 4000;

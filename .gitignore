@@ -21,3 +21,6 @@ build
 *.out
 
 *.ppm
+
+*.pfm
+*.csv

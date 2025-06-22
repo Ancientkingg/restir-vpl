@@ -25,14 +25,14 @@ World load_world() {
 
 	World world;
 	// Scene 1
-	world.place_obj("objects/sahur.obj", false, glm::vec3(0, 0, 0));
+	//world.place_obj("objects/sahur.obj", false, glm::vec3(0, 0, 0));
 	
 	// Scene 2
 	//world.place_obj("objects/cornell-box.obj", false, glm::vec3(0, 0, 0));
 
 	// Scene 3
-	//world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
-	//world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
+	world.place_obj("objects/bigCubeLight.obj", true, glm::vec3(5, 5, 0));
+	world.place_obj("objects/modern_living_room.obj", false, glm::vec3(0, 0, 0));
 
 	auto loading_stop = std::chrono::high_resolution_clock::now();
 
